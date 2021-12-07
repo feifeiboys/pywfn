@@ -1,11 +1,8 @@
 # 此脚本用来组织程序的页面布局
 import os
-
 cwd = os.getcwd()
 import sys
-
 sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便找到自定义包
-
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from logReader import Reader
@@ -14,7 +11,7 @@ from logWriter import Writer
 from pages import get_userful_obtials
 
 
-class App():
+class App:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title('分子轨道提取')
