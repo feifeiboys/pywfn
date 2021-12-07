@@ -19,19 +19,26 @@
 2.  xxxx
 3.  xxxx
 
-#### 参与贡献
+#### 公式
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+$N_i=\left ( \frac {2\times \alpha _i}{\pi }  \right ) ^ {3/4} \times 2\times \sqrt{\alpha _i} $
+
+$\phi _{x,i}=N_n \times (x-x_n)\times e^{-\alpha _i(r-R_A)^2}$
+
+$\phi _{y,i}=N_n \times (y-y_n)\times e^{-\alpha _i(r-R_A)^2}$
+
+$\phi _{z,i}=N_n \times (z-z_n)\times e^{-\alpha _i(r-R_A)^2}$
+
+$(r-R_A)^2=(x-x_n)^2+(y-y_n)^2+(z-z_n)^2$
+
+$\phi _{p,x}=c_1\times  \phi _{x,1}+c_2\times  \phi _{x,2}+c_3\times  \phi _{x,3}+c_4\times  \phi _{x,4}$
+
+$\phi _{p,y}=c_1\times  \phi _{y,1}+c_2\times  \phi _{y,2}+c_3\times  \phi _{y,3}+c_4\times  \phi _{y,4}$
+
+$\phi _{p,z}=c_1\times  \phi _{z,1}+c_2\times  \phi _{z,2}+c_3\times  \phi _{z,3}+c_4\times  \phi _{z,4}$
+
+$f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 
 
-#### 特技
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+其中 $i$ 代表第几个 $\alpha$ 和 $c$ ，$n$ 代表第几个原子 
