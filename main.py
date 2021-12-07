@@ -62,8 +62,6 @@ class App:
         self.entry1 = tk.Entry(self.frameR, show=None, width=200)
         tk.Label(self.frameR, text='输入需要的轨道编号，用,和-分割').place(x=0, y=270, anchor='nw')
         self.entry2 = tk.Entry(self.frameR, show=None, width=200)
-        self.option_select_saveAll = tk.Checkbutton(self.frameR, text='all', variable=self.if_save_all_var, onvalue=1,
-                                                    offvalue=0)
         self.option_select_saveSelect = tk.Checkbutton(self.frameR, text='select', variable=self.if_save_select_var,
                                                        onvalue=1, offvalue=0)
         self.para_button = tk.Button(self.frameR, text='保存参数并计算', command=self.get_input_para)
@@ -76,7 +74,6 @@ class App:
         self.log_window_text.place(x=0, y=30, width=500, anchor='nw')
         self.entry1.place(x=0, y=200, anchor='nw')
         self.entry2.place(x=0, y=300, anchor='nw')
-        self.option_select_saveAll.place(x=0, y=350, anchor='nw')
         self.option_select_saveSelect.place(x=50, y=350, anchor='nw')
         self.para_button.place(x=110, y=400, anchor='n')
 
@@ -107,7 +104,7 @@ class App:
         self.caculater.set_data(self.data)
         self.log_window_text.insert('end', '搜索完成\n')
 
-    def num_list_to_str(slef, num_list):  # 将列表中的数字转换为字符串
+    def num_list_to_str(self, num_list):  # 将列表中的数字转换为字符串
         str_list = []
         for i in range(len(num_list)):
             str_list.append(f'{num_list[i] + 1}')
@@ -144,11 +141,13 @@ class App:
         self.writer.data = self.data
         file_path = asksaveasfilename(defaultextension='.xlsx', title='保存文件',
                                       initialfile=self.log_path.split('/')[-1].split('.')[-2])
-        if self.if_save_all_var.get() == 1:
-            self.writer.save_atom_obtials('all_atoms_coefficient')
         if self.if_save_select_var.get() == 1:
-            self.writer.save_atom_obtials('select_atoms_coefficient', select_atoms=self.select_atoms,
-                                          select_obtials=self.select_botials)
+            if 'Molecular Orbital Coefficients' in self.data.keys():
+                self.writer.save_atom_obtials('select_atoms_coefficient','Molecular Orbital Coefficients',select_atoms=self.select_atoms,select_obtials=self.select_botials)
+            if 'Alpha Molecular Orbital Coefficients' in self.data.keys():
+                self.writer.save_atom_obtials('select_atoms_coefficient_alpha','Alpha Molecular Orbital Coefficients',select_atoms=self.select_atoms,select_obtials=self.select_botials)
+            if 'Beta Molecular Orbital Coefficients' in self.data.keys():
+                self.writer.save_atom_obtials('select_atoms_coefficient_beta','Beta Molecular Orbital Coefficients',select_atoms=self.select_atoms,select_obtials=self.select_botials)
         self.writer.save(file_path)
         self.log_window_text.insert('end', '文件保存成功\n')
         # print('保存文件')

@@ -43,4 +43,4 @@ $\phi _{p,z}=c_1\times  \phi _{z,1}+c_2\times  \phi _{z,2}+c_3\times  \phi _{z,3
 
 $f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 
-其中 $i$ 代表第几个 $\alpha$ 和 $c$ ，$n$ 代表第几个原子 
+其中 $i$ 代表第几个 $\alpha$ 和 $c$ ，$n$ 代表第几个原子，x,y,z即为原子周围某一点的坐标

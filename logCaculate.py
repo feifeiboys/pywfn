@@ -9,21 +9,28 @@ import sympy
 class Caculater():
     def __init__(self, program):
         self.program = program
+        self.obtial_type = None
+        self.atoms_pos = None
+        self.atoms = None
+        self.standard_basis = None
 
     def set_data(self, data):
-        if 'Standard orientation' in data.keys():
+        keys = data.keys()
+        if 'Standard orientation' in keys:
             self.atoms_pos = data['Standard orientation']
-        if 'Molecular Orbital Coefficients' in data.keys():
+        if 'Molecular Orbital Coefficients' in keys:
+            self.obtial_type = 0
             self.atoms = data['Molecular Orbital Coefficients']
+        elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
+            self.obtial_type = 1
+            self.atoms = [{
+                'atom_id':alpha['atom_id'],
+                'atom_type':alpha['atom_type'],
+                'datas':pd.concat([alpha['datas'],beta['datas']],axis=1),
+                'obtials':alpha['obtials']+beta['obtials']
+            } for alpha,beta in zip(data['Alpha Molecular Orbital Coefficients'],data['Beta Molecular Orbital Coefficients'])]
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
-
-    def get_vector_between_atoms(self, atom1_num, atom2_num):  # 计算两个原子之间的坐标向量
-        atoms_pos = self.atoms_pos
-        dx = atoms_pos.iloc[atom1_num].loc['X'] - atoms_pos.iloc[atom2_num].loc['X']
-        dy = atoms_pos.iloc[atom1_num].loc['Y'] - atoms_pos.iloc[atom2_num].loc['Y']
-        dz = atoms_pos.iloc[atom1_num].loc['Z'] - atoms_pos.iloc[atom2_num].loc['Z']
-        return np.array([dx, dy, dz], dtype=np.float64)
 
     def get_2p_obtial(self, atom_num, obtial_num, ):  # 返回指定原子的pz,py和pz轨道
         atoms = self.atoms
@@ -31,33 +38,6 @@ class Caculater():
         py = atoms[atom_num]['datas'].loc['3PY'].iloc[obtial_num]
         pz = atoms[atom_num]['datas'].loc['3PZ'].iloc[obtial_num]
         return np.array([px, py, pz], dtype=np.float64)
-
-    def get_2point(self, center_pos, pos):  # 获取与建轴垂直的两个点的坐标(中心坐标，1/4处坐标)
-        a1, b1, c1 = sympy.symbols('a1,b1,c1')
-        a2, b2, c2 = sympy.symbols('a2,b2,c2')
-        x1, y1, z1 = center_pos
-        x, y, z = pos
-        if x1 - x == 0 and y1 - y == 0:
-            a1 = x1
-            res = sympy.solve([
-                (x - x1) * (a1 - x1) + (y - y1) * (b1 - y1) + (z - z1) * (c1 - z1),
-                (a1 - x1) ** 2 + (b1 - y1) ** 2 + (c1 - z1) ** 2 - (x - x1) ** 2 - (y - y1) ** 2 - (z - z1) ** 2, ],
-                (b1, c1))
-            a1, b1, c1 = a1, res[0][1], res[0][2]
-        else:
-            c1 = z1
-            res = sympy.solve([
-                (x - x1) * (a1 - x1) + (y - y1) * (b1 - y1) + (z - z1) * (c1 - z1),
-                (a1 - x1) ** 2 + (b1 - y1) ** 2 + (c1 - z1) ** 2 - (x - x1) ** 2 - (y - y1) ** 2 - (z - z1) ** 2, ],
-                (a1, b1))
-            a1, b1, c1 = res[0][0], res[0][1], c1
-        res = sympy.solve([
-            (a2 - x1) * (a1 - x1) + (b2 - y1) * (b1 - y1) + (c2 - z1) * (c1 - z1),
-            (a2 - x1) * (x - x1) + (b2 - y1) * (y - y1) + (c2 - z1) * (z - z1),
-            (a2 - x1) ** 2 + (b2 - y1) ** 2 + (c2 - z1) ** 2 - (x - x1) ** 2 - (y - y1) ** 2 - (z - z1) ** 2],
-            (a2, b2, c2))
-        a2, b2, c2 = res[0][0], res[0][1], res[0][2]
-        return np.array([a1, b1, c1], dtype=np.float64), np.array([a2, b2, c2], dtype=np.float64)
 
     def function(self, center_pos, pos, alpha, c, Ps):  # 获取函数值 (原子坐标，计算点坐标，alpha，c，轨道系数,函数平移)
         xn, yn, zn = center_pos
@@ -244,7 +224,7 @@ class Caculater():
         print('center/', center_square_sum / all_square_sum)
         print('center_res', center_res)
         print('around_res', around_res)
-        bond_level = np.sum(2 * center_res * around_res)
+        bond_level = np.sum(2 if self.obtial_type == 0 else 1 * center_res * around_res)
         return bond_level
 
     def get_atom_bond_levels(self, center, arounds, obtials):  # 计算某个原子与周围原子之间的键级

@@ -26,7 +26,6 @@ class Page():
         tk.Label(self.window, text='输入需要判断的轨道编号，用,和-分割:').place(x=0, y=300, anchor='nw')
         self.entry3 = tk.Entry(self.window, show=None, width=200)
         self.caculate_button = tk.Button(self.window, text='计算有用轨道', command=self.caculate_tread)
-        self.save_button = tk.Button(self.window, text='保存', command=self.save)
 
     def set_conponent_pos(self):
         self.entry1.place(x=0, y=150, anchor='nw')
@@ -34,7 +33,6 @@ class Page():
         self.entry2.place(x=0, y=250, anchor='nw')
         self.entry3.place(x=0, y=350, anchor='nw')
         self.caculate_button.place(x=240, y=500, anchor='center')
-        self.save_button.place(x=240, y=550, anchor='center')
 
     def run(self):
         self.window.mainloop()
@@ -52,27 +50,28 @@ class Page():
         # 在信息框输入
         self.entry2.delete(0, 'end')
         self.entry2.insert(0, ';'.join([','.join([str(i + 1) for i in each]) for each in connections]))
+
     def caculate_tread(self):
         t = threading.Thread(target=self.caculate)
         t.setDaemon(True)
         t.start()
+
     def caculate(self):  # 获取用户输入的参数
         center_atom_indexs = self.main_program.get_nums(self.entry1.get())
         around_atoms_indexs = [self.main_program.get_nums(each) for each in self.entry2.get().split(';')]
         obtial_indexs = self.main_program.get_nums(self.entry3.get())
-        all_userful = []
+        obtial_length = self.caculater.atoms[0]['datas'].shape[1]
+        obtial_type = self.caculater.obtial_type
+        if obtial_type == 1:
+            obtial_indexs += [int(i+obtial_length/2) for i in obtial_indexs]
+        print(obtial_indexs)
         for i, center_atom_index in enumerate(center_atom_indexs):
             self.main_program.log_window_text.insert('end', f'{center_atom_index + 1}:\n')  # 提示原子序号
-            all_userful.append([center_atom_index + 1])
             userful = self.caculater.get_userful_obtials(center_atom_index,obtial_indexs)
-            self.main_program.log_window_text.insert('end', '有用轨道为：'+','.join([str(i+1) for i in userful]) + '\n')
-            print('userful',userful)
+            if obtial_type == 0:
+                self.main_program.log_window_text.insert('end','有用轨道为：'+','.join([str(i+1) for i in userful]) + '\n')
+            else:
+                self.main_program.log_window_text.insert('end','有用轨道为：'+','.join([f'α{str(i+1)}' if i < obtial_length/2 else f'β{str(i+1-int(obtial_length/2))}' for i in userful]) + '\n')
             bond_levels = self.caculater.get_atom_bond_levels(center_atom_index, around_atoms_indexs[i],userful)
             self.main_program.log_window_text.insert('end', f'sum{np.sum(bond_levels)}\n')
-            all_userful[-1] += userful
-        self.all_userful = all_userful
-    def caculate_bond_level(self):
-        print(self.all_userful)
-    def save(self):
-        print(self.all_userful)
-        self.writer.save_userful_bitial(self.all_userful)
+
