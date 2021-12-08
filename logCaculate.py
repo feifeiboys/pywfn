@@ -24,11 +24,13 @@ class Caculater():
         elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
             self.obtial_type = 1
             self.atoms = [{
-                'atom_id':alpha['atom_id'],
-                'atom_type':alpha['atom_type'],
-                'datas':pd.concat([alpha['datas'],beta['datas']],axis=1),
-                'obtials':alpha['obtials']+beta['obtials']
-            } for alpha,beta in zip(data['Alpha Molecular Orbital Coefficients'],data['Beta Molecular Orbital Coefficients'])]
+                'atom_id': alpha['atom_id'],
+                'atom_type': alpha['atom_type'],
+                'datas': pd.concat([alpha['datas'], beta['datas']], axis=1),
+                'obtials': alpha['obtials'] + beta['obtials']
+            } for alpha, beta in
+                zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
+        self.obtial_length = len(self.atoms[0]['obtials'])
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
 
@@ -72,60 +74,60 @@ class Caculater():
         return PX, PY, PZ
 
     # 判断某个原子的某个轨道是否有用,(中心原子序号，周围原子序号，轨道序号)
-    def get_obtial_is_userful(self, center_atom_num, around_atom_nums, obtial_num):  # 这里传入的应当是用户输入的
+    def get_obtial_is_userful(self, center, around, obtial):  # 这里传入的应当是用户输入的
         atoms = self.atoms
         atoms_pos = self.atoms_pos
-        lim = 0.0065
-        log = ''
-        userful_list = []
-        all_square_sum = self.get_all_atom_square_sum()[obtial_num]
-        px = atoms[center_atom_num]['datas'].loc['2PX'].astype('float').to_numpy()[obtial_num]  # 从log文件中提取的轨道系数
-        py = atoms[center_atom_num]['datas'].loc['2PY'].astype('float').to_numpy()[obtial_num]
-        pz = atoms[center_atom_num]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial_num]
-        if px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum < 0.005:
-            return False
+        all_square_sum = self.get_all_atom_square_sum()[obtial]
+        px = atoms[center]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
+        py = atoms[center]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
+        pz = atoms[center]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
 
-        center_unit_matrix = self.get_unit_matrix([center_atom_num])
-        PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial_num]
-        PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial_num]
-        PZ = (pz ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[2].flatten()[obtial_num]
+        p_sums = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
+        if p_sums < 0.005:
+            return False
+        # print('p_sums',center,around,obtial,p_sums)
+        center_unit_matrix = self.get_unit_matrix([center])
+        PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
+        PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
+        PZ = (pz ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[2].flatten()[obtial]
 
         # 中心原子坐标
-        x1 = atoms_pos.iloc[center_atom_num].loc['X']
-        y1 = atoms_pos.iloc[center_atom_num].loc['Y']
-        z1 = atoms_pos.iloc[center_atom_num].loc['Z']
-        data1 = np.array(self.standard_basis[center_atom_num])
+        x1 = atoms_pos.iloc[center].loc['X']
+        y1 = atoms_pos.iloc[center].loc['Y']
+        z1 = atoms_pos.iloc[center].loc['Z']
+        data1 = np.array(self.standard_basis[center])
         a1, a2, a3, a4 = data1[:, 0].tolist()
         c1, c2, c3, c4 = data1[:, 1].tolist()
-        for around_num in around_atom_nums:
-            # 判断当前的原子类型，如果是H 的话就不用计算,自身也不参与计算
-            if center_atom_num != around_num and atoms[around_num]['atom_type'] != 'H':
-                # 获取周围原子的坐标
-                x2 = atoms_pos.iloc[around_num].loc['X']
-                y2 = atoms_pos.iloc[around_num].loc['Y']
-                z2 = atoms_pos.iloc[around_num].loc['Z']
-                # 获取四分之一处坐标
-                x = (x2 + 3 * x1) / 4
-                y = (y2 + 3 * y1) / 4
-                z = (z2 + 3 * z1) / 4
-                fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=(a1, a2, a3, a4), c=(c1, c2, c3, c4),
-                                   Ps=(PX, PY, PZ))
-                if abs(fv) < lim:
-                    userful_list.append(0)
-                else:
-                    userful_list.append(1)
+        if center != around and atoms[around]['atom_type'] != 'H':
+            # 获取周围原子的坐标
+            x2 = atoms_pos.iloc[around].loc['X']
+            y2 = atoms_pos.iloc[around].loc['Y']
+            z2 = atoms_pos.iloc[around].loc['Z']
+            # 获取四分之一处坐标
+            x = (x2 + 3 * x1) / 4
+            y = (y2 + 3 * y1) / 4
+            z = (z2 + 3 * z1) / 4
+            fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=(a1, a2, a3, a4), c=(c1, c2, c3, c4),
+                               Ps=(PX, PY, PZ))
+            if abs(fv) < 0.005:
+                print('fv',center+1,around+1,obtial+1,fv)
+                return True
             else:
-                pass
-        if np.sum(userful_list) == 0:
-            return True
-        else:
-            return False
+                return False
 
-    def get_userful_obtials(self,center,obtials):
+    def obtial_between_atoms(self, center, around, obtials):  # 挑选两个原子之间合理的键级有哪些
+        userful = []
+        for obtial in obtials:
+            res = self.get_obtial_is_userful(center, around, obtial)
+            if res:
+                userful.append(obtial)
+        return userful
+
+    def get_userful_obtials(self, center, obtials):
         arounds = self.get_connections(center)
         userful = []
         for obtial in obtials:
-            res = self.get_obtial_is_userful(center,arounds,obtial)
+            res = self.get_obtial_is_userful(center, arounds, obtial)
             if res:
                 userful.append(obtial)
         return userful
@@ -187,8 +189,7 @@ class Caculater():
                             c=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv3 = self.function(center_pos=(x1, y1, z1), pos=(x1, y1, z1 + 1), alpha=data1[:, 0].tolist(),
                             c=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
-        # print(f'{center + 1},{around + 1},{obtial + 1},1,{fv1},{fv2},{fv3}')
-        data_list.append([fv1,fv2,fv3])
+        data_list.append([fv1, fv2, fv3])
         PX, PY, PZ = self.get_px(around, obtial)
         fv1 = self.function(center_pos=(x2, y2, z2), pos=(x2 + 1, y2, z2), alpha=data2[:, 0].tolist(),
                             c=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
@@ -196,44 +197,40 @@ class Caculater():
                             c=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv3 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2, z2 + 1), alpha=data2[:, 0].tolist(),
                             c=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
-        # print(f'{center + 1},{around + 1},{obtial + 1},2,{fv1},{fv2},{fv3}')
         data_list.append([fv1, fv2, fv3])
         data_list = np.array(data_list)
         data_list[data_list > 0] = 1
         data_list[data_list < 0] = -1
-        res = np.sum(np.prod(np.array(data_list),axis=0))
+        res = np.sum(np.prod(np.array(data_list), axis=0))
         # print(res)
         return 1 if res > 0 else -1
 
-    def get_bond_level_between_tow_atom(self, center, around, userful_obtials):  # 计算两个原子之间的键级
-        around_units = [self.get_unit(center,around,obtial) for obtial in userful_obtials]
-
-        around_units = np.array(around_units).reshape(1,len(userful_obtials))
-        center_units = np.ones((1,len(userful_obtials)))
+    def get_bond_level_between_tow_atom(self, center, around, obtials):  # 计算两个原子之间的键级
+        userful_obtials = self.obtial_between_atoms(center,around,obtials)
+        around_units = [self.get_unit(center, around, obtial) for obtial in userful_obtials]
+        around_units = np.array(around_units).reshape(1, len(userful_obtials))
+        center_units = np.ones((1, len(userful_obtials)))
         self.program.data_var.set(f'正在计算{center}和{around}键级')
+
+        if self.obtial_type == 0:
+            userful_str = [str(i+1) for i in userful_obtials]
+            self.program.log_window_text.insert('end',f'{center+1}->{around+1},PO'+','.join(userful_str)+'\n')
+        else:
+            userful_str = ['α'+str(i+1) if i < self.obtial_length/2 else 'β'+str(i+1-int(self.obtial_length/2)) for i in userful_obtials]
+            self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},PO:' + ','.join(userful_str) + '\n')
         all_square_sum = self.get_all_atom_square_sum()[np.newaxis, :][:, userful_obtials]
         center_square_sum = self.get_each_atom_square_sum([center])[:, userful_obtials]
         around_square_sum = self.get_each_atom_square_sum([around])[:, userful_obtials]
         center_res = (center_square_sum / all_square_sum) ** 0.5 * center_units
         around_res = (around_square_sum / all_square_sum) ** 0.5 * around_units
-        print(f'正在计算{center+1}和{around+1}键级')
-        print(userful_obtials)
-        print('center_square_sum',center_square_sum)
-        print('around_square_sum', around_square_sum)
-        print('all_square_sum', all_square_sum)
-        print('center/', center_square_sum / all_square_sum)
-        print('center_res', center_res)
-        print('around_res', around_res)
-        bond_level = np.sum(2 if self.obtial_type == 0 else 1 * center_res * around_res)
+        bond_level = np.sum((2 if self.obtial_type == 0 else 1) * center_res * around_res)
         return bond_level
 
     def get_atom_bond_levels(self, center, arounds, obtials):  # 计算某个原子与周围原子之间的键级
         bond_levels = []
-        userful = self.get_userful_obtials(center,obtials)
         for around in arounds:
             if self.atoms[around]['atom_type'] != 'H':
-                bond_level = self.get_bond_level_between_tow_atom(center, around, userful)
+                bond_level = self.get_bond_level_between_tow_atom(center, around, obtials)
                 bond_levels.append(bond_level)
-                self.program.log_window_text.insert('end',f'{center+1}->{around+1}:{bond_level}\n')
+                self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},BL:{bond_level}\n')
         return np.array(bond_levels)
-

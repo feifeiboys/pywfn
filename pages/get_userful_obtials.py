@@ -63,15 +63,9 @@ class Page():
         obtial_length = self.caculater.atoms[0]['datas'].shape[1]
         obtial_type = self.caculater.obtial_type
         if obtial_type == 1:
-            obtial_indexs += [int(i+obtial_length/2) for i in obtial_indexs]
-        print(obtial_indexs)
+            obtial_indexs += [int(i+obtial_length/2) for i in obtial_indexs[:-1]]
         for i, center_atom_index in enumerate(center_atom_indexs):
             self.main_program.log_window_text.insert('end', f'{center_atom_index + 1}:\n')  # 提示原子序号
-            userful = self.caculater.get_userful_obtials(center_atom_index,obtial_indexs)
-            if obtial_type == 0:
-                self.main_program.log_window_text.insert('end','有用轨道为：'+','.join([str(i+1) for i in userful]) + '\n')
-            else:
-                self.main_program.log_window_text.insert('end','有用轨道为：'+','.join([f'α{str(i+1)}' if i < obtial_length/2 else f'β{str(i+1-int(obtial_length/2))}' for i in userful]) + '\n')
-            bond_levels = self.caculater.get_atom_bond_levels(center_atom_index, around_atoms_indexs[i],userful)
-            self.main_program.log_window_text.insert('end', f'sum{np.sum(bond_levels)}\n')
+            bond_levels = self.caculater.get_atom_bond_levels(center_atom_index, around_atoms_indexs[i],obtial_indexs)
+            self.main_program.log_window_text.insert('end', f'SUM:{np.sum(bond_levels)}\n')
 
