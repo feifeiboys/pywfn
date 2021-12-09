@@ -95,6 +95,7 @@ class App:
                 self.log_lines = self.log_text.split('\n')
                 self.reader.logLines = self.log_lines
                 self.get_data()
+            self.show_page()
         else:
             self.log_window_text.insert('end', '仅能读取.log或.out文件\n')
 

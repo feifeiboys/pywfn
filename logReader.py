@@ -101,18 +101,12 @@ class Reader:
                 for i, atom in enumerate(atoms):
                     index = np.array(atom['datas'])[0, :, 0].tolist()
                     array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1)
-                    atoms[i]['datas'] = pd.DataFrame(array, index=index)
-                    atoms[i]['datas'].astype(dtype='float')
+                    atoms[i]['datas'] = pd.DataFrame(array, index=index,columns=np.array(all_obtials).flatten().tolist()).astype(dtype='float').loc[:,'O']
                     atoms[i]['obtials'] = np.array(all_obtials).flatten().tolist()
                     atom_id = atoms[i]['atom_id']
                     atom_type = atoms[i]['atom_type']
                     self.program.log_window_text.insert('end', f'{atom_id}{atom_type}\n')
                 self.data[title] = atoms
-                obtial_number = len(atoms[0]['obtials'])
-                obtial_series = pd.Series(atoms[0]['obtials'])
-                self.program.log_window_text.insert('end', f'共读取到{len(atoms)}个原子\n每个原子读取到{obtial_number}个轨道\n')
-                O_num = obtial_series.value_counts()['O']
-                self.program.log_window_text.insert('end', f'其中{O_num}个O轨道\n')
                 return atoms
 
     def get_standard_basis(self):

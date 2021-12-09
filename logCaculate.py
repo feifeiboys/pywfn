@@ -2,11 +2,10 @@
 import numpy as np
 import pandas as pd
 import math
-import matplotlib.pyplot as plt
 import sympy
 
 
-class Caculater():
+class Caculater:
     def __init__(self, program):
         self.program = program
         self.obtial_type = None
@@ -21,7 +20,12 @@ class Caculater():
         if 'Molecular Orbital Coefficients' in keys:
             self.obtial_type = 0
             self.atoms = data['Molecular Orbital Coefficients']
+            obtial_num = data['Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.program.log_window_text.insert('end',f'读取到{obtial_num}个 O 轨道\n')
         elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
+            self.alpha_num = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.beta_num = data['Beta Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.program.log_window_text.insert('end',f'读取到{self.alpha_num}个Alpha_O轨道和{self.beta_num}个Beta_O轨道\n')
             self.obtial_type = 1
             self.atoms = [{
                 'atom_id': alpha['atom_id'],
@@ -30,7 +34,7 @@ class Caculater():
                 'obtials': alpha['obtials'] + beta['obtials']
             } for alpha, beta in
                 zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
-        self.obtial_length = len(self.atoms[0]['obtials'])
+        self.obtial_length = self.atoms[0]['datas'].shape[1]
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
 
@@ -83,9 +87,14 @@ class Caculater():
         pz = atoms[center]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
 
         p_sums = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
+        if self.obtial_type == 0:
+            print('psum', center + 1, around + 1, obtial + 1, p_sums, p_sums < 0.005)
+        else:
+            obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
+            print(f'psum,{center + 1},{around + 1},{obtial_str},{p_sums},{ p_sums > 0.005}')
         if p_sums < 0.005:
             return False
-        # print('p_sums',center,around,obtial,p_sums)
+
         center_unit_matrix = self.get_unit_matrix([center])
         PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
         PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
@@ -109,15 +118,21 @@ class Caculater():
             z = (z2 + 3 * z1) / 4
             fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=(a1, a2, a3, a4), c=(c1, c2, c3, c4),
                                Ps=(PX, PY, PZ))
+            if self.obtial_type == 0:
+                print('fv', center + 1, around + 1, obtial + 1, fv, abs(fv) < 0.005)
+            else:
+                obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
+                print(f'fv,{center + 1},{around + 1},{obtial_str},{fv},{abs(fv) < 0.005}')
             if abs(fv) < 0.005:
-                print('fv',center+1,around+1,obtial+1,fv)
+
                 return True
             else:
                 return False
 
-    def obtial_between_atoms(self, center, around, obtials):  # 挑选两个原子之间合理的键级有哪些
+    def obtial_between_atoms(self, center, around):  # 挑选两个原子之间合理的键级有哪些
         userful = []
-        for obtial in obtials:
+
+        for obtial in range(self.obtial_length):
             res = self.get_obtial_is_userful(center, around, obtial)
             if res:
                 userful.append(obtial)
@@ -205,8 +220,8 @@ class Caculater():
         # print(res)
         return 1 if res > 0 else -1
 
-    def get_bond_level_between_tow_atom(self, center, around, obtials):  # 计算两个原子之间的键级
-        userful_obtials = self.obtial_between_atoms(center,around,obtials)
+    def get_bond_level_between_tow_atom(self, center, around):  # 计算两个原子之间的键级
+        userful_obtials = self.obtial_between_atoms(center,around)
         around_units = [self.get_unit(center, around, obtial) for obtial in userful_obtials]
         around_units = np.array(around_units).reshape(1, len(userful_obtials))
         center_units = np.ones((1, len(userful_obtials)))
@@ -216,7 +231,7 @@ class Caculater():
             userful_str = [str(i+1) for i in userful_obtials]
             self.program.log_window_text.insert('end',f'{center+1}->{around+1},PO'+','.join(userful_str)+'\n')
         else:
-            userful_str = ['α'+str(i+1) if i < self.obtial_length/2 else 'β'+str(i+1-int(self.obtial_length/2)) for i in userful_obtials]
+            userful_str = [f'α{i+1}' if i < self.alpha_num else f'β{i+1-self.alpha_num}' for i in userful_obtials]
             self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},PO:' + ','.join(userful_str) + '\n')
         all_square_sum = self.get_all_atom_square_sum()[np.newaxis, :][:, userful_obtials]
         center_square_sum = self.get_each_atom_square_sum([center])[:, userful_obtials]
@@ -226,11 +241,11 @@ class Caculater():
         bond_level = np.sum((2 if self.obtial_type == 0 else 1) * center_res * around_res)
         return bond_level
 
-    def get_atom_bond_levels(self, center, arounds, obtials):  # 计算某个原子与周围原子之间的键级
+    def get_atom_bond_levels(self, center, arounds):  # 计算某个原子与周围原子之间的键级
         bond_levels = []
         for around in arounds:
             if self.atoms[around]['atom_type'] != 'H':
-                bond_level = self.get_bond_level_between_tow_atom(center, around, obtials)
+                bond_level = self.get_bond_level_between_tow_atom(center, around)
                 bond_levels.append(bond_level)
                 self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},BL:{bond_level}\n')
         return np.array(bond_levels)
