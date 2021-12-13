@@ -2,7 +2,7 @@
 import re
 import numpy as np
 import pandas as pd
-
+import json
 
 class Reader:
     def __init__(self, program):
@@ -85,21 +85,27 @@ class Reader:
                 else:
                     # 在三维列表中添加一个二维列表
                     atoms[atom_id - 1]['datas'].append([line_list[4:]])
-            elif re.search(r'\d+ +\d+[A-Za-z]+ +-?\d+.\d{5} +-?\d+.\d{5} +-?\d+.\d{5} +-?\d+.\d{5} +-?\d+.\d{5}',
+            elif re.search(r'\d+ +\d+[A-Za-z]+ +-?\d+.\d{5} *-?\d+.\d{5} *-?\d+.\d{5} *-?\d+.\d{5} *-?\d+.\d{5}',
                            line_text) is not None:
-                line_list = re.split(r' +', line_text)
-                data = line_list[2:]
+                res = re.findall(r'\d+ +(\d+[A-Za-z]+) +(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5})',line_text)[0]
+                data = list(res)
                 # print(line_num,data)
                 atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
             elif re.search(
-                    r'\d+ +\d+[A-Za-z]+[\+\- ?]?\d+? +-?\d+.\d{5} +-?\d+.\d{5} +-?\d+.\d{5} +-?\d+.\d{5} +-?\d+.\d{5}',
+                    r'\d+ +\d+[A-Za-z]+[\+\- ?]?\d+? +-?\d+.\d{5} *-?\d+.\d{5} *-?\d+.\d{5} *-?\d+.\d{5} *-?\d+.\d{5}',
                     line_text) is not None:
                 line_list = re.split(r' {2,}', line_text)
                 data = line_list[-6:]
                 atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
             else:
+                print(atoms)
+                self.atoms=atoms
+                print(line_text)
                 for i, atom in enumerate(atoms):
-                    index = np.array(atom['datas'])[0, :, 0].tolist()
+                    with open(f'template/{i}.json','w',encoding='utf-8') as f:
+                        f.write(json.dumps(atom))
+
+                    index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist()
                     array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1)
                     atoms[i]['datas'] = pd.DataFrame(array, index=index,columns=np.array(all_obtials).flatten().tolist()).astype(dtype='float').loc[:,'O']
                     atoms[i]['obtials'] = np.array(all_obtials).flatten().tolist()

@@ -45,11 +45,9 @@ class Caculater:
         pz = atoms[atom_num]['datas'].loc['3PZ'].iloc[obtial_num]
         return np.array([px, py, pz], dtype=np.float64)
 
-    def function(self, center_pos, pos, alpha, c, Ps):  # 获取函数值 (原子坐标，计算点坐标，alpha，c，轨道系数,函数平移)
+    def function(self, center_pos, pos, alpha, cs, Ps):  # 获取函数值 (原子坐标，计算点坐标，alpha，c，轨道系数,函数平移)
         xn, yn, zn = center_pos
         xi, yi, zi = pos
-        a1, a2, a3, a4 = alpha
-        c1, c2, c3, c4 = c
         PX, PY, PZ = Ps
         pi = math.pi
         e = math.e
@@ -59,9 +57,11 @@ class Caculater:
         fx = N * (xi - xn) * e ** (-a * r)
         fy = N * (yi - yn) * e ** (-a * r)
         fz = N * (zi - zn) * e ** (-a * r)
-        fpx = c1 * fx.subs(a, a1) + c2 * fx.subs(a, a2) + c3 * fx.subs(a, a3) + c4 * fx.subs(a, a4)
-        fpy = c1 * fy.subs(a, a1) + c2 * fy.subs(a, a2) + c3 * fy.subs(a, a3) + c4 * fy.subs(a, a4)
-        fpz = c1 * fz.subs(a, a1) + c2 * fz.subs(a, a2) + c3 * fz.subs(a, a3) + c4 * fz.subs(a, a4)
+        print([(c,a) for c, a_ in zip(cs, alpha)])
+        print([c * fx.subs(a, a_) for c, a_ in zip(cs, alpha)])
+        fpx = sum([c * fx.subs(a, a_) for c, a_ in zip(cs, alpha)])
+        fpy = sum([c * fy.subs(a, a_) for c, a_ in zip(cs, alpha)])
+        fpz = sum([c * fz.subs(a, a_) for c, a_ in zip(cs, alpha)])
         f = PX * fpx + PY * fpy + PZ * fpz
         return f
 
@@ -88,7 +88,7 @@ class Caculater:
 
         p_sums = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
         if self.obtial_type == 0:
-            print('psum', center + 1, around + 1, obtial + 1, p_sums, p_sums < 0.005)
+            print('psum', center + 1, around + 1, obtial + 1, p_sums, p_sums > 0.005)
         else:
             obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
             print(f'psum,{center + 1},{around + 1},{obtial_str},{p_sums},{ p_sums > 0.005}')
@@ -104,9 +104,7 @@ class Caculater:
         x1 = atoms_pos.iloc[center].loc['X']
         y1 = atoms_pos.iloc[center].loc['Y']
         z1 = atoms_pos.iloc[center].loc['Z']
-        data1 = np.array(self.standard_basis[center])
-        a1, a2, a3, a4 = data1[:, 0].tolist()
-        c1, c2, c3, c4 = data1[:, 1].tolist()
+        paras = np.array(self.standard_basis[center])
         if center != around and atoms[around]['atom_type'] != 'H':
             # 获取周围原子的坐标
             x2 = atoms_pos.iloc[around].loc['X']
@@ -116,15 +114,14 @@ class Caculater:
             x = (x2 + 3 * x1) / 4
             y = (y2 + 3 * y1) / 4
             z = (z2 + 3 * z1) / 4
-            fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=(a1, a2, a3, a4), c=(c1, c2, c3, c4),
+            fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=paras[:, 0].tolist(), cs=paras[:, 1].tolist(),
                                Ps=(PX, PY, PZ))
             if self.obtial_type == 0:
                 print('fv', center + 1, around + 1, obtial + 1, fv, abs(fv) < 0.005)
             else:
                 obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
                 print(f'fv,{center + 1},{around + 1},{obtial_str},{fv},{abs(fv) < 0.005}')
-            if abs(fv) < 0.005:
-
+            if abs(fv) < 0.0065:
                 return True
             else:
                 return False
@@ -132,7 +129,7 @@ class Caculater:
     def obtial_between_atoms(self, center, around):  # 挑选两个原子之间合理的键级有哪些
         userful = []
 
-        for obtial in range(self.obtial_length):
+        for obtial in range(self.obtial_length):  # 所有的O轨道都判断
             res = self.get_obtial_is_userful(center, around, obtial)
             if res:
                 userful.append(obtial)
@@ -199,19 +196,19 @@ class Caculater:
         PX, PY, PZ = self.get_px(center, obtial)
         data_list = []
         fv1 = self.function(center_pos=(x1, y1, z1), pos=(x1 + 1, y1, z1), alpha=data1[:, 0].tolist(),
-                            c=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
+                            cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv2 = self.function(center_pos=(x1, y1, z1), pos=(x1, y1 + 1, z1), alpha=data1[:, 0].tolist(),
-                            c=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
+                            cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv3 = self.function(center_pos=(x1, y1, z1), pos=(x1, y1, z1 + 1), alpha=data1[:, 0].tolist(),
-                            c=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
+                            cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
         data_list.append([fv1, fv2, fv3])
         PX, PY, PZ = self.get_px(around, obtial)
         fv1 = self.function(center_pos=(x2, y2, z2), pos=(x2 + 1, y2, z2), alpha=data2[:, 0].tolist(),
-                            c=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
+                            cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv2 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2 + 1, z2), alpha=data2[:, 0].tolist(),
-                            c=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
+                            cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv3 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2, z2 + 1), alpha=data2[:, 0].tolist(),
-                            c=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
+                            cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         data_list.append([fv1, fv2, fv3])
         data_list = np.array(data_list)
         data_list[data_list > 0] = 1
