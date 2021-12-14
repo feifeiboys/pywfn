@@ -9,7 +9,7 @@ from logReader import Reader
 from logCaculate import Caculater
 from logWriter import Writer
 from pages import get_userful_obtials
-
+from pages import get_bond_cloud
 
 class App:
     def __init__(self):
@@ -65,7 +65,7 @@ class App:
         self.option_select_saveSelect = tk.Checkbutton(self.frameR, text='select', variable=self.if_save_select_var,
                                                        onvalue=1, offvalue=0)
         self.para_button = tk.Button(self.frameR, text='保存参数并计算', command=self.get_input_para)
-
+        self.cloud_button = tk.Button(self.frameR,text='展示云图', command=self.show_cloud)
     def set_conponent_pos(self):  # 设置组件的位置
         self.frameL.place(x=0, y=0, anchor='nw')
         self.frameR.place(x=500, y=0, anchor='nw')
@@ -76,7 +76,7 @@ class App:
         self.entry2.place(x=0, y=300, anchor='nw')
         self.option_select_saveSelect.place(x=50, y=350, anchor='nw')
         self.para_button.place(x=110, y=400, anchor='n')
-
+        self.cloud_button.place(x=110,y=450,anchor='n')
     def run(self):
         self.window.mainloop()
 
@@ -84,6 +84,9 @@ class App:
         self.window.quit()
 
     # 定义各种函数
+    def show_cloud(self):
+        page=get_bond_cloud.Page(self)
+        page.run()
     def select_file(self):  # 选择文件并读取
         self.log_path = askopenfilename(filetypes=[('log', '.log'), ('out', '.out')])
         self.log_window_text.insert('end', f'打开文件{self.log_path}\n')

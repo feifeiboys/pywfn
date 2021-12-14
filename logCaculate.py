@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import math
 import sympy
-
-
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 class Caculater:
     def __init__(self, program):
         self.program = program
@@ -57,8 +57,6 @@ class Caculater:
         fx = N * (xi - xn) * e ** (-a * r)
         fy = N * (yi - yn) * e ** (-a * r)
         fz = N * (zi - zn) * e ** (-a * r)
-        print([(c,a) for c, a_ in zip(cs, alpha)])
-        print([c * fx.subs(a, a_) for c, a_ in zip(cs, alpha)])
         fpx = sum([c * fx.subs(a, a_) for c, a_ in zip(cs, alpha)])
         fpy = sum([c * fy.subs(a, a_) for c, a_ in zip(cs, alpha)])
         fpz = sum([c * fz.subs(a, a_) for c, a_ in zip(cs, alpha)])
@@ -125,6 +123,44 @@ class Caculater:
                 return True
             else:
                 return False
+
+    def get_cloud(self,center, around, obtial,way):
+        x = self.atoms_pos.iloc[center].loc['X']
+        y = self.atoms_pos.iloc[center].loc['Y']
+        z = self.atoms_pos.iloc[center].loc['Z']
+        paras = np.array(self.standard_basis[center])
+        all_square_sum = self.get_all_atom_square_sum()[obtial]
+        px = self.atoms[center]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
+        py = self.atoms[center]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
+        pz = self.atoms[center]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
+        center_unit_matrix = self.get_unit_matrix([center])
+        PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
+        PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
+        PZ = (pz ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[2].flatten()[obtial]
+        x_ = self.atoms_pos.iloc[around].loc['X']
+        y_ = self.atoms_pos.iloc[around].loc['Y']
+        z_ = self.atoms_pos.iloc[around].loc['Z']
+        dx = (x_ - x)
+        dy = (y_ - y)
+        dz = (z_ - z)
+        xs = []
+        results = []
+        num=30
+        for i,x in enumerate(np.arange(0, 1, 1/num)):
+            res = self.function(center_pos=(x, y, z), pos=(x + dx / num * i, y + dy / num * i, z + dz / num * i),
+                                alpha=paras[:, 0].tolist(), cs=paras[:, 1].tolist(), Ps=(PX, PY, PZ))
+            results.append(res)
+            xs.append(x)
+        print(xs,results)
+
+        plt.plot(np.abs(way-np.array(xs)),np.array(results),label=f'{center+1}')
+        plt.legend()
+
+    def get_clouds(self,center,around,obtial):
+        self.get_cloud(center,around,obtial,way=0)
+        self.get_cloud(around,center,obtial,1)
+        plt.title(f'{center + 1}<->{around + 1},{obtial + 1}')
+        plt.show()
 
     def obtial_between_atoms(self, center, around):  # 挑选两个原子之间合理的键级有哪些
         userful = []
