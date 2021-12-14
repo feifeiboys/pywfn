@@ -151,7 +151,10 @@ class Caculater:
                                 alpha=paras[:, 0].tolist(), cs=paras[:, 1].tolist(), Ps=(PX, PY, PZ))
             results.append(res)
             xs.append(x)
-        print(xs,results)
+        print(center+1,around+1,obtial+1)
+        print(xs)
+        print(results)
+        print('-'*50)
 
         plt.plot(np.abs(way-np.array(xs)),np.array(results),label=f'{center+1}')
         plt.legend()
