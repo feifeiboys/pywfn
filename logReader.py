@@ -102,8 +102,6 @@ class Reader:
                 self.atoms=atoms
                 print(line_text)
                 for i, atom in enumerate(atoms):
-                    with open(f'template/{i}.json','w',encoding='utf-8') as f:
-                        f.write(json.dumps(atom))
 
                     index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist()
                     array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1)

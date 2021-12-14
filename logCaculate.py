@@ -83,48 +83,60 @@ class Caculater:
         px = atoms[center]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
         py = atoms[center]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
         pz = atoms[center]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
+        p_sums_center = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
+        # if self.obtial_type == 0:
+        #     print('psum', center + 1, around + 1, obtial + 1, p_sums, p_sums > 0.005)
+        # else:
+        #     obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
+        #     print(f'psum,{center + 1},{around + 1},{obtial_str},{p_sums},{ p_sums > 0.005}')
 
-        p_sums = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
-        if self.obtial_type == 0:
-            print('psum', center + 1, around + 1, obtial + 1, p_sums, p_sums > 0.005)
-        else:
-            obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
-            print(f'psum,{center + 1},{around + 1},{obtial_str},{p_sums},{ p_sums > 0.005}')
-        if p_sums < 0.005:
+        px = atoms[around]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
+        py = atoms[around]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
+        pz = atoms[around]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
+        p_sums_around = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
+        print(center+1,around+1,obtial+1,p_sums_center,p_sums_around)
+        if p_sums_center < 0.008 and p_sums_around < 0.008:
             return False
 
-        center_unit_matrix = self.get_unit_matrix([center])
-        PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
-        PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
-        PZ = (pz ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[2].flatten()[obtial]
-
-        # 中心原子坐标
-        x1 = atoms_pos.iloc[center].loc['X']
-        y1 = atoms_pos.iloc[center].loc['Y']
-        z1 = atoms_pos.iloc[center].loc['Z']
-        paras = np.array(self.standard_basis[center])
+        # center_unit_matrix = self.get_unit_matrix([center])
+        # PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
+        # PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
+        # PZ = (pz ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[2].flatten()[obtial]
+        #
+        # # 中心原子坐标
+        # x1 = atoms_pos.iloc[center].loc['X']
+        # y1 = atoms_pos.iloc[center].loc['Y']
+        # z1 = atoms_pos.iloc[center].loc['Z']
+        # paras = np.array(self.standard_basis[center])
         if center != around and atoms[around]['atom_type'] != 'H':
-            # 获取周围原子的坐标
-            x2 = atoms_pos.iloc[around].loc['X']
-            y2 = atoms_pos.iloc[around].loc['Y']
-            z2 = atoms_pos.iloc[around].loc['Z']
-            # 获取四分之一处坐标
-            x = (x2 + 3 * x1) / 4
-            y = (y2 + 3 * y1) / 4
-            z = (z2 + 3 * z1) / 4
-            fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=paras[:, 0].tolist(), cs=paras[:, 1].tolist(),
-                               Ps=(PX, PY, PZ))
-            if self.obtial_type == 0:
-                print('fv', center + 1, around + 1, obtial + 1, fv, abs(fv) < 0.005)
-            else:
-                obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
-                print(f'fv,{center + 1},{around + 1},{obtial_str},{fv},{abs(fv) < 0.005}')
-            if abs(fv) < 0.0065:
+            # # 获取周围原子的坐标
+            # x2 = atoms_pos.iloc[around].loc['X']
+            # y2 = atoms_pos.iloc[around].loc['Y']
+            # z2 = atoms_pos.iloc[around].loc['Z']
+            # # 获取四分之一处坐标
+            # x = (x2 + 3 * x1) / 4
+            # y = (y2 + 3 * y1) / 4
+            # z = (z2 + 3 * z1) / 4
+            # fv = self.function(center_pos=(x1, y1, z1), pos=(x, y, z), alpha=paras[:, 0].tolist(), cs=paras[:, 1].tolist(),
+            #                    Ps=(PX, PY, PZ))
+            # if self.obtial_type == 0:
+            #     print('fv', center + 1, around + 1, obtial + 1, fv, abs(fv) < 0.005)
+            # else:
+            #     obtial_str = f'α{obtial + 1}' if obtial < self.alpha_num else f'β{obtial + 1 - self.alpha_num}'
+            #     print(f'fv,{center + 1},{around + 1},{obtial_str},{fv},{abs(fv) < 0.005}')
+            results = np.abs(np.array(self.get_cloud(center,around,obtial)))
+            print(results)
+            res = results[results > 0.01].shape[0]
+            if res == 0:
                 return True
             else:
                 return False
+            # if abs(fv) < 0.0065:
+            #     return True
+            # else:
+            #     return False
 
-    def get_cloud(self,center, around, obtial,way):
+    def get_cloud(self,center, around, obtial,way=0):  # 获取中心原子和周围原子之间十个点的函数值
         x = self.atoms_pos.iloc[center].loc['X']
         y = self.atoms_pos.iloc[center].loc['Y']
         z = self.atoms_pos.iloc[center].loc['Z']
@@ -145,30 +157,31 @@ class Caculater:
         dz = (z_ - z)
         xs = []
         results = []
-        num=30
+        num=10
         for i,x in enumerate(np.arange(0, 1, 1/num)):
             res = self.function(center_pos=(x, y, z), pos=(x + dx / num * i, y + dy / num * i, z + dz / num * i),
                                 alpha=paras[:, 0].tolist(), cs=paras[:, 1].tolist(), Ps=(PX, PY, PZ))
             results.append(res)
             xs.append(x)
-        print(center+1,around+1,obtial+1)
-        print(xs)
-        print(results)
-        print('-'*50)
+        # print(center+1,around+1,obtial+1)
+        # print(xs)
+        # print(results)
+        # print('-'*50)
 
-        plt.plot(np.abs(way-np.array(xs)),np.array(results),label=f'{center+1}')
-        plt.legend()
+        return results
+        # plt.plot(np.abs(way-np.array(xs)),np.array(results),label=f'{center+1}')
+        # plt.legend()
 
     def get_clouds(self,center,around,obtial):
         self.get_cloud(center,around,obtial,way=0)
         self.get_cloud(around,center,obtial,1)
-        plt.title(f'{center + 1}<->{around + 1},{obtial + 1}')
-        plt.show()
+        # plt.title(f'{center + 1}<->{around + 1},{obtial + 1}')
+        # plt.show()
 
     def obtial_between_atoms(self, center, around):  # 挑选两个原子之间合理的键级有哪些
         userful = []
-
-        for obtial in range(self.obtial_length):  # 所有的O轨道都判断
+        obtial_num = self.obtial_length
+        for obtial in range(int(obtial_num/2),obtial_num):  # 所有的O轨道都判断
             res = self.get_obtial_is_userful(center, around, obtial)
             if res:
                 userful.append(obtial)
