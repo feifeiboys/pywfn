@@ -172,9 +172,9 @@ class Caculater:
 
     def get_clouds(self,center,around,obtial):
         results = self.get_cloud(center,around,obtial,way=0)
-        plt.plot(np.arange(0,1,10),np.array(results),label=f'{center+1}')
+        plt.plot(np.arange(0,1,0.1),np.array(results),label=f'{center+1}')
         results = self.get_cloud(around,center,obtial,1)
-        plt.plot(np.arange(1, 0, 10), np.array(results), label=f'{around + 1}')
+        plt.plot(1-np.arange(0, 1, 0.1), np.array(results), label=f'{around + 1}')
         plt.legend()
         plt.title(f'{center + 1}<->{around + 1},{obtial + 1}')
         plt.show()
