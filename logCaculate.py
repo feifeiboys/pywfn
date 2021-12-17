@@ -147,7 +147,7 @@ class Caculater:
                     if res:
                         userful.append(obtial)
             if self.obtial_type == 1:
-                if (obtial < self.alpha_num/2) or (self.alpha_num < obtial < self.alpha_num + self.beta_num / 2):
+                if (self.alpha_num/2 < obtial < self.alpha_num) or (self.alpha_num+self.beta_num/2 < obtial):
                     res = self.get_obtial_is_userful(center,around,obtial)
                     if res:
                         userful.append(obtial)
