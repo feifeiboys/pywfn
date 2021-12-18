@@ -93,10 +93,9 @@ class Caculater:
         if p_sums_center < 0.008 and p_sums_around < 0.008:
             return False
         if center != around and atoms[around]['atom_type'] != 'H':
-            results = np.abs(np.array(self.get_cloud(center,around,obtial)))
-            print(results)
-            res = results[results > 0.01].shape[0]
-            if res == 0:
+            results_center = np.abs(np.array(self.get_cloud(center,around,obtial)))
+            results_around = np.abs(np.array(self.get_cloud(center, around, obtial)))
+            if np.max(np.abs(results_center))<0.01 or np.max(np.abs(results_around)) < 0.01:
                 return True
             else:
                 return False
@@ -234,7 +233,7 @@ class Caculater:
         fv3 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2, z2 + 1), alpha=data2[:, 0].tolist(),
                             cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         data_list.append([fv1, fv2, fv3])
-        fun2=np.array(data_list)
+        fun2 = np.array(data_list)
         print('around_fv',fv1,fv2,fv3)
         data_list = np.array(data_list)
         data_list[data_list > 0] = 1
