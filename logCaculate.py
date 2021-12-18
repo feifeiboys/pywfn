@@ -142,7 +142,7 @@ class Caculater:
         obtial_num = self.obtial_length
         for obtial in range(obtial_num):  # 所有的O轨道都判断
             if self.obtial_type == 0:
-                if obtial < obtial_num/2:
+                if obtial > obtial_num/2:
                     res = self.get_obtial_is_userful(center, around, obtial)
                     if res:
                         userful.append(obtial)
@@ -151,6 +151,8 @@ class Caculater:
                     res = self.get_obtial_is_userful(center,around,obtial)
                     if res:
                         userful.append(obtial)
+        # return [7,8,9,10,11+7,11+8]
+        # return [13,14,15,16+13]
         return userful
 
     # def get_userful_obtials(self, center, obtials):
@@ -212,6 +214,7 @@ class Caculater:
         x1, y1, z1 = [self.atoms_pos.iloc[center].loc[['X', 'Y', 'Z']].iloc[i] for i in range(3)]
         x2, y2, z2 = [self.atoms_pos.iloc[around].loc[['X', 'Y', 'Z']].iloc[i] for i in range(3)]
         PX, PY, PZ = self.get_px(center, obtial)
+        center_p=np.array([PX,PY,PZ])
         data_list = []
         fv1 = self.function(center_pos=(x1, y1, z1), pos=(x1 + 1, y1, z1), alpha=data1[:, 0].tolist(),
                             cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
@@ -220,7 +223,10 @@ class Caculater:
         fv3 = self.function(center_pos=(x1, y1, z1), pos=(x1, y1, z1 + 1), alpha=data1[:, 0].tolist(),
                             cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
         data_list.append([fv1, fv2, fv3])
+        fun1 = np.array(data_list)
+        print('center_fv',fv1,fv2,fv3)
         PX, PY, PZ = self.get_px(around, obtial)
+        around_p=np.array([PX,PY,PZ])
         fv1 = self.function(center_pos=(x2, y2, z2), pos=(x2 + 1, y2, z2), alpha=data2[:, 0].tolist(),
                             cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         fv2 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2 + 1, z2), alpha=data2[:, 0].tolist(),
@@ -228,15 +234,23 @@ class Caculater:
         fv3 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2, z2 + 1), alpha=data2[:, 0].tolist(),
                             cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
         data_list.append([fv1, fv2, fv3])
+        fun2=np.array(data_list)
+        print('around_fv',fv1,fv2,fv3)
         data_list = np.array(data_list)
         data_list[data_list > 0] = 1
         data_list[data_list < 0] = -1
-        res = np.sum(np.prod(np.array(data_list), axis=0))
-        # print(res)
+        # res = np.sum(np.prod(np.array(data_list), axis=0))
+        # # print(res)
+        # res = np.sum(fun1*fun2)
+        res = np.sum(center_p*around_p)
+        
         return 1 if res > 0 else -1
 
-    def get_bond_level_between_tow_atom(self, center, around):  # 计算两个原子之间的键级
-        userful_obtials = self.obtial_between_atoms(center,around)
+    def get_bond_level_between_tow_atom(self, center, around,input_obtials):  # 计算两个原子之间的键级
+        if input_obtials is None:
+            userful_obtials = self.obtial_between_atoms(center,around)
+        else:
+            userful_obtials = input_obtials
         around_units = [self.get_unit(center, around, obtial) for obtial in userful_obtials]
         around_units = np.array(around_units).reshape(1, len(userful_obtials))
         center_units = np.ones((1, len(userful_obtials)))
@@ -253,14 +267,16 @@ class Caculater:
         around_square_sum = self.get_each_atom_square_sum([around])[:, userful_obtials]
         center_res = (center_square_sum / all_square_sum) ** 0.5 * center_units
         around_res = (around_square_sum / all_square_sum) ** 0.5 * around_units
+        print('center_res',center_res)
+        print('around_res',around_res)
         bond_level = np.sum((2 if self.obtial_type == 0 else 1) * center_res * around_res)
         return bond_level
 
-    def get_atom_bond_levels(self, center, arounds):  # 计算某个原子与周围原子之间的键级
+    def get_atom_bond_levels(self, center, arounds,input_obtials):  # 计算某个原子与周围原子之间的键级
         bond_levels = []
         for around in arounds:
             if self.atoms[around]['atom_type'] != 'H':
-                bond_level = self.get_bond_level_between_tow_atom(center, around)
+                bond_level = self.get_bond_level_between_tow_atom(center, around,input_obtials)
                 bond_levels.append(bond_level)
                 self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},BL:{bond_level}\n')
         return np.array(bond_levels)

@@ -1,5 +1,7 @@
 # 此脚本用来组织程序的页面布局
 import os
+import re
+
 cwd = os.getcwd()
 import sys
 sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便找到自定义包
@@ -121,7 +123,7 @@ class App:
     # 将用户输入的范围转换为列表，真实的数据应该是输入的数据-1
     def get_nums(self, string):
         res = []
-        for each in string.split(','):
+        for each in re.split(r',|，',string):
             content = each.split('-')
             if len(content) == 1:
                 res.append(int(each) - 1)

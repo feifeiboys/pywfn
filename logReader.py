@@ -40,7 +40,6 @@ class Reader:
             if line_num > title_line_num + 4:
                 if re.search(r'\d+ +\d+ +\d+ +-?\d+.\d{6} +-?\d+.\d{6} +-?\d+.\d{6}', line_text) != None:
                     line_text_list.append(line_text)
-                    # print(atom_index,line_text)
                     atom_index += 1
                 else:
                     res_array = np.array([re.split(r' +', each)[1:] for each in line_text_list], dtype=np.float64)
@@ -98,9 +97,7 @@ class Reader:
                 data = line_list[-6:]
                 atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
             else:
-                print(atoms)
                 self.atoms=atoms
-                print(line_text)
                 for i, atom in enumerate(atoms):
 
                     index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist()
@@ -120,7 +117,6 @@ class Reader:
         title_line_num = len(logLines)
         for line_num, line_text in enumerate(logLines):
             if 'Overlap normalization' in line_text:
-                print(line_num, line_text)
                 title_line_num = line_num
             if line_num > title_line_num:
                 if re.search(r'^  +\d+ +\d+', line_text) is not None:
@@ -135,7 +131,6 @@ class Reader:
                 elif re.search(r'-?0.\d{10}D[+*/-]\d+ +-?0.\d{10}D[+*/-]\d+', line_text) is not None:
                     pass
                 else:
-                    print(line_text)
                     self.data['Standard basis'] = datas
                     return datas
 
