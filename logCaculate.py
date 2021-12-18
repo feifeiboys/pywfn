@@ -94,13 +94,13 @@ class Caculater:
             return False
         if center != around and atoms[around]['atom_type'] != 'H':
             results_center = np.abs(np.array(self.get_cloud(center,around,obtial)))
-            results_around = np.abs(np.array(self.get_cloud(center, around, obtial)))
+            results_around = np.abs(np.array(self.get_cloud(around, center, obtial)))
             if np.max(np.abs(results_center))<0.01 or np.max(np.abs(results_around)) < 0.01:
                 return True
             else:
                 return False
 
-    def get_cloud(self,center, around, obtial,way=0):  # 获取中心原子和周围原子之间十个点的函数值
+    def get_cloud(self,center, around, obtial):  # 获取中心原子和周围原子之间十个点的函数值
         x = self.atoms_pos.iloc[center].loc['X']
         y = self.atoms_pos.iloc[center].loc['Y']
         z = self.atoms_pos.iloc[center].loc['Z']
@@ -128,9 +128,9 @@ class Caculater:
         return results
 
     def get_clouds(self,center,around,obtial):
-        results = self.get_cloud(center,around,obtial,way=0)
+        results = self.get_cloud(center,around,obtial)
         plt.plot(np.arange(0,1,0.1),np.array(results),label=f'{center+1}')
-        results = self.get_cloud(around,center,obtial,1)
+        results = self.get_cloud(around,center,obtial)
         plt.plot(1-np.arange(0, 1, 0.1), np.array(results), label=f'{around + 1}')
         plt.legend()
         plt.title(f'{center + 1}<->{around + 1},{obtial + 1}')
