@@ -271,11 +271,11 @@ class Caculater:
         bond_level = np.sum((2 if self.obtial_type == 0 else 1) * center_res * around_res)
         return bond_level
 
-    def get_atom_bond_levels(self, center, arounds,input_obtials):  # 计算某个原子与周围原子之间的键级
+    def get_atom_bond_levels(self, center, arounds,all_obtials):  # 计算某个原子与周围原子之间的键级
         bond_levels = []
-        for around in arounds:
+        for i,around in enumerate(arounds):
             if self.atoms[around]['atom_type'] != 'H':
-                bond_level = self.get_bond_level_between_tow_atom(center, around,input_obtials)
+                bond_level = self.get_bond_level_between_tow_atom(center, around,all_obtials[i])
                 bond_levels.append(bond_level)
                 self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},BL:{bond_level}\n')
         return np.array(bond_levels)

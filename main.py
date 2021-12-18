@@ -96,7 +96,10 @@ class App:
         if file_type == 'log' or file_type == 'out':
             # self.inform_var.set(self.log_path)
             with open(self.log_path, 'r', encoding='utf-8') as f:
-                self.log_text = f.read()
+                # 对初始文件中不必要的数据进行处理
+                data = f.read()
+                data = re.sub(r'\([A-Z]{3}\)--', '       ', data)
+                self.log_text = data
                 self.log_lines = self.log_text.split('\n')
                 self.reader.logLines = self.log_lines
                 self.get_data()

@@ -26,7 +26,7 @@ class Page:
         tk.Label(self.window, text='输入周围原子编号，用,和-分割:').place(x=0, y=200, anchor='w')
         self.get_connection_button = tk.Button(self.window, text='自动获取', command=self.get_connection)
         self.entry2 = tk.Entry(self.window, show=None, width=200)
-        tk.Label(self.window, text='手动输入轨道，需用；隔离α和β，若不输入则自动挑选轨道').place(x=0, y=300, anchor='w')
+        tk.Label(self.window, text='手动输入轨道，需用|隔离不同周围原子，需用；隔离α和β，若不输入则自动挑选轨道').place(x=0, y=300, anchor='w')
         self.entry3 = tk.Entry(self.window, show=None, width=200)
         self.caculate_button = tk.Button(self.window, text='计算轨道和键级', command=self.caculate_tread)
 
@@ -62,16 +62,18 @@ class Page:
     def caculate(self):  # 获取用户输入的参数
         centers = self.main_program.get_nums(self.entry1.get())
         arounds = [self.main_program.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
-        obtials = None
-        if self.caculater.obtial_type == 0 and self.entry3.get() != '':
-            obtials = self.main_program.get_nums(self.entry3.get())
-        elif self.caculater.obtial_type == 1 and self.entry3.get() != '':
-            alpha_obtials = self.main_program.get_nums(re.split(r';|；',self.entry3.get())[0])
-            beta_obtails = self.main_program.get_nums(re.split(r';|；',self.entry3.get())[1])
-            obtials = alpha_obtials + [i + self.caculater.alpha_num for i in beta_obtails]
-        if obtials is not None:
-            self.main_program.log_window_text.insert('end',f'选择轨道为'+','.join([str(each) for each in obtials])+'\n')
+        all_obtials=[]
+        for each in re.split(r'\|',self.entry3.get()):
+            obtials = None
+            if self.caculater.obtial_type == 0 and each != '':
+                obtials = self.main_program.get_nums(each)
+            elif self.caculater.obtial_type == 1 and each != '':
+                alpha_obtials = self.main_program.get_nums(re.split(r';|；',each)[0])
+                beta_obtails = self.main_program.get_nums(re.split(r';|；',each)[1])
+                obtials = alpha_obtials + [i + self.caculater.alpha_num for i in beta_obtails]
+            all_obtials.append(obtials)
+            self.main_program.log_window_text.insert('end', f'选择轨道为' + ','.join([str(each) for each in obtials]) + '\n')
         for i, center in enumerate(centers):
             self.main_program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
-            bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i], obtials)
+            bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i], all_obtials)
             self.main_program.log_window_text.insert('end', f'SUM:{np.sum(bond_levels)}\n')
