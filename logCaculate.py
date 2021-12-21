@@ -12,6 +12,9 @@ class Caculater:
         self.atoms_pos = None
         self.atoms = None
         self.standard_basis = None
+        self.PX = '4PX'
+        self.PY = '4PY'
+        self.PZ = '4PZ'
 
     def set_data(self, data):
         keys = data.keys()
@@ -35,14 +38,17 @@ class Caculater:
             } for alpha, beta in
                 zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
         self.obtial_length = self.atoms[0]['datas'].shape[1]
+        self.PX=[]
+        self.PY=[]
+        self.PZ=[]
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
 
     def get_2p_obtial(self, atom_num, obtial_num, ):  # 返回指定原子的pz,py和pz轨道
         atoms = self.atoms
-        px = atoms[atom_num]['datas'].loc['3PX'].iloc[obtial_num]
-        py = atoms[atom_num]['datas'].loc['3PY'].iloc[obtial_num]
-        pz = atoms[atom_num]['datas'].loc['3PZ'].iloc[obtial_num]
+        px = atoms[atom_num]['datas'].loc[self.PX].iloc[obtial_num]
+        py = atoms[atom_num]['datas'].loc[self.PY].iloc[obtial_num]
+        pz = atoms[atom_num]['datas'].loc[self.PZ].iloc[obtial_num]
         return np.array([px, py, pz], dtype=np.float64)
 
     def function(self, center_pos, pos, alpha, cs, Ps):  # 获取函数值 (原子坐标，计算点坐标，alpha，c，轨道系数,函数平移)
@@ -65,9 +71,9 @@ class Caculater:
 
     def get_px(self, atom_num, obtial_num):
         atoms = self.atoms
-        px = atoms[atom_num]['datas'].loc['2PX'].astype('float').to_numpy()[obtial_num]  # 从log文件中提取的轨道系数
-        py = atoms[atom_num]['datas'].loc['2PY'].astype('float').to_numpy()[obtial_num]
-        pz = atoms[atom_num]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial_num]
+        px = atoms[atom_num]['datas'].loc[self.PX].astype('float').to_numpy()[obtial_num]  # 从log文件中提取的轨道系数
+        py = atoms[atom_num]['datas'].loc[self.PY].astype('float').to_numpy()[obtial_num]
+        pz = atoms[atom_num]['datas'].loc[self.PZ].astype('float').to_numpy()[obtial_num]
         center_unit_matrix = self.get_unit_matrix([atom_num])
         all_square_sum = self.get_all_atom_square_sum()
         PX = (px ** 2 / all_square_sum[obtial_num]) ** 0.5 * center_unit_matrix[0].flatten()[obtial_num]
@@ -78,16 +84,17 @@ class Caculater:
     # 判断某个原子的某个轨道是否有用,(中心原子序号，周围原子序号，轨道序号)
     def get_obtial_is_userful(self, center, around, obtial):  # 这里传入的应当是用户输入的
         atoms = self.atoms
-        atoms_pos = self.atoms_pos
         all_square_sum = self.get_all_atom_square_sum()[obtial]
-        px = atoms[center]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
-        py = atoms[center]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
-        pz = atoms[center]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
+        center_datas = atoms[center]['datas']
+        px = center_datas.loc[self.PX][obtial]  # 从log文件中提取的轨道系数
+        py = center_datas.loc[self.PY][obtial]
+        pz = center_datas.loc[self.PZ][obtial]
         p_sums_center = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
 
-        px = atoms[around]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
-        py = atoms[around]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
-        pz = atoms[around]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
+        around_datas = atoms[around]['datas']
+        px = around_datas.loc[self.PX][obtial]  # 从log文件中提取的轨道系数
+        py = around_datas.loc[self.PY][obtial]
+        pz = around_datas.loc[self.PZ][obtial]
         p_sums_around = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
         print(center+1,around+1,obtial+1,p_sums_center,p_sums_around)
         if p_sums_center < 0.008 and p_sums_around < 0.008:
@@ -106,9 +113,9 @@ class Caculater:
         z = self.atoms_pos.iloc[center].loc['Z']
         paras = np.array(self.standard_basis[center])
         all_square_sum = self.get_all_atom_square_sum()[obtial]
-        px = self.atoms[center]['datas'].loc['2PX'].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
-        py = self.atoms[center]['datas'].loc['2PY'].astype('float').to_numpy()[obtial]
-        pz = self.atoms[center]['datas'].loc['2PZ'].astype('float').to_numpy()[obtial]
+        px = self.atoms[center]['datas'].loc[self.PX].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
+        py = self.atoms[center]['datas'].loc[self.PY].astype('float').to_numpy()[obtial]
+        pz = self.atoms[center]['datas'].loc[self.PZ].astype('float').to_numpy()[obtial]
         center_unit_matrix = self.get_unit_matrix([center])
         PX = (px ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
         PY = (py ** 2 / all_square_sum) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
@@ -193,9 +200,9 @@ class Caculater:
         atoms = self.atoms
         for i in select_atoms:
             atom = atoms[i]
-            px_list.append(atom['datas'].loc['2PX'].astype('float').to_numpy()[np.newaxis, :])  # 添加新轴
-            py_list.append(atom['datas'].loc['2PY'].astype('float').to_numpy()[np.newaxis, :])
-            pz_list.append(atom['datas'].loc['2PZ'].astype('float').to_numpy()[np.newaxis, :])
+            px_list.append(atom['datas'].loc[self.PX].astype('float').to_numpy()[np.newaxis, :])  # 添加新轴
+            py_list.append(atom['datas'].loc[self.PY].astype('float').to_numpy()[np.newaxis, :])
+            pz_list.append(atom['datas'].loc[self.PZ].astype('float').to_numpy()[np.newaxis, :])
         px_res = np.concatenate(px_list, axis=0)
         px_res[px_res > 0] = 1
         px_res[px_res < 0] = -1
