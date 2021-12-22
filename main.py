@@ -4,6 +4,7 @@ import re
 
 cwd = os.getcwd()
 import sys
+
 sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便找到自定义包
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
@@ -12,6 +13,7 @@ from logCaculate import Caculater
 from logWriter import Writer
 from pages import get_userful_obtials
 from pages import get_bond_cloud
+
 
 class App:
     def __init__(self):
@@ -67,7 +69,8 @@ class App:
         self.option_select_saveSelect = tk.Checkbutton(self.frameR, text='select', variable=self.if_save_select_var,
                                                        onvalue=1, offvalue=0)
         self.para_button = tk.Button(self.frameR, text='保存参数并计算', command=self.get_input_para)
-        self.cloud_button = tk.Button(self.frameR,text='展示云图', command=self.show_cloud)
+        self.cloud_button = tk.Button(self.frameR, text='展示云图', command=self.show_cloud)
+
     def set_conponent_pos(self):  # 设置组件的位置
         self.frameL.place(x=0, y=0, anchor='nw')
         self.frameR.place(x=500, y=0, anchor='nw')
@@ -78,7 +81,8 @@ class App:
         self.entry2.place(x=0, y=300, anchor='nw')
         self.option_select_saveSelect.place(x=50, y=350, anchor='nw')
         self.para_button.place(x=110, y=400, anchor='n')
-        self.cloud_button.place(x=110,y=450,anchor='n')
+        self.cloud_button.place(x=110, y=450, anchor='n')
+
     def run(self):
         self.window.mainloop()
 
@@ -87,8 +91,9 @@ class App:
 
     # 定义各种函数
     def show_cloud(self):
-        page=get_bond_cloud.Page(self)
+        page = get_bond_cloud.Page(self)
         page.run()
+
     def select_file(self):  # 选择文件并读取
         self.log_path = askopenfilename(filetypes=[('log', '.log'), ('out', '.out')])
         self.log_window_text.insert('end', f'打开文件{self.log_path}\n')
@@ -126,21 +131,22 @@ class App:
     # 将用户输入的范围转换为列表，真实的数据应该是输入的数据-1
     def get_nums(self, string):
         res = []
-        for each in re.split(r',|，',string):
-            content = each.split('-')
-            if len(content) == 1:
-                res.append(int(each) - 1)
+        for each in re.split(',|，',string):
+            if '-' in each:
+                start = int(re.split('-', each)[0])
+                end = int(re.split('-', each)[1])
+                res += list(range(start, end + 1))
             else:
-                res += [int(i) - 1 for i in range(int(content[0]), int(content[1]) + 1)]
-        return res
+                res += [int(each)]
+        return [each - 1 for each in res]
 
     def get_input_para(self):  # 获取用户输入的参数
-        atom_indexs = self.get_nums(self.entry1.get())
-        obtial_indexs = self.get_nums(self.entry2.get())
-        self.log_window_text.insert('end', '选择的原子有:' + ','.join(self.num_list_to_str(atom_indexs)) + '\n')
-        self.log_window_text.insert('end', '选择的轨道有:' + ','.join(self.num_list_to_str(obtial_indexs)) + '\n')
-        self.select_atoms = atom_indexs
-        self.select_botials = obtial_indexs
+        atoms = self.get_nums(self.entry1.get())
+        obtials = self.get_nums(self.entry2.get())
+        self.log_window_text.insert('end', '选择的原子有:' + ','.join([f'{each}' for each in atoms]) + '\n')
+        self.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in obtials]) + '\n')
+        self.select_atoms = atoms
+        self.select_botials = obtials
         self.log_window_text.insert('end', 'all：' + ('保存\n' if self.if_save_all_var.get() == 1 else '不保存\n'))
         self.log_window_text.insert('end', 'select：' + ('保存\n' if self.if_save_select_var.get() == 1 else '不保存\n'))
         self.log_window_text.insert('end', 'square：' + ('保存\n' if self.if_save_caculate_var.get() == 1 else '不保存\n'))
@@ -152,11 +158,14 @@ class App:
                                       initialfile=self.log_path.split('/')[-1].split('.')[-2])
         if self.if_save_select_var.get() == 1:
             if 'Molecular Orbital Coefficients' in self.data.keys():
-                self.writer.save_atom_obtials('select_atoms_coefficient','Molecular Orbital Coefficients',select_atoms=self.select_atoms,select_obtials=self.select_botials)
+                self.writer.save_atom_obtials('select_atoms_coefficient', 'Molecular Orbital Coefficients',
+                                              select_atoms=self.select_atoms, select_obtials=self.select_botials)
             if 'Alpha Molecular Orbital Coefficients' in self.data.keys():
-                self.writer.save_atom_obtials('select_atoms_coefficient_alpha','Alpha Molecular Orbital Coefficients',select_atoms=self.select_atoms,select_obtials=self.select_botials)
+                self.writer.save_atom_obtials('select_atoms_coefficient_alpha', 'Alpha Molecular Orbital Coefficients',
+                                              select_atoms=self.select_atoms, select_obtials=self.select_botials)
             if 'Beta Molecular Orbital Coefficients' in self.data.keys():
-                self.writer.save_atom_obtials('select_atoms_coefficient_beta','Beta Molecular Orbital Coefficients',select_atoms=self.select_atoms,select_obtials=self.select_botials)
+                self.writer.save_atom_obtials('select_atoms_coefficient_beta', 'Beta Molecular Orbital Coefficients',
+                                              select_atoms=self.select_atoms, select_obtials=self.select_botials)
         self.writer.save(file_path)
         self.log_window_text.insert('end', '文件保存成功\n')
         # print('保存文件')

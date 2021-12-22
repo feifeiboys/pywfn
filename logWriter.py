@@ -10,24 +10,16 @@ class Writer:
         self.data = None
 
     # 保存原子轨道
-    def save_atom_obtials(self, sheet_name,title, **kw):  # 保存所有或者选定的原子轨道
-        obtials = self.data[title]
-        if 'select_obtials' in kw.keys():
-            select_obtials = kw['select_obtials']
-        else:
-            select_obtials = obtials[0]['datas'].columns.to_numpy().tolist()  # 所有的轨道
-        if 'select_atoms' in kw.keys():
-            select_atoms = kw['select_atoms']
-        else:
-            select_atoms = list(range(len(obtials)))
+    def save_atom_obtials(self, sheet_name,title, select_obtials,select_atoms):  # 保存所有或者选定的原子轨道
+        obtials = self.data[title]  # 是一个列表，每个原子的轨道数据
         sheet = self.wb.add_worksheet(sheet_name)
         line_num = 0
         # 先在最上面写入选择的轨道
 
         sheet.write_row(line_num, 2, (np.array(select_obtials) + 1).tolist())
         line_num += 1
-        for select_atom in select_atoms:
-            each = obtials[select_atom]
+        for atom_num in select_atoms:
+            each = obtials[atom_num]
             atom_type = each['atom_type']
             atom_id = each['atom_id']
 
@@ -36,9 +28,9 @@ class Writer:
             line_num += 1
             index = each['datas'].index.tolist()
             sheet.write_column(line_num, 1, index)  # 写入原子轨道分量的列
-            obtials_frame = each['datas'][select_obtials].astype('float').to_numpy()
-            for obtial in obtials_frame:
-                sheet.write_row(line_num, 2, obtial.tolist())
+
+            for idx in index:
+                sheet.write_row(line_num, 2, each['datas'].loc[idx].iloc[select_obtials].to_list())
                 line_num += 1
 
     def save_userful_obtial(self, all_userful):

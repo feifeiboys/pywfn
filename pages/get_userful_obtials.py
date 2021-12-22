@@ -43,10 +43,18 @@ class Page:
     def num2str(self, nums):
         for i in range(len(nums)): nums[i] = str(nums[i])
         return nums
-
+    def get_nums(self, string):
+        res = []
+        for each in re.split(r',|，', string):
+            content = each.split('-')
+            if len(content) == 1:
+                res.append(int(each) - 1)
+            else:
+                res += [int(i) - 1 for i in range(int(content[0]), int(content[1]) + 1)]
+        return res
     def get_connection(self):
         connections = []
-        center_atom_indexs = self.main_program.get_nums(self.entry1.get())
+        center_atom_indexs = self.get_nums(self.entry1.get())
         for center_atom_index in center_atom_indexs:
             res = self.caculater.get_connections(center_atom_index)
             connections.append(res)
@@ -60,18 +68,18 @@ class Page:
         t.start()
 
     def caculate(self):  # 获取用户输入的参数
-        centers = self.main_program.get_nums(self.entry1.get())
-        arounds = [self.main_program.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
+        centers = self.get_nums(self.entry1.get())
+        arounds = [self.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
         all_obtials=[]
         obtial_input=self.entry3.get()
         if obtial_input!='':
             for each in re.split(r'\|',self.entry3.get()):
                 obtials = None
                 if self.caculater.obtial_type == 0 and each != '':
-                    obtials = self.main_program.get_nums(each)
+                    obtials = self.get_nums(each)
                 elif self.caculater.obtial_type == 1 and each != '':
-                    alpha_obtials = self.main_program.get_nums(re.split(r';|；',each)[0])
-                    beta_obtails = self.main_program.get_nums(re.split(r';|；',each)[1])
+                    alpha_obtials = self.get_nums(re.split(r';|；',each)[0])
+                    beta_obtails = self.get_nums(re.split(r';|；',each)[1])
                     obtials = alpha_obtials + [i + self.caculater.alpha_num for i in beta_obtails]
                 all_obtials.append(obtials)
                 self.main_program.log_window_text.insert('end', f'选择轨道为' + ','.join([str(each) for each in obtials]) + '\n')

@@ -4,7 +4,7 @@ import pandas as pd
 import math
 import sympy
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import re
 class Caculater:
     def __init__(self, program):
         self.program = program
@@ -38,9 +38,6 @@ class Caculater:
             } for alpha, beta in
                 zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
         self.obtial_length = self.atoms[0]['datas'].shape[1]
-        self.PX=[]
-        self.PY=[]
-        self.PZ=[]
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
 
@@ -84,6 +81,7 @@ class Caculater:
     # 判断某个原子的某个轨道是否有用,(中心原子序号，周围原子序号，轨道序号)
     def get_obtial_is_userful(self, center, around, obtial):  # 这里传入的应当是用户输入的
         atoms = self.atoms
+        atoms_pos = self.atoms_pos
         all_square_sum = self.get_all_atom_square_sum()[obtial]
         center_datas = atoms[center]['datas']
         px = center_datas.loc[self.PX][obtial]  # 从log文件中提取的轨道系数
@@ -92,9 +90,9 @@ class Caculater:
         p_sums_center = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
 
         around_datas = atoms[around]['datas']
-        px = around_datas.loc[self.PX][obtial]  # 从log文件中提取的轨道系数
-        py = around_datas.loc[self.PY][obtial]
-        pz = around_datas.loc[self.PZ][obtial]
+        px = around_datas.loc[self.PX].astype('float').to_numpy()[obtial]  # 从log文件中提取的轨道系数
+        py = around_datas.loc[self.PY].astype('float').to_numpy()[obtial]
+        pz = around_datas.loc[self.PZ].astype('float').to_numpy()[obtial]
         p_sums_around = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
         print(center+1,around+1,obtial+1,p_sums_center,p_sums_around)
         if p_sums_center < 0.008 and p_sums_around < 0.008:
@@ -217,8 +215,10 @@ class Caculater:
     def get_unit(self, center, around, obtial):  # 根据原子周围三个点的函数值来判断两原子之间的正负关系，每个原子能计算出三个值
         data1 = np.array(self.standard_basis[center])
         data2 = np.array(self.standard_basis[around])
+        print(data1,data2)
         x1, y1, z1 = [self.atoms_pos.iloc[center].loc[['X', 'Y', 'Z']].iloc[i] for i in range(3)]
         x2, y2, z2 = [self.atoms_pos.iloc[around].loc[['X', 'Y', 'Z']].iloc[i] for i in range(3)]
+        print(x1,y1,z1)
         PX, PY, PZ = self.get_px(center, obtial)
         center_p=np.array([PX,PY,PZ])
         data_list = []
