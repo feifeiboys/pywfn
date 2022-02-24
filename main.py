@@ -103,7 +103,7 @@ class App:
             with open(self.log_path, 'r', encoding='utf-8') as f:
                 # 对初始文件中不必要的数据进行处理
                 data = f.read()
-                data = re.sub(r'\([A-Z]{3}\)--', '       ', data)
+                # data = re.sub(r'\(\w+\)--O','  O  ',data)
                 self.log_text = data
                 self.log_lines = self.log_text.split('\n')
                 self.reader.logLines = self.log_lines

@@ -12,9 +12,9 @@ class Caculater:
         self.atoms_pos = None
         self.atoms = None
         self.standard_basis = None
-        self.PX = '4PX'
-        self.PY = '4PY'
-        self.PZ = '4PZ'
+        self.PX = '2PX'
+        self.PY = '2PY'
+        self.PZ = '2PZ'
 
     def set_data(self, data):
         keys = data.keys()
@@ -264,7 +264,7 @@ class Caculater:
 
         if self.obtial_type == 0:
             userful_str = [str(i+1) for i in userful_obtials]
-            self.program.log_window_text.insert('end',f'{center+1}->{around+1},PO'+','.join(userful_str)+'\n')
+            self.program.log_window_text.insert('end',f'{center+1}->{around+1},PO：'+','.join(userful_str)+'\n')
         else:
             userful_str = [f'α{i+1}' if i < self.alpha_num else f'β{i+1-self.alpha_num}' for i in userful_obtials]
             self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},PO:' + ','.join(userful_str) + '\n')
