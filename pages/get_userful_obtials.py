@@ -52,7 +52,7 @@ class Page:
             else:
                 res += [int(i) - 1 for i in range(int(content[0]), int(content[1]) + 1)]
         return res
-    def get_connection(self):
+    def get_connection(self): #获得与中心原子相连的原子
         connections = []
         center_atom_indexs = self.get_nums(self.entry1.get())
         for center_atom_index in center_atom_indexs:
@@ -87,3 +87,10 @@ class Page:
             self.main_program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
             bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i], all_obtials)
             self.main_program.log_window_text.insert('end', f'SUM:{np.sum(bond_levels)}\n')
+
+    # def caculate(self):
+    #     centers = self.get_nums(self.entry1.get())
+    #     all_arounds = [self.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
+    #     print(centers,all_arounds)
+    #     for center,arounds in zip(centers,all_arounds):
+    #         self.caculater.get_plant_level(center,arounds)

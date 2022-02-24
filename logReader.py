@@ -54,9 +54,9 @@ class Reader:
     #情况3     Eigenvalues --   -11.17917 -11.17907 -11.17829 -11.17818 -11.17794
     #情况4   1 1   C  1S         -0.00901  -0.01132   0.00047  -0.01645  -0.02767
     #情况5   2        2S         -0.00131  -0.00175  -0.00041  -0.00184  -0.00173
-    def get_atoms_obtial_coefficients(self, title):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情
+    def get_atoms_obtial_coefficients(self, title):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
         s1=r'\d+ +\d+ +\d+ +\d+ +\d+'
-        s2=r'( *(\(\w+\)--){0,1}[OV]){1,5}'
+        s2=r'( *(\(\w+\)--){0,1}[OV]){5}'
         s3=r'Eigenvalues --'
         s4=r'\d+ +(\d+) +([A-Za-z]+) +(\d[A-Z]+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
         s51=r'\d+ +(\d[A-Z]+?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
@@ -71,9 +71,10 @@ class Reader:
             line_text = logLines[line_num]  #本行的文本
             if re.search(s1, line_text) is not None: #情况1
                 pass
-            elif re.search(s2, line_text) is not None: # 情况2
+            elif re.search(s2, line_text) is not None: # 情况2，获得column
                 obtials = re.split(r' +', line_text)[1:] # 获取占据轨道还是非占据轨道
                 all_obtials.append(obtials)
+                print(line_num,line_text)
             elif re.search(s3, line_text) is not None: # 情况3
                 pass
             elif re.search(s4,line_text) is not None:
@@ -91,20 +92,18 @@ class Reader:
             elif re.search(s51,line_text) is not None:
                 line_data=list(re.search(s51,line_text).groups())
                 data = line_data
-                # 匹配的1s,2s等最后带一个空格，应该去掉
                 atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
             elif re.search(s52,line_text) is not None:
                 line_data=list(re.search(s52,line_text).groups())
                 data = line_data
-                # 匹配的1s,2s等最后带一个空格，应该去掉
                 atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
             else: # 若不满足以上任意一种情况，说明已经查找完毕，则对收集到的数据进行处理
                 print('end_line',line_text)
                 self.atoms=atoms
                 for i, atom in enumerate(atoms):
-                    index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist()
+                    index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist() # 轨道类型，s,p等
                     print('index',index,len(index))
-                    array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1)
+                    array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1) # 一个原子的数据块[index行,columns列]
                     print('array',array,array.shape)
                     columns=np.array(all_obtials).flatten().tolist()
                     print('columns',columns,len(columns))

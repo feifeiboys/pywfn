@@ -11,9 +11,9 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 from logReader import Reader
 from logCaculate import Caculater
 from logWriter import Writer
+from loger import Loger
 from pages import get_userful_obtials
 from pages import get_bond_cloud
-
 
 class App:
     def __init__(self):
@@ -27,11 +27,12 @@ class App:
         self.init_models()
 
     def init_models(self):
+        self.loger=Loger()
         # print('self',type(self))
         self.reader = Reader(program=self)
         self.caculater = Caculater(program=self)
         self.writer = Writer(program=self)
-
+        
     def init_control(self):
         self.show_top_window = False
         # 在这里初始化一些变量
