@@ -28,7 +28,7 @@
     >链接：https://pan.baidu.com/s/1-NNkgzEtnVZDfj_zR1OQ1A   
     提取码：fhg1 --来自百度网盘超级会员V3的分享
 
-#### 使用步骤
+#### 使用步骤(以萘为例)
 1. 运行程序
 ![运行程序](/imgs/运行程序.png)
 2.  `open`->打开需要处理的`log`或`out`文件
