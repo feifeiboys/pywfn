@@ -1,23 +1,24 @@
-# 此脚本用来计算各种需要的参数,输入的全都是指定原子和轨道的系数
 import numpy as np
 import pandas as pd
 import math
 import sympy
 import matplotlib.pyplot as plt
-import re
+
 class Caculater:
     def __init__(self, program):
         self.program = program
-        self.loger=program.loger
-        self.obtial_type = None
+        self.logger=program.logger
+        self.obtial_type = None # 轨道类型，是否为劈裂
         self.atoms_pos = None
         self.atoms = None
         self.standard_basis = None
         self.PX = '2PX'
         self.PY = '2PY'
         self.PZ = '2PZ'
+        self.set_data()
 
-    def set_data(self, data):
+    def set_data(self):
+        data=self.program.data
         keys = data.keys()
         if 'Standard orientation' in keys:
             self.atoms_pos = data['Standard orientation']
@@ -26,11 +27,11 @@ class Caculater:
             self.obtial_type = 0
             self.atoms = data['Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
             obtial_num = data['Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.program.log_window_text.insert('end',f'读取到{obtial_num}个 O 轨道\n')
+            self.program.log_window_text.insert('end',f'读取到{obtial_num}个轨道\n')
         elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
             self.alpha_num = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
             self.beta_num = data['Beta Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.program.log_window_text.insert('end',f'读取到{self.alpha_num}个Alpha_O轨道和{self.beta_num}个Beta_O轨道\n')
+            self.program.log_window_text.insert('end',f'读取到{self.alpha_num}个Alpha轨道和{self.beta_num}个Beta轨道\n')
             self.obtial_type = 1
             self.atoms = [{
                 'atom_id': alpha['atom_id'],
@@ -45,11 +46,11 @@ class Caculater:
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
 
-    def get_2p_obtial(self, atom_num, obtial_num, ):  # 返回指定原子的pz,py和pz轨道
+    def get_p_obtial(self,atom,obtial):  # 返回指定原子的pz,py和pz轨道
         atoms = self.atoms
-        px = atoms[atom_num]['datas'].loc[self.PX].iloc[obtial_num]
-        py = atoms[atom_num]['datas'].loc[self.PY].iloc[obtial_num]
-        pz = atoms[atom_num]['datas'].loc[self.PZ].iloc[obtial_num]
+        px = atoms[atom]['datas'].loc[self.PX].iloc[obtial]
+        py = atoms[atom]['datas'].loc[self.PY].iloc[obtial]
+        pz = atoms[atom]['datas'].loc[self.PZ].iloc[obtial]
         return np.array([px, py, pz], dtype=np.float64)
 
     def function(self, center_pos, pos, alpha, cs, Ps):  # 获取函数值 (原子坐标，计算点坐标，alpha，c，轨道系数,函数平移)
@@ -70,16 +71,13 @@ class Caculater:
         f = PX * fpx + PY * fpy + PZ * fpz
         return f
 
-    def get_px(self, atom_num, obtial_num):
-        atoms = self.atoms
-        px = atoms[atom_num]['datas'].loc[self.PX].astype('float').to_numpy()[obtial_num]  # 从log文件中提取的轨道系数
-        py = atoms[atom_num]['datas'].loc[self.PY].astype('float').to_numpy()[obtial_num]
-        pz = atoms[atom_num]['datas'].loc[self.PZ].astype('float').to_numpy()[obtial_num]
-        center_unit_matrix = self.get_unit_matrix([atom_num])
+    def get_px(self, atom, obtial):
+        px,py,pz=self.get_p_obtial(atom,obtial)
+        center_unit_matrix = self.get_unit_matrix([atom])
         all_square_sum = self.get_all_atom_square_sum()
-        PX = (px ** 2 / all_square_sum[obtial_num]) ** 0.5 * center_unit_matrix[0].flatten()[obtial_num]
-        PY = (py ** 2 / all_square_sum[obtial_num]) ** 0.5 * center_unit_matrix[1].flatten()[obtial_num]
-        PZ = (pz ** 2 / all_square_sum[obtial_num]) ** 0.5 * center_unit_matrix[2].flatten()[obtial_num]
+        PX = (px ** 2 / all_square_sum[atom]) ** 0.5 * center_unit_matrix[0].flatten()[obtial]
+        PY = (py ** 2 / all_square_sum[atom]) ** 0.5 * center_unit_matrix[1].flatten()[obtial]
+        PZ = (pz ** 2 / all_square_sum[atom]) ** 0.5 * center_unit_matrix[2].flatten()[obtial]
         return PX, PY, PZ
 
     # 判断两个原子之间的轨道是不是π轨道,(中心原子序号，周围原子序号，轨道序号)
@@ -98,20 +96,30 @@ class Caculater:
         pz = around_datas.loc[self.PZ].astype('float').to_numpy()[obtial]
         p_sums_around = px ** 2 / all_square_sum + py ** 2 / all_square_sum + pz ** 2 / all_square_sum
         # 针对通用体系想出来的方法
-        print(f'center:{center},around:{around},obtial:{obtial}')
-        print(f'p_sum_center:{p_sums_center},p_sum_around:{p_sums_around}')
+        self.logger.info(f'center:{center+1},around:{around+1},obtial:{obtial+1}')
+        self.logger.info(f'p_sum_center:{p_sums_center},p_sum_around:{p_sums_around}')
         if p_sums_center < 0.008 and p_sums_around < 0.008:
             
             return False
         
         if center != around and atoms[around]['atom_type'] != 'H':
-            results_center = np.max(np.abs(np.array(self.get_cloud(center,around,obtial)))) # 键轴上十个点处函数值的最大值
-            results_around = np.max(np.abs(np.array(self.get_cloud(around,center,obtial))))
-            print(f'results_center:{results_center},results_around:{results_around}')
-            if results_center<0.01 or results_around < 0.01:
+            # 分别获取与中心原子和周围原子相连的原子
+            all_res=[]
+            center_connections=self.get_connections(center)
+            around_connections=self.get_connections(around)
+            for each in center_connections:
+                if atoms[each]['atom_type']!='H':
+                    res=np.max(np.abs(self.get_cloud(center,each,obtial)))
+                    all_res.append(res)
+            for each in around_connections:
+                if atoms[each]['atom_type']!='H':
+                    res=np.max(np.abs(self.get_cloud(around,each,obtial)))
+                    all_res.append(res)
+            result=max(all_res)
+            self.logger.info(f'result:{result}')
+            if result < 0.01:
                 return True
             else:
-                
                 return False
 
     def get_cloud(self,center, around, obtial):  # 获取中心原子和周围原子之间十个点的函数值
@@ -141,14 +149,6 @@ class Caculater:
             results.append(res)
         return results
 
-    def get_clouds(self,center,around,obtial):
-        results = self.get_cloud(center,around,obtial)
-        plt.plot(np.arange(0,1,0.1),np.array(results),label=f'{center+1}')
-        results = self.get_cloud(around,center,obtial)
-        plt.plot(1-np.arange(0, 1, 0.1), np.array(results), label=f'{around + 1}')
-        plt.legend()
-        plt.title(f'{center + 1}<->{around + 1},{obtial + 1}')
-        plt.show()
 
     def obtial_between_atoms(self, center, around):  # 挑选两个原子之间π键有哪些
         userful = []
@@ -167,14 +167,14 @@ class Caculater:
                     userful.append(obtial)
         return userful
 
-    def get_connections(self, atom_num):  # 计算所有原子与指定原子之间的距离,进而判断与之相连的原子
+    def get_connections(self, atom):  # 计算所有原子与指定原子之间的距离,进而判断与之相连的原子
         atoms_pos = self.atoms_pos
-        dxs = atoms_pos.loc[:, 'X'] - atoms_pos.iloc[atom_num].loc['X']
-        dys = atoms_pos.loc[:, 'Y'] - atoms_pos.iloc[atom_num].loc['Y']
-        dzs = atoms_pos.loc[:, 'Z'] - atoms_pos.iloc[atom_num].loc['Z']
+        dxs = atoms_pos.loc[:, 'X'] - atoms_pos.iloc[atom].loc['X']
+        dys = atoms_pos.loc[:, 'Y'] - atoms_pos.iloc[atom].loc['Y']
+        dzs = atoms_pos.loc[:, 'Z'] - atoms_pos.iloc[atom].loc['Z']
         distances = (dxs ** 2 + dys ** 2 + dzs ** 2) ** 0.5
         res = np.where(distances < 2)[0].tolist()
-        res.remove(atom_num)
+        res.remove(atom)
         return res
 
     def get_each_atom_square_sum(self, select_atoms):  # 获取每一个原子的所有轨道的平方和
@@ -211,41 +211,8 @@ class Caculater:
         pz_res[pz_res < 0] = -1
         return np.array([px_res, py_res, pz_res])  # 返回某个原子的所有轨道的2px,2py,2pz
 
-    def get_unit(self, center, around, obtial):  # 根据原子周围三个点的函数值来判断两原子之间的正负关系，每个原子能计算出三个值
-        data1 = np.array(self.standard_basis[center])
-        data2 = np.array(self.standard_basis[around])
-        print(data1,data2)
-        x1, y1, z1 = [self.atoms_pos.iloc[center].loc[['X', 'Y', 'Z']].iloc[i] for i in range(3)]
-        x2, y2, z2 = [self.atoms_pos.iloc[around].loc[['X', 'Y', 'Z']].iloc[i] for i in range(3)]
-        print(x1,y1,z1)
-        PX, PY, PZ = self.get_px(center, obtial)
-        center_p=np.array([PX,PY,PZ])
-        data_list = []
-        fv1 = self.function(center_pos=(x1, y1, z1), pos=(x1 + 1, y1, z1), alpha=data1[:, 0].tolist(),
-                            cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
-        fv2 = self.function(center_pos=(x1, y1, z1), pos=(x1, y1 + 1, z1), alpha=data1[:, 0].tolist(),
-                            cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
-        fv3 = self.function(center_pos=(x1, y1, z1), pos=(x1, y1, z1 + 1), alpha=data1[:, 0].tolist(),
-                            cs=data1[:, 2].tolist(), Ps=(PX, PY, PZ))
-        data_list.append([fv1, fv2, fv3])
-        fun1 = np.array(data_list)
-        print('center_fv',fv1,fv2,fv3)
-        PX, PY, PZ = self.get_px(around, obtial)
-        around_p=np.array([PX,PY,PZ])
-        fv1 = self.function(center_pos=(x2, y2, z2), pos=(x2 + 1, y2, z2), alpha=data2[:, 0].tolist(),
-                            cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
-        fv2 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2 + 1, z2), alpha=data2[:, 0].tolist(),
-                            cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
-        fv3 = self.function(center_pos=(x2, y2, z2), pos=(x2, y2, z2 + 1), alpha=data2[:, 0].tolist(),
-                            cs=data2[:, 2].tolist(), Ps=(PX, PY, PZ))
-        data_list.append([fv1, fv2, fv3])
-        fun2 = np.array(data_list)
-        print('around_fv',fv1,fv2,fv3)
-        data_list = np.array(data_list)
-        data_list[data_list > 0] = 1
-        data_list[data_list < 0] = -1
-        res = np.sum(center_p*around_p)
-        
+    def get_unit(self, center, around, obtial):  # 判断两原子之间的正负关系
+        res=np.sum(self.get_p_obtial(center,obtial)*self.get_p_obtial(around,obtial))
         return 1 if res > 0 else -1
 
     def get_bond_level_between_tow_atom(self, center, around,input_obtials=None):  # 计算两个原子之间的键级
@@ -256,7 +223,6 @@ class Caculater:
         around_units = [self.get_unit(center, around, obtial) for obtial in userful_obtials] # 周围原子与中心原子之间的正负系数
         around_units = np.array(around_units).reshape(1, len(userful_obtials))
         center_units = np.ones((1, len(userful_obtials)))
-        self.program.data_var.set(f'正在计算{center}和{around}键级')
 
         if self.obtial_type == 0:
             userful_str = [str(i+1) for i in userful_obtials]
@@ -283,39 +249,3 @@ class Caculater:
                 self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},键级:{bond_level}\n')
         return np.array(bond_levels)
     
-    
-    def get_bond_level(array,bond_para): # 针对于平面体系临时加的
-        bond_levels=[]
-        for a1,a2,_ in bond_para:
-            bond_level=np.sum(2*array[a1]*array[a2])
-            bond_levels.append(bond_level)
-        return np.array(bond_levels)
-    
-    def get_plant_level(self,center,arounds): #针对平面体系，计算方式不同
-        # 挑选轨道
-        each_quare_sum=[]
-        each_atom_pz=[]
-        for i,atom in enumerate(self.atoms):
-            if atom['atom_type']=='C':
-                datas=atom['datas'].iloc[:,:60]
-                each_quare_sum.append(np.sum(datas**2)) #每个碳原子的所有原子轨道的平方和
-                each_atom_pz.append(np.array(datas.loc['2PX',:]))
-                
-        each_quare_sum=np.array(each_quare_sum)
-        each_atom_pz=np.array(each_atom_pz)
-        all_atom_pz=np.sum(np.abs(each_atom_pz),axis=0)
-        # print(all_atom_pz)
-        all_square_sum=np.sum(each_quare_sum,axis=0) #所有碳原子的每个轨道原子平方和
-        each_atom_pz=np.where(each_atom_pz>0,1,each_atom_pz)
-        each_atom_pz=np.where(each_atom_pz<0,-1,each_atom_pz)
-        data=(each_quare_sum/all_square_sum)**0.5*each_atom_pz
-        pis=np.where(all_atom_pz>0)[0]
-        data=data[:,pis]
-        for around in arounds:
-            print(center,around)
-            if self.atoms[around]['atom_type']=='H':
-                continue
-            level=np.sum(2*data[center-1]*data[around-1])
-            print(f'{center}->{around}:{level}')
-            self.program.log_window_text.insert('end',f'{center}->{around}:{level}\n')
-# 拉取测试

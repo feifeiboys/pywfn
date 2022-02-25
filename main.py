@@ -9,17 +9,19 @@ sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便�
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from logReader import Reader
-from logCaculate import Caculater
-from logWriter import Writer
-from loger import Loger
-from pages import get_userful_obtials
-from pages import get_bond_cloud
+# 导入所有页面，以字典形式
+from pages import pages
+import datetime
+import logging
+start_time=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') # 时:分:秒
+logging.basicConfig(filename=f'logs/{start_time}.txt',format='%(filename)s - %(funcName)s - %(message)s',level=logging.INFO)
+
 
 class App:
     def __init__(self):
         self.window = tk.Tk()
-        self.window.title('分子轨道提取')
-        self.window.geometry('720x640')
+        self.window.title('log-process')
+        self.window.geometry('500x640')
         self.init_control()
         self.init_variable()
         self.init_component()
@@ -27,62 +29,33 @@ class App:
         self.init_models()
 
     def init_models(self):
-        self.loger=Loger()
-        # print('self',type(self))
+        self.logger=logging.getLogger(__name__)
         self.reader = Reader(program=self)
-        self.caculater = Caculater(program=self)
-        self.writer = Writer(program=self)
         
     def init_control(self):
         self.show_top_window = False
         # 在这里初始化一些变量
 
     def init_variable(self):
-        self.if_save_all_var = tk.IntVar()
-        self.if_save_select_var = tk.IntVar()
-        self.if_save_caculate_var = tk.IntVar()
-        self.inform_var = tk.StringVar()
-        self.inform_var.set('尚未打开文件')
-        self.data_var = tk.StringVar()
-        self.data_var.set('')
+        pass
 
     def init_component(self):
-        self.menubar = tk.Menu(self.window)
-        self.menubar.add_command(label='open', command=self.select_file)
-        self.toolsbar = tk.Menu(self.menubar)
+        self.menubar = tk.Menu(self.window) # 添加菜单栏
+
+        self.menubar.add_command(label='open', command=self.select_file) # 菜单栏添加按钮
+
+        self.toolsbar = tk.Menu(self.menubar) #菜单栏中添加菜单栏
         self.menubar.add_cascade(label='tools', menu=self.toolsbar)  # 添加子菜单
-        self.toolsbar.add_command(label='获取有用轨道', command=self.show_page)
-        # self.toolsbar.add_separator() #添加一条分割线
-        self.menubar.add_command(label='save', command=self.save)
+
+        self.toolsbar.add_command(label='计算键级', command=lambda:self.show_page('计算键级'))
+        self.toolsbar.add_command(label='挑选轨道', command=lambda:self.show_page('挑选轨道'))
+
         self.window.config(menu=self.menubar)
-
-        self.frameL = tk.Frame(self.window, width=500, height=640)
-        self.frameR = tk.Frame(self.window, width=220, height=640)
-
-        self.inform_lable = tk.Label(self.frameL, textvariable=self.inform_var)
-        self.log_window_text = tk.Text(self.frameL, height=40)
-        tk.Label(self.frameL, text='-----小飞出品，能用就行-----').place(x=250, y=620, anchor='center')
-
-        tk.Label(self.frameR, text='输入需要的原子编号，用,和-分割').place(x=0, y=170, anchor='nw')
-        self.entry1 = tk.Entry(self.frameR, show=None, width=200)
-        tk.Label(self.frameR, text='输入需要的轨道编号，用,和-分割').place(x=0, y=270, anchor='nw')
-        self.entry2 = tk.Entry(self.frameR, show=None, width=200)
-        self.option_select_saveSelect = tk.Checkbutton(self.frameR, text='select', variable=self.if_save_select_var,
-                                                       onvalue=1, offvalue=0)
-        self.para_button = tk.Button(self.frameR, text='保存参数并计算', command=self.get_input_para)
-        self.cloud_button = tk.Button(self.frameR, text='展示云图', command=self.show_cloud)
+        self.log_window_text = tk.Text(self.window, height=45)
+        tk.Label(self.window, text='-----小飞出品，能用就行-----').place(x=250, y=620, anchor='center')
 
     def set_conponent_pos(self):  # 设置组件的位置
-        self.frameL.place(x=0, y=0, anchor='nw')
-        self.frameR.place(x=500, y=0, anchor='nw')
-
-        # self.inform_lable.place(x=300, y=0, anchor='n')
-        self.log_window_text.place(x=0, y=30, width=500, anchor='nw')
-        self.entry1.place(x=0, y=200, anchor='nw')
-        self.entry2.place(x=0, y=300, anchor='nw')
-        self.option_select_saveSelect.place(x=50, y=350, anchor='nw')
-        self.para_button.place(x=110, y=400, anchor='n')
-        self.cloud_button.place(x=110, y=450, anchor='n')
+        self.log_window_text.place(x=0, y=0, width=500, anchor='nw')
 
     def run(self):
         self.window.mainloop()
@@ -91,9 +64,6 @@ class App:
         self.window.quit()
 
     # 定义各种函数
-    def show_cloud(self):
-        page = get_bond_cloud.Page(self)
-        page.run()
 
     def select_file(self):  # 选择文件并读取
         self.log_path = askopenfilename(filetypes=[('log', '.log'), ('out', '.out')])
@@ -109,68 +79,18 @@ class App:
                 self.log_lines = self.log_text.split('\n')
                 self.reader.logLines = self.log_lines
                 self.get_data()
-            self.show_page()
         else:
             self.log_window_text.insert('end', '仅能读取.log或.out文件\n')
 
     def get_data(self):
         self.log_window_text.insert('end', '开始搜索...\n')
         self.data = self.reader.get()
-        self.caculater.set_data(self.data)
         self.log_window_text.insert('end', '搜索完成\n')
 
-    def num_list_to_str(self, num_list):  # 将列表中的数字转换为字符串
-        str_list = []
-        for i in range(len(num_list)):
-            str_list.append(f'{num_list[i] + 1}')
-        return str_list
-
-    def show_page(self):
-        page = get_userful_obtials.Page(program=self)
+    def show_page(self,name):
+        print(name)
+        page = pages[name].Page(program=self)
         page.run()
-
-    # 将用户输入的范围转换为列表，真实的数据应该是输入的数据-1
-    def get_nums(self, string):
-        res = []
-        for each in re.split(',|，',string):
-            if '-' in each:
-                start = int(re.split('-', each)[0])
-                end = int(re.split('-', each)[1])
-                res += list(range(start, end + 1))
-            else:
-                res += [int(each)]
-        return [each - 1 for each in res]
-
-    def get_input_para(self):  # 获取用户输入的参数
-        atoms = self.get_nums(self.entry1.get())
-        obtials = self.get_nums(self.entry2.get())
-        self.log_window_text.insert('end', '选择的原子有:' + ','.join([f'{each}' for each in atoms]) + '\n')
-        self.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in obtials]) + '\n')
-        self.select_atoms = atoms
-        self.select_botials = obtials
-        self.log_window_text.insert('end', 'all：' + ('保存\n' if self.if_save_all_var.get() == 1 else '不保存\n'))
-        self.log_window_text.insert('end', 'select：' + ('保存\n' if self.if_save_select_var.get() == 1 else '不保存\n'))
-        self.log_window_text.insert('end', 'square：' + ('保存\n' if self.if_save_caculate_var.get() == 1 else '不保存\n'))
-        # print(self.if_save_squareMatrix_var.get())
-
-    def save(self):
-        self.writer.data = self.data
-        file_path = asksaveasfilename(defaultextension='.xlsx', title='保存文件',
-                                      initialfile=self.log_path.split('/')[-1].split('.')[-2])
-        if self.if_save_select_var.get() == 1:
-            if 'Molecular Orbital Coefficients' in self.data.keys():
-                self.writer.save_atom_obtials('select_atoms_coefficient', 'Molecular Orbital Coefficients',
-                                              select_atoms=self.select_atoms, select_obtials=self.select_botials)
-            if 'Alpha Molecular Orbital Coefficients' in self.data.keys():
-                self.writer.save_atom_obtials('select_atoms_coefficient_alpha', 'Alpha Molecular Orbital Coefficients',
-                                              select_atoms=self.select_atoms, select_obtials=self.select_botials)
-            if 'Beta Molecular Orbital Coefficients' in self.data.keys():
-                self.writer.save_atom_obtials('select_atoms_coefficient_beta', 'Beta Molecular Orbital Coefficients',
-                                              select_atoms=self.select_atoms, select_obtials=self.select_botials)
-        self.writer.save(file_path)
-        self.log_window_text.insert('end', '文件保存成功\n')
-        # print('保存文件')
-
 
 app = App()
 app.run()

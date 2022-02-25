@@ -3,19 +3,18 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import threading
 import numpy as np
-
+from .scripy import Caculater
 
 class Page:
     def __init__(self, program):
-        self.main_program = program
+        self.program = program
         self.window = tk.Tk()
         self.window.geometry('480x640')
         self.window.title('计算轨道和键级')
         self.init_variable()
         self.init_component()
         self.set_conponent_pos()
-        self.caculater = self.main_program.caculater
-        self.writer = self.main_program.writer
+        self.caculater = Caculater(program)
 
     def init_variable(self):
         self.if_save = tk.IntVar()
@@ -63,9 +62,9 @@ class Page:
         self.entry2.insert(0, ';'.join([','.join([str(i + 1) for i in each]) for each in connections]))
 
     def caculate_tread(self):
-        t = threading.Thread(target=self.caculate)
-        t.setDaemon(True)
-        t.start()
+        self.t = threading.Thread(target=self.caculate)
+        self.t.setDaemon(True)
+        self.t.start()
 
     def caculate(self):  # 获取用户输入的参数
         centers = self.get_nums(self.entry1.get())
@@ -82,15 +81,8 @@ class Page:
                     beta_obtails = self.get_nums(re.split(r';|；',each)[1])
                     obtials = alpha_obtials + [i + self.caculater.alpha_num for i in beta_obtails]
                 all_obtials.append(obtials)
-                self.main_program.log_window_text.insert('end', f'选择轨道为' + ','.join([str(each) for each in obtials]) + '\n')
+                self.program.log_window_text.insert('end', f'选择轨道为' + ','.join([str(each) for each in obtials]) + '\n')
         for i, center in enumerate(centers):
-            self.main_program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
+            self.program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
             bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i], all_obtials)
-            self.main_program.log_window_text.insert('end', f'SUM:{np.sum(bond_levels)}\n')
-
-    # def caculate(self):
-    #     centers = self.get_nums(self.entry1.get())
-    #     all_arounds = [self.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
-    #     print(centers,all_arounds)
-    #     for center,arounds in zip(centers,all_arounds):
-    #         self.caculater.get_plant_level(center,arounds)
+            self.program.log_window_text.insert('end', f'SUM:{np.sum(bond_levels)}\n')

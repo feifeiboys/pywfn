@@ -15,12 +15,40 @@
 
 #### 软件架构
 软件分为一下几个主要部分  
-- main.py 负责程序的主要界面和入口  
+- main.py 仅负责组件间的关联以及信息的打印
 - logReader.py 负责程序对log/out文件的读取  
 - logCaculate.py 负责进行相关的量化计算  
 - logWriter.py 负责保存读取和计算的结果  
 - pages/ 存储程序的扩展界面
+  - bond_level 计算键级页面
+  - save_obtial 保存轨道页面
 - data.json 存储预设数据
+- logs 存储每次程序运行时的日志文件
+
+#### 基础页面架构
+```python
+import tkinter as tk
+class Page:
+    def __init__(self,program) -> None:
+        self.program=program
+        self.window = tk.Tk()
+        self.window.geometry('480x640')
+        self.window.title('title')
+        self.init_variable()
+        self.init_component()
+        self.set_conponent_pos()
+    def init_variable(self):  # 定义tkinter变量
+        pass
+
+    def init_component(self): # 定义tkinter组件
+        pass
+
+    def set_conponent_pos(self): # 定义tkinter组件位置
+        pass
+
+    def run(self): # 运行页面
+        self.window.mainloop()
+```
 
 #### 安装教程
 1.  如果电脑上有python,第一次运行是需要输入命令  

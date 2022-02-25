@@ -74,7 +74,6 @@ class Reader:
             elif re.search(s2, line_text) is not None: # 情况2，获得column
                 obtials = re.split(r' +', line_text)[1:] # 获取占据轨道还是非占据轨道
                 all_obtials.append(obtials)
-                print(line_num,line_text)
             elif re.search(s3, line_text) is not None: # 情况3
                 pass
             elif re.search(s4,line_text) is not None:
