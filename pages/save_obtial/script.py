@@ -4,25 +4,32 @@ from xlsxwriter import Workbook
 import numpy as np
 
 class Writer:
-    def __init__(self) -> None:
-        self.wb=Workbook({'nan_inf_to_errors': True})
-    def save(self,atoms,obtials,data,path,program): #保存文件
-        self.file_path = asksaveasfilename(defaultextension='.xlsx', title='保存文件',initialfile=os.path.splitext(os.path.basename(path)))[0]
-        self.data=data
-        self.atoms=atoms
-        self.obtials=obtials
-        if 'Molecular Orbital Coefficients' in data.keys():
-            self.save_atom_obtials('coefficient', 'Molecular Orbital Coefficients')
-        if 'Alpha Molecular Orbital Coefficients' in data.keys():
-            self.save_atom_obtials('coefficient_alpha', 'Alpha Molecular Orbital Coefficients')
-        if 'Beta Molecular Orbital Coefficients' in data.keys():
-            self.save_atom_obtials('coefficient_beta', 'Beta Molecular Orbital Coefficients',
-                                            atoms=atoms, obtials=obtials)
-        program.log_window_text.insert('end', '文件保存成功\n')
+    def __init__(self,program) -> None:
+        self.program=program
+        #print(self.program.data)
+    def save(self,atoms,obtials): #保存文件
+        
+        path=self.program.log_path
+        self.file_path = asksaveasfilename(defaultextension='.xlsx', title='保存文件',initialfile=os.path.splitext(os.path.basename(path))[0])
+        self.atoms=[i-1 for i in atoms]
+        self.obtials=[i-1 for i in obtials]
+        data=self.program.data # 主程序读取到的数据
+        type_data=[
+            {'key':'Molecular Orbital Coefficients','sheet_name':'coefficient'},
+            {'key':'Alpha Molecular Orbital Coefficients','sheet_name':'coefficient_alpha'},
+            {'key':'Beta Molecular Orbital Coefficients','sheet_name':'coefficient_beta'},
+        ]
+        for each in type_data:
+            if each['key'] in data.keys():
+                self.save_atom_obtials(sheet_name=each['sheet_name'],title=each['key'])
+        
 
     # 保存原子轨道
-    def save_atom_obtials(self, sheet_name,title, obtials,atoms):  # 保存所有或者选定的原子轨道
-        all_obtials = self.data[title]  # 是一个列表，每个原子的轨道数据
+    def save_atom_obtials(self, sheet_name,title):  # 保存所有或者选定的原子轨道
+        self.wb=Workbook({'nan_inf_to_errors': True})
+        atoms=self.atoms
+        obtials=self.obtials
+        all_obtials = self.program.data[title]  # 是一个列表，每个原子的轨道数据
         sheet = self.wb.add_worksheet(sheet_name)
         line_num = 0
         # 先在最上面写入选择的轨道
@@ -43,3 +50,5 @@ class Writer:
             for idx in index:
                 sheet.write_row(line_num, 2, each['datas'].loc[idx].iloc[obtials].to_list())
                 line_num += 1
+        self.wb.close()
+        self.program.log_window_text.insert('end', '文件保存成功\n')

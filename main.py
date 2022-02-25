@@ -4,7 +4,7 @@ import re
 
 cwd = os.getcwd()
 import sys
-
+import json
 sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便找到自定义包
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
@@ -15,18 +15,23 @@ import datetime
 import logging
 start_time=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') # 时:分:秒
 logging.basicConfig(filename=f'logs/{start_time}.txt',format='%(filename)s - %(funcName)s - %(message)s',level=logging.INFO)
-
+with open('config.json','r',encoding='utf-8') as f:
+    config=json.loads(f.read())
+    print(config)
 
 class App:
     def __init__(self):
+        self.config=config
         self.window = tk.Tk()
         self.window.title('log-process')
-        self.window.geometry('500x640')
+        pageWidth,pageHeight=self.config['pageWidth'],self.config['pageHeight']
+        self.window.geometry(f'{pageWidth}x{pageHeight}')
         self.init_control()
         self.init_variable()
         self.init_component()
         self.set_conponent_pos()
         self.init_models()
+        
 
     def init_models(self):
         self.logger=logging.getLogger(__name__)
@@ -43,13 +48,12 @@ class App:
         self.menubar = tk.Menu(self.window) # 添加菜单栏
 
         self.menubar.add_command(label='open', command=self.select_file) # 菜单栏添加按钮
-
+        self.menubar.add_command(label='view',command=self.show)
         self.toolsbar = tk.Menu(self.menubar) #菜单栏中添加菜单栏
         self.menubar.add_cascade(label='tools', menu=self.toolsbar)  # 添加子菜单
-
         self.toolsbar.add_command(label='计算键级', command=lambda:self.show_page('计算键级'))
         self.toolsbar.add_command(label='挑选轨道', command=lambda:self.show_page('挑选轨道'))
-
+        self.menubar.add_command(label='save',command=self.save)
         self.window.config(menu=self.menubar)
         self.log_window_text = tk.Text(self.window, height=45)
         tk.Label(self.window, text='-----小飞出品，能用就行-----').place(x=250, y=620, anchor='center')
@@ -91,6 +95,16 @@ class App:
         print(name)
         page = pages[name].Page(program=self)
         page.run()
+    
+    def show(self):
+        if self.log_path:
+            os.startfile(self.log_path)
+
+    def save(self):
+        file=asksaveasfilename(initialfile=f'{os.path.splitext(os.path.basename(self.log_path))[0]}.txt',title='保存文件',filetypes=[('文本文档','.txt')])
+        with open(file,'w',encoding='utf-8') as f:
+            f.write(self.log_window_text.get(1.0,'end'))
+        os.startfile(file)
 
 app = App()
 app.run()

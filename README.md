@@ -15,15 +15,15 @@
 
 #### 软件架构
 软件分为一下几个主要部分  
-- main.py 仅负责组件间的关联以及信息的打印
-- logReader.py 负责程序对log/out文件的读取  
-- logCaculate.py 负责进行相关的量化计算  
-- logWriter.py 负责保存读取和计算的结果  
-- pages/ 存储程序的扩展界面
-  - bond_level 计算键级页面
-  - save_obtial 保存轨道页面
-- data.json 存储预设数据
-- logs 存储每次程序运行时的日志文件
+- `main.py` 仅负责组件间的关联以及信息的打印
+- `logReader.py` 负责程序对log/out文件的读取  
+- `pages/` 存储程序的扩展界面
+  - `bond_level` 计算键级页面
+    - `page.py` 负责页面组织
+    - `script.py` 负责计算
+  - `save_obtial` 保存轨道页面
+- `data.json` 存储预设数据
+- `logs` 存储每次程序运行时的日志文件
 
 #### 基础页面架构
 ```python
@@ -61,11 +61,11 @@ class Page:
 1. 运行程序
 ![运行程序](/imgs/运行程序.png)
 2.  `open`->打开需要处理的`log`或`out`文件
-![读取文件](/imgs/读取文件后.png)
+![读取文件](/imgs/读取文件.png)
 3.  在窗口右侧指定原子和轨道，用`-`和`,`分隔
-![制定原子](/imgs/输入原子编号.png)
+![制定原子](/imgs/指定原子.png)
 4.  点击`计算轨道和键级`
-![计算结果](/imgs/计算键级.png)
+![计算结果](/imgs/计算结果.png)
 #### 程序中用到的公式
 
 - #### 计算原子周围某一点的函数值
@@ -106,4 +106,4 @@ $f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 - 用基准物键级减去所有键级为自由价
 
 #### 技术规范
-- 在页面脚本中不进行
+- 在页面脚本中不进行计算

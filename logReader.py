@@ -101,11 +101,8 @@ class Reader:
                 self.atoms=atoms
                 for i, atom in enumerate(atoms):
                     index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist() # 轨道类型，s,p等
-                    print('index',index,len(index))
                     array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1) # 一个原子的数据块[index行,columns列]
-                    print('array',array,array.shape)
                     columns=np.array(all_obtials).flatten().tolist()
-                    print('columns',columns,len(columns))
                     atoms[i]['datas'] = pd.DataFrame(array, index=index,columns=columns).astype(dtype='float')
                     atoms[i]['obtials'] = np.array(all_obtials).flatten().tolist()
                     atom_id = atoms[i]['atom_id']

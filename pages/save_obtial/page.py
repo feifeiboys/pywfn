@@ -1,5 +1,6 @@
 import tkinter as tk
 from .script import Writer
+import re
 class Page:
     def __init__(self,program) -> None:
         self.program=program
@@ -27,11 +28,23 @@ class Page:
     def run(self): # 运行页面
         self.window.mainloop()
 
+    def get_nums(self,content):
+        res=[]
+        for each in re.split(',|，',content):
+            if re.search(r'-',each) is None:
+                res.append(int(each))
+            else:
+                a,b=re.split('-',each)
+                res+=list(range(int(a),int(b)+1))
+        return res
+
     def get_input_para(self):  # 获取用户输入的参数
         atoms = self.get_nums(self.entry1.get())
         obtials = self.get_nums(self.entry2.get())
-        self.log_window_text.insert('end', '选择的原子有:' + ','.join([f'{each}' for each in atoms]) + '\n')
-        self.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in obtials]) + '\n')
+        self.program.log_window_text.insert('end', '选择的原子有:' + ','.join([f'{each}' for each in atoms]) + '\n')
+        self.program.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in obtials]) + '\n')
         print(atoms,obtials)
+        writer=Writer(self.program)
+        writer.save(atoms,obtials)
 
     

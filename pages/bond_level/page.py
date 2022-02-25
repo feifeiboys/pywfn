@@ -9,7 +9,8 @@ class Page:
     def __init__(self, program):
         self.program = program
         self.window = tk.Tk()
-        self.window.geometry('480x640')
+        pageWidth,pageHeight=self.program.config['pageWidth'],self.program.config['pageHeight']
+        self.window.geometry(f'{pageWidth}x{pageHeight}')
         self.window.title('计算轨道和键级')
         self.init_variable()
         self.init_component()
