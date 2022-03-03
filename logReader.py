@@ -8,46 +8,58 @@ class Reader:
     def __init__(self, program):
         self.program = program
         self.data = {}
-        self.title = {}  # 记录标题行
+        self.titles = {  # 用来所搜的
+            'Standard orientation':{
+                'title':'Standard orientation',
+                'num':None
+            },
+            '  Molecular Orbital Coefficients':{
+                'title':'Molecular Orbital Coefficients',
+                'num':None
+            },
+            'Alpha Molecular Orbital Coefficients':{
+                'title':'Alpha Molecular Orbital Coefficients',
+                'num':None
+            },
+            'Beta Molecular Orbital Coefficients':{
+                'title':'Beta Molecular Orbital Coefficients',
+                'num':None
+            },
+            'Overlap normalization':{
+                'title':'Molecular Orbital Coefficients',
+                'num':None
+            },
+        }  # 记录标题行
         self.logLines = None
+        
 
     def get_titles(self):
         logLines = self.logLines
         for i, line in enumerate(logLines):
-            if 'Standard orientation' in line:
-                self.title['Standard orientation'] = i
-            elif '  Molecular Orbital Coefficients' in line:
-                self.title['Molecular Orbital Coefficients'] = i
-                self.get_atoms_obtial_coefficients('Molecular Orbital Coefficients')
-            elif 'Alpha Molecular Orbital Coefficients' in line:
-                self.title['Alpha Molecular Orbital Coefficients'] = i
-                self.get_atoms_obtial_coefficients('Alpha Molecular Orbital Coefficients')
-            elif 'Beta Molecular Orbital Coefficients' in line:
-                self.title['Beta Molecular Orbital Coefficients'] = i
-                self.get_atoms_obtial_coefficients('Beta Molecular Orbital Coefficients')
-            elif 'Overlap normalization' in line:
-                self.title['Overlap normalization'] = i
+            for title in self.titles.keys():
+                if title in line:
+                    self.titles[title]['num']=i
+                    print(title,self.titles[title]['num'],i)
 
-    def get_atom_position_Matrix(self):  # 提取原子坐标矩阵
+    def get_atom_position_Matrix(self,titleNum):  # 提取原子坐标矩阵
         self.program.log_window_text.insert('end', '正在获取 Standard orientation\n')
         logLines = self.logLines
-        title_line_num = len(logLines)
+        print(titleNum,self.logLines[titleNum])
         line_text_list = []
         atom_index = 1
-        for line_num, line_text in enumerate(logLines):
-            if 'Standard orientation:' in line_text:
-                title_line_num = line_num
-            if line_num > title_line_num + 4:
-                if re.search(r'\d+ +\d+ +\d+ +-?\d+.\d{6} +-?\d+.\d{6} +-?\d+.\d{6}', line_text) != None:
+        for i in range(titleNum+5,len(logLines)):
+            line_text=self.logLines[i]
+            if re.search(r'\d+ +\d+ +\d+ +-?\d+.\d{6} +-?\d+.\d{6} +-?\d+.\d{6}', line_text) != None:
                     line_text_list.append(line_text)
                     atom_index += 1
-                else:
-                    res_array = np.array([re.split(r' +', each)[1:] for each in line_text_list], dtype=np.float64)
-                    res_frame = pd.DataFrame(res_array,
-                                             columns=['Center Number', 'Atomic Number', 'Atomic Type', 'X', 'Y', 'Z'])
-                    self.data['Standard orientation'] = res_frame
-                    return res_frame
+            else:
+                res_array = np.array([re.split(r' +', each)[1:] for each in line_text_list], dtype=np.float64)
+                res_frame = pd.DataFrame(res_array,
+                                            columns=['Center Number', 'Atomic Number', 'Atomic Type', 'X', 'Y', 'Z'])
+                self.data['Standard orientation'] = res_frame
+                return res_frame
 
+                
     # 分子轨道的文本数据有5种情况
     #情况1                           1         2         3         4         5
     #情况2                           O         O         O         O         O
@@ -62,7 +74,7 @@ class Reader:
         s51=r'\d+ +(\d[A-Z]+?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
         s52=r'\d+ +(\d[A-Z]+? ?\+?-?\d?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
         self.program.log_window_text.insert('end', f'正在获取 {title}\n')
-        title_line_num = self.title[title] # 标题所在的行号
+        title_line_num = self.titles[title]['num'] # 标题所在的行号
         logLines = self.logLines
         atoms = []
         all_obtials = []
@@ -107,8 +119,12 @@ class Reader:
                     atoms[i]['obtials'] = np.array(all_obtials).flatten().tolist()
                     atom_id = atoms[i]['atom_id']
                     atom_type = atoms[i]['atom_type']
-                    self.program.log_window_text.insert('end', f'{atom_id}{atom_type}\n')
-                self.data[title] = atoms
+                    self.program.log_window_text.insert('end', f'{atom_id}{atom_type}'.ljust(6,' '))
+                    if (i+1)%10==0:
+                        self.program.log_window_text.insert('end', f'\n')
+                    self.program.update_progress('整合轨道信息...',(i+1)/len(atoms))
+                self.program.log_window_text.insert('end', f'\n')
+                self.data[self.titles[title]['title']] = atoms
                 return atoms
 
     def get_standard_basis(self):
@@ -137,6 +153,11 @@ class Reader:
 
     def get(self):
         self.get_titles()
-        self.get_atom_position_Matrix()
+        print(self.titles)
+        for title in list(self.titles.keys())[1:4]:
+            if self.titles[title]['num'] is not None:
+                print(f'read {title}')
+                self.get_atoms_obtial_coefficients(title)
+        self.get_atom_position_Matrix(self.titles['Standard orientation']['num'])
         self.get_standard_basis()
         return self.data

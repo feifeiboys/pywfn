@@ -1,5 +1,7 @@
 import re
 import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 import matplotlib.pyplot as plt
 import threading
 import numpy as np
@@ -8,7 +10,8 @@ from .scripy import Caculater
 class Page:
     def __init__(self, program):
         self.program = program
-        self.window = tk.Tk()
+        self.window = tk.Toplevel()
+        #self.window=ttk.Window()
         pageWidth,pageHeight=self.program.config['pageWidth'],self.program.config['pageHeight']
         self.window.geometry(f'{pageWidth}x{pageHeight}')
         self.window.title('计算轨道和键级')
@@ -24,17 +27,14 @@ class Page:
         tk.Label(self.window, text='输入中心原子编号').place(x=0, y=100, anchor='nw')
         self.entry1 = tk.Entry(self.window, show=None, width=200)
         tk.Label(self.window, text='输入周围原子编号，用,和-分割:').place(x=0, y=200, anchor='w')
-        self.get_connection_button = tk.Button(self.window, text='自动获取', command=self.get_connection)
+        self.get_connection_button = ttk.Button(self.window, text='自动获取', command=self.get_connection,style=(SECONDARY,OUTLINE))
         self.entry2 = tk.Entry(self.window, show=None, width=200)
-        tk.Label(self.window, text='手动输入轨道，需用|隔离不同周围原子，需用；隔离α和β，若不输入则自动挑选轨道').place(x=0, y=300, anchor='w')
-        self.entry3 = tk.Entry(self.window, show=None, width=200)
-        self.caculate_button = tk.Button(self.window, text='计算轨道和键级', command=self.caculate_tread)
+        self.caculate_button = ttk.Button(self.window, text='计算轨道和键级', command=lambda:threading.Thread(target=self.caculate).start(),bootstyle=(SECONDARY,OUTLINE))
 
     def set_conponent_pos(self):
         self.entry1.place(x=0, y=150, anchor='nw')
         self.get_connection_button.place(x=220, y=200, anchor='center')
         self.entry2.place(x=0, y=250, anchor='nw')
-        self.entry3.place(x=0, y=350, anchor='nw')
         self.caculate_button.place(x=240, y=500, anchor='center')
 
     def run(self):
@@ -62,28 +62,13 @@ class Page:
         self.entry2.delete(0, 'end')
         self.entry2.insert(0, ';'.join([','.join([str(i + 1) for i in each]) for each in connections]))
 
-    def caculate_tread(self):
-        self.t = threading.Thread(target=self.caculate)
-        self.t.setDaemon(True)
-        self.t.start()
-
     def caculate(self):  # 获取用户输入的参数
         centers = self.get_nums(self.entry1.get())
         arounds = [self.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
-        all_obtials=[]
-        obtial_input=self.entry3.get()
-        if obtial_input!='':
-            for each in re.split(r'\|',self.entry3.get()):
-                obtials = None
-                if self.caculater.obtial_type == 0 and each != '':
-                    obtials = self.get_nums(each)
-                elif self.caculater.obtial_type == 1 and each != '':
-                    alpha_obtials = self.get_nums(re.split(r';|；',each)[0])
-                    beta_obtails = self.get_nums(re.split(r';|；',each)[1])
-                    obtials = alpha_obtials + [i + self.caculater.alpha_num for i in beta_obtails]
-                all_obtials.append(obtials)
-                self.program.log_window_text.insert('end', f'选择轨道为' + ','.join([str(each) for each in obtials]) + '\n')
         for i, center in enumerate(centers):
             self.program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
-            bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i], all_obtials)
-            self.program.log_window_text.insert('end', f'SUM:{np.sum(bond_levels)}\n')
+            bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i])
+            self.program.log_window_text.insert('end', f'键级和:{np.sum(bond_levels)}\n')
+            base_level=self.program.config['base_level']
+            self.program.log_window_text.insert('end', f'自由价:{base_level-np.sum(bond_levels)}\n')
+            self.program.update_progress('计算自由价',(i+1)/len(centers))
