@@ -25,30 +25,7 @@
 - `data.json` 存储预设数据
 - `logs` 存储每次程序运行时的日志文件
 
-#### 基础页面架构
-```python
-import tkinter as tk
-class Page:
-    def __init__(self,program) -> None:
-        self.program=program
-        self.window = tk.Tk()
-        self.window.geometry('480x640')
-        self.window.title('title')
-        self.init_variable()
-        self.init_component()
-        self.set_conponent_pos()
-    def init_variable(self):  # 定义tkinter变量
-        pass
 
-    def init_component(self): # 定义tkinter组件
-        pass
-
-    def set_conponent_pos(self): # 定义tkinter组件位置
-        pass
-
-    def run(self): # 运行页面
-        self.window.mainloop()
-```
 
 #### 安装教程
 1.  如果电脑上有python,第一次运行是需要输入命令  
@@ -108,3 +85,6 @@ $f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 
 #### 技术规范
 - 在页面脚本中不进行计算
+
+d-dou+2r3-2-ts-f-01-opt-e.log -35
+cat2-m2-dou-3-e.log -1

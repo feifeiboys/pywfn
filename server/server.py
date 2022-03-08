@@ -2,30 +2,68 @@
 from flask import Flask, render_template,jsonify
 import threading
 import numpy as np
-atomDict={
-    '1.0':'H',
-    '6.0':'C'
-}
-data = {
-    'title': '分子模型展示'
-}
-atomPos=None
-atoms=[]
+import mimetypes
+mimetypes.add_type('application/javascript', '.mjs')
+from datetime import timedelta
 
+app = Flask(__name__)
+app.config['SEND_FILE_MAX_AGE_DEFAULT']=timedelta(seconds=1) #设置文件缓存保存时间为1s
+
+def set_normals(normals):
+    global atomNormals
+    new_normals={}
+    for key in normals.keys():
+        value=normals[key]
+        if value is not None:
+            new_normals[key]=normals[key].tolist()
+        else:
+            new_normals[key]=None
+    atomNormals=new_normals
+
+def setCloud(data):
+    global cloudData
+    cloudData=data
+
+title='分子模型展示'
+atomPos=[]
+atomNormals=None
+atomPos=None
+cloudData=None
+
+
+@app.route('/')
 def index():
     print('home')
-    return render_template('index.html', data=data)
+    return render_template('home.html')
+
+@app.route('/data')
 def get_data():
-    print(atomPos)
     if atomPos is not None:
         return jsonify({'atomPos':np.array(atomPos).tolist()})
     else:
-        return '尚未读取文件'
+        return 'None'
 
 
-app = Flask(__name__)
-app.add_url_rule(rule='/', view_func=index)
-app.add_url_rule(rule='/data', view_func=get_data)
+@app.route('/normals')
+def get_normals():
+    if atomNormals is not None:
+        return jsonify(atomNormals)
+    else:
+        return 'None'
+
+@app.route('/clouds')
+def get_clouds():
+    if cloudData is not None:
+        return jsonify(cloudData)
+    else:
+        return 'None'
+
+@app.route('/test')
+def test():
+    return render_template('convex.html')
+
+
+
 
 if __name__=="__main__":
-    threading.Thread(target=lambda:app.run(threaded=True)).start()
+    app.run(debug=True)

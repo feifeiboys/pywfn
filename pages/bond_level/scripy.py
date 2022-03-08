@@ -3,6 +3,8 @@ import pandas as pd
 import math
 import sympy
 import matplotlib.pyplot as plt
+import sys
+
 class Caculater:
     def __init__(self, program):
         self.program = program
@@ -49,7 +51,7 @@ class Caculater:
         self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
         print(self.each_square_sum.shape)
         self.all_sauare_sum=self.each_square_sum.sum(axis=0) # 所有原子所有轨道的平方和
-        self.get_allNormals()
+        # self.get_allNormals()
 
     def get_atomPos(self,atom):  # 获取指定原子的坐标
         x = self.atoms_pos.iloc[atom].loc['X'] # 中心原子坐标
@@ -131,19 +133,26 @@ class Caculater:
             print(atom,n)
         return self.normals[f'{atom}']
     def set_Normal(self,atom,norm):
-        if f'{atom}' not in self.normals.keys():
-            self.normals[f'{atom}']=norm
-    def search_Normal(self,atom,i=1): #递归搜索向量(要十分小心，不然程序就死了),i为搜索次数,s为已经搜索的原子
+        self.normals[f'{atom}']=norm
+    def search_Normal(self,atom): #递归搜索向量(要十分小心，不然程序就死了),i为搜索次数,s为已经搜索的原子
         connections=self.get_connections(atom) # 该原子连接的原子
         # 下一轮搜索就不要搜索已经搜过的了
+        print(connections,len(connections))
         if len(connections)==3:
             n=self.get_Normal(atom)
             return n
-        if len(connections)==2 or len(connections)==1:
+        if len(connections)==4 or len(connections)==2 or len(connections)==1:
+            for each in connections:
+                if len(self.get_connections(each))==3:
+                    return self.get_Normal(each)
             self.searched.append(atom)
             for each in connections:
+                if self.atoms[each]['atom_type']=='H':
+                    continue
                 if each not in self.searched:
-                    return self.search_Normal(each,i+1)
+                    print('递归搜索',atom+1,len(connections),[each+1 for each in connections],each)
+                    return self.search_Normal(each)
+                
         else:
             print(f'{atom},连接数量错误,{len(connections)}')
     # 判断两个原子之间的轨道是不是π轨道,(中心原子序号，周围原子序号，轨道序号)
@@ -151,19 +160,17 @@ class Caculater:
         self.program.log_window_text.insert('end','正在计算所有原子法向量...')
         for atom in range(len(self.atoms)):
             if self.atoms[atom]['atom_type']!='H':
-                if len(self.get_connections(atom))==4:
-                    self.set_Normal(atom,None)
-                else:
-                    n=self.search_Normal(atom)
-                    self.set_Normal(atom,n)
+                print('开始搜索法向量',atom+1)
+                n=self.search_Normal(atom)
+                self.set_Normal(atom,n)
                 self.searched.clear()
             else:
                 self.set_Normal(atom,None) #H原子也没有法向量
             self.program.update_progress('获取原子法向量',(atom+1)/len(self.atoms))
-        print(self.normals)
+        self.program.server.set_normals(self.normals)
+        
     def get_obtial_is_userful(self, center, around, obtial):  # 这里传入的应当是用户输入的
         all_square_sum = self.all_sauare_sum[obtial]
-
         centerPs=self.atoms[center]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,obtial]
         p_sums_center=np.sum(centerPs**2/all_square_sum)
         aroundPs=self.atoms[around]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,obtial]
@@ -191,7 +198,7 @@ class Caculater:
         an=self.normals[f'{around}']
         cv1=self.get_functionValue(center,centerPos+cn,obtial) #不同情况只是法向量不同，但是原子的位置归根到底是不会变的，所以确定法向量即可确定四处函数值
         cv2=self.get_functionValue(center,centerPos-cn,obtial)
-        av1=self.get_functionValue(around,aroundPos+an,obtial) 
+        av1=self.get_functionValue(around,aroundPos+an,obtial)
         av2=self.get_functionValue(around,aroundPos-an,obtial)
         self.point2[f'{around}-{obtial}']=[av1,av2] #保存每两个分子的法向量值
         self.point2[f'{center}-{obtial}']=[cv1,cv2]
@@ -226,7 +233,7 @@ class Caculater:
         dys = atoms_pos.loc[:, 'Y'] - atoms_pos.iloc[atom].loc['Y']
         dzs = atoms_pos.loc[:, 'Z'] - atoms_pos.iloc[atom].loc['Z']
         distances = (dxs ** 2 + dys ** 2 + dzs ** 2) ** 0.5
-        res = np.where(distances < 2)[0].tolist()
+        res = np.where(distances < 1.7)[0].tolist()
         res.remove(atom)
         return res
 
@@ -263,12 +270,21 @@ class Caculater:
 
     def get_atom_bond_levels(self, center, arounds):  # 计算某个原子与周围原子之间的键级
         bond_levels = []
+        cn=self.search_Normal(center) #中心原子法向量
+        self.set_Normal(center,cn)
         for around in arounds:
+            if self.atoms[around]['atom_type']=='H':
+                self.set_Normal(around,None) #H原子也没有法向量
+                continue
+            an=self.search_Normal(around)
+            # an=cn
+            self.set_Normal(around,an)
             if self.normals[f'{center}'] is not None and self.normals[f'{around}'] is not None:
                 bond_level = self.get_bond_level_between_tow_atom(center, around)
             else:
                 bond_level=0
             bond_levels.append(bond_level)
             self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},键级:{bond_level}\n')
+        self.program.server.set_normals(self.normals)
         return np.array(bond_levels)
     

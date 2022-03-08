@@ -6,15 +6,16 @@ import matplotlib.pyplot as plt
 import threading
 import numpy as np
 from .scripy import Caculater
-
+import os
+from ..utils import get_nums
 class Page:
     def __init__(self, program):
         self.program = program
         self.window = tk.Toplevel()
-        #self.window=ttk.Window()
         pageWidth,pageHeight=self.program.config['pageWidth'],self.program.config['pageHeight']
-        self.window.geometry(f'{pageWidth}x{pageHeight}')
-        self.window.title('计算轨道和键级')
+        screenWidth,screenHeight=self.window.winfo_screenwidth(),self.window.winfo_screenheight()
+        self.window.geometry(f'{pageWidth}x{pageHeight}+{int(screenWidth/2)}+{int(screenHeight/2-pageHeight/2)}')
+        self.window.title(f'计算轨道和键级{os.path.basename(program.log_path)}')
         self.init_variable()
         self.init_component()
         self.set_conponent_pos()
@@ -43,18 +44,9 @@ class Page:
     def num2str(self, nums):
         for i in range(len(nums)): nums[i] = str(nums[i])
         return nums
-    def get_nums(self, string):
-        res = []
-        for each in re.split(r',|，', string):
-            content = each.split('-')
-            if len(content) == 1:
-                res.append(int(each) - 1)
-            else:
-                res += [int(i) - 1 for i in range(int(content[0]), int(content[1]) + 1)]
-        return res
     def get_connection(self): #获得与中心原子相连的原子
         connections = []
-        center_atom_indexs = self.get_nums(self.entry1.get())
+        center_atom_indexs = get_nums(self.entry1.get())
         for center_atom_index in center_atom_indexs:
             res = self.caculater.get_connections(center_atom_index)
             connections.append(res)
@@ -63,8 +55,8 @@ class Page:
         self.entry2.insert(0, ';'.join([','.join([str(i + 1) for i in each]) for each in connections]))
 
     def caculate(self):  # 获取用户输入的参数
-        centers = self.get_nums(self.entry1.get())
-        arounds = [self.get_nums(each) for each in re.split(r';|；',self.entry2.get())]
+        centers = get_nums(self.entry1.get())
+        arounds = [get_nums(each) for each in re.split(r';|；',self.entry2.get())]
         for i, center in enumerate(centers):
             self.program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
             bond_levels = self.caculater.get_atom_bond_levels(center, arounds[i])

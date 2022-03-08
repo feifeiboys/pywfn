@@ -6,6 +6,7 @@ import json
 
 class Reader:
     def __init__(self, program):
+        print('reader 初始化')
         self.program = program
         self.data = {}
         self.titles = {  # 用来所搜的

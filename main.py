@@ -1,10 +1,10 @@
 # 此脚本用来组织程序的页面布局
-from ast import Return
 import os
 import re
 
 cwd = os.getcwd()
 import sys
+sys.setrecursionlimit(10000000)
 import json
 sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便找到自定义包
 import tkinter as tk
@@ -27,6 +27,10 @@ def getConfig():
 # 定义服务器
 from server import server
 import webbrowser
+import socket
+viewTread=threading.Thread(target=lambda:server.app.run(threaded=True,host='0.0.0.0'))
+viewTread.setDaemon(True)
+viewTread.start()
 class App:
     def __init__(self):
         self.config=getConfig()
@@ -34,7 +38,8 @@ class App:
         self.window=ttk.Window()
         self.window.title('log-process')
         pageWidth,pageHeight=self.config['pageWidth'],self.config['pageHeight']
-        self.window.geometry(f'{pageWidth}x{pageHeight}')
+        screenWidth,screenHeight=self.window.winfo_screenwidth(),self.window.winfo_screenheight()
+        self.window.geometry(f'{pageWidth}x{pageHeight}+{int(screenWidth/2-pageWidth)}+{int(screenHeight/2-pageHeight/2)}')
         self.init_control()
         self.init_variable()
         self.init_component()
@@ -44,7 +49,7 @@ class App:
 
     def init_models(self):
         self.logger=logging.getLogger(__name__)
-        self.reader = Reader(program=self)
+        
         
     def init_control(self):
         self.show_top_window = False
@@ -52,17 +57,17 @@ class App:
 
     def init_variable(self):
         self.progressLabelV=tk.StringVar()
-        self.progressLabelV.set('123')
 
     def init_component(self):
         self.menubar = tk.Menu(self.window) # 添加菜单栏
 
         self.menubar.add_command(label='open', command=self.select_file) # 菜单栏添加按钮
-        self.menubar.add_command(label='view',command=self.show)
+        self.menubar.add_command(label='view',command=self.show_web)
 
         self.toolsbar = tk.Menu(self.menubar,tearoff=False) #菜单栏中添加菜单栏
         self.toolsbar.add_command(label='计算键级', command=lambda:self.show_page('计算键级'))
         self.toolsbar.add_command(label='挑选轨道', command=lambda:self.show_page('挑选轨道'))
+        self.toolsbar.add_command(label='渲染云图', command=lambda:self.show_page('渲染云图'))
         self.menubar.add_cascade(label='tools', menu=self.toolsbar)  # 添加子菜单
 
         self.menubar.add_command(label='save',command=self.save)
@@ -71,17 +76,16 @@ class App:
         self.log_window_text = ttk.ScrolledText(self.window)
         self.progressLabel=ttk.Label(self.window,textvariable=self.progressLabelV)
         self.progressBar=ttk.Progressbar(self.window,bootstyle="success")
-        #tk.Label(self.window, text='-----小飞出品，能用就行-----').place(x=250, y=620, anchor='center')
 
     def set_conponent_pos(self):  # 设置组件的位置
         self.log_window_text.place(x=0, y=0, width=500,height=635, anchor='nw')
-        #self.progressLabel.place(x=0,y=610,width=100)
         self.progressBar.place(x=0,y=635,width=500,height=5)
 
     def run(self):
         self.window.mainloop()
 
     def quit(self):
+        print('quit')
         self.window.quit()
 
     # 定义各种函数
@@ -98,6 +102,7 @@ class App:
         if file_type == 'log' or file_type == 'out':
             # self.inform_var.set(self.log_path)
             with open(self.log_path, 'r', encoding='utf-8') as f:
+                self.reader = Reader(program=self) #每次要读取文件时就创建一个新的reader对象
                 # 对初始文件中不必要的数据进行处理
                 data = f.read()
                 # data = re.sub(r'\(\w+\)--O','  O  ',data)
@@ -113,22 +118,20 @@ class App:
 
     def get_data(self):
         self.log_window_text.insert('end', '开始搜索...\n')
+        
         self.data = self.reader.get()
-        print(self.data.keys())
         self.log_window_text.insert('end', '搜索完成\n')
         atomPos=self.data['Standard orientation']
         self.server.atomPos=atomPos
 
     def show_page(self,name):
-        print(name)
         page = pages[name].Page(program=self)
         page.run()
     
-    def show(self):
-        # if self.log_path:
-        #     os.startfile(self.log_path)
-        threading.Thread(target=lambda:server.app.run(threaded=True)).start()
-        webbrowser.open('http://127.0.0.1:5000/')
+    def show_web(self): #展示分子网页
+        
+        ip = socket.gethostbyname(socket.gethostname())
+        webbrowser.open(f'http://{ip}:5000/')
 
     def save(self):
         file=asksaveasfilename(initialfile=f'{os.path.splitext(os.path.basename(self.log_path))[0]}.txt',title='保存文件',filetypes=[('文本文档','.txt')])
