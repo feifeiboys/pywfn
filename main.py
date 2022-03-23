@@ -1,7 +1,6 @@
 # 此脚本用来组织程序的页面布局
 import os
 import re
-
 cwd = os.getcwd()
 import sys
 sys.setrecursionlimit(10000000)
@@ -23,7 +22,9 @@ logging.basicConfig(filename=f'logs/{start_time}.txt',format='%(message)s',level
 
 def getConfig():
     with open('config.json','r',encoding='utf-8') as f:
-        return json.loads(f.read())
+        config=json.loads(f.read())
+        server.config=config
+        return config
 # 定义服务器
 from server import server
 import webbrowser
@@ -62,18 +63,24 @@ class App:
         self.menubar = tk.Menu(self.window) # 添加菜单栏
 
         self.menubar.add_command(label='open', command=self.select_file) # 菜单栏添加按钮
-        self.menubar.add_command(label='view',command=self.show_web)
+
+        self.viewbar=tk.Menu(self.menubar,tearoff=False)
+        self.viewbar.add_command(label='web',command=self.view_web)
+        self.viewbar.add_command(label='default',command=self.view_default)
+        self.menubar.add_cascade(label='view',menu=self.viewbar)
 
         self.toolsbar = tk.Menu(self.menubar,tearoff=False) #菜单栏中添加菜单栏
-        self.toolsbar.add_command(label='计算键级', command=lambda:self.show_page('计算键级'))
-        self.toolsbar.add_command(label='挑选轨道', command=lambda:self.show_page('挑选轨道'))
-        self.toolsbar.add_command(label='渲染云图', command=lambda:self.show_page('渲染云图'))
+        self.toolsbar.add_command(label='free valence', command=lambda:self.show_page('计算键级'))
+        self.toolsbar.add_command(label='select obtial', command=lambda:self.show_page('挑选轨道'))
+        self.toolsbar.add_command(label='render cloud', command=lambda:self.show_page('渲染云图'))
         self.menubar.add_cascade(label='tools', menu=self.toolsbar)  # 添加子菜单
 
         self.menubar.add_command(label='save',command=self.save)
         self.menubar.add_command(label='config',command=self.update_config)
+        self.menubar.add_command(label='help',command=self.show_help)
         self.window.config(menu=self.menubar)
         self.log_window_text = ttk.ScrolledText(self.window)
+        self.log_window_text.insert('end','Welcome to use this program, click help to view the instructions\n')
         self.progressLabel=ttk.Label(self.window,textvariable=self.progressLabelV)
         self.progressBar=ttk.Progressbar(self.window,bootstyle="success")
 
@@ -97,7 +104,7 @@ class App:
     def select_file(self):  # 选择文件并读取
         self.log_path = askopenfilename(filetypes=[('log', '.log'), ('out', '.out')])
         self.logger.info(self.log_path) # 日志中记录打开文件的位置
-        self.log_window_text.insert('end', f'打开文件{self.log_path}\n')
+        self.log_window_text.insert('end', f'open file {self.log_path}\n')
         file_type = self.log_path.split('.')[-1]
         if file_type == 'log' or file_type == 'out':
             # self.inform_var.set(self.log_path)
@@ -105,7 +112,6 @@ class App:
                 self.reader = Reader(program=self) #每次要读取文件时就创建一个新的reader对象
                 # 对初始文件中不必要的数据进行处理
                 data = f.read()
-                # data = re.sub(r'\(\w+\)--O','  O  ',data)
                 self.log_text = data
                 self.log_lines = self.log_text.split('\n')
                 self.reader.logLines = self.log_lines
@@ -113,35 +119,39 @@ class App:
                 t.start()
                 # self.get_data()
         else:
-            self.log_window_text.insert('end', '仅能读取.log或.out文件\n')
+            self.log_window_text.insert('end', 'Can only read .log or .out files\n')
 
 
     def get_data(self):
-        self.log_window_text.insert('end', '开始搜索...\n')
-        
-        self.data = self.reader.get()
-        self.log_window_text.insert('end', '搜索完成\n')
-        atomPos=self.data['Standard orientation']
-        self.server.atomPos=atomPos
+        self.log_window_text.insert('end', 'start search...\n')
+        self.Data = self.reader.get()
+        self.log_window_text.insert('end', 'search done\n')
+        self.server.atomPos=self.Data.atoms_pos
 
     def show_page(self,name):
         page = pages[name].Page(program=self)
         page.run()
     
-    def show_web(self): #展示分子网页
-        
+    def view_web(self): #展示分子网页
         ip = socket.gethostbyname(socket.gethostname())
         webbrowser.open(f'http://{ip}:5000/')
 
+    def view_default(self):
+        os.startfile(self.log_path)
+    
+    def show_help(self):
+        ip = socket.gethostbyname(socket.gethostname())
+        webbrowser.open(f'http://{ip}:5000/help')
+
     def save(self):
-        file=asksaveasfilename(initialfile=f'{os.path.splitext(os.path.basename(self.log_path))[0]}.txt',title='保存文件',filetypes=[('文本文档','.txt')])
+        file=asksaveasfilename(initialfile=f'{os.path.splitext(os.path.basename(self.log_path))[0]}.txt',title='save document',filetypes=[('text document','.txt')])
         with open(file,'w',encoding='utf-8') as f:
             f.write(self.log_window_text.get(1.0,'end'))
         os.startfile(file)
 
     def update_config(self):#定义函数更新参数
         self.config=getConfig()
-        self.log_window_text.insert('end','参数更新成功\n')
+        self.log_window_text.insert('end','Parameters updated successfully\n')
             
 app = App()
 app.run()

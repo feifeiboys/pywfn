@@ -29,7 +29,8 @@ atomPos=[]
 atomNormals=None
 atomPos=None
 cloudData=None
-
+config=None
+atomFree={} #原子自由价
 
 @app.route('/')
 def index():
@@ -58,10 +59,20 @@ def get_clouds():
     else:
         return 'None'
 
-@app.route('/test')
-def test():
-    return render_template('convex.html')
+@app.route('/frees')
+def get_free():
+    return jsonify(atomFree)
 
+@app.route('/config')
+def get_config():
+    if config is not None:
+        return jsonify(config)
+    else:
+        return 'None'
+
+@app.route('/help')
+def show_help():
+    return render_template('help.html')
 
 
 

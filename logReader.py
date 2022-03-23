@@ -6,9 +6,9 @@ import json
 
 class Reader:
     def __init__(self, program):
-        print('reader 初始化')
         self.program = program
         self.data = {}
+        self.Eigenvalues=[]
         self.titles = {  # 用来所搜的
             'Standard orientation':{
                 'title':'Standard orientation',
@@ -40,12 +40,10 @@ class Reader:
             for title in self.titles.keys():
                 if title in line:
                     self.titles[title]['num']=i
-                    print(title,self.titles[title]['num'],i)
 
     def get_atom_position_Matrix(self,titleNum):  # 提取原子坐标矩阵
-        self.program.log_window_text.insert('end', '正在获取 Standard orientation\n')
+        self.program.log_window_text.insert('end', 'reading Standard orientation...\n')
         logLines = self.logLines
-        print(titleNum,self.logLines[titleNum])
         line_text_list = []
         atom_index = 1
         for i in range(titleNum+5,len(logLines)):
@@ -70,11 +68,11 @@ class Reader:
     def get_atoms_obtial_coefficients(self, title):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
         s1=r'\d+ +\d+ +\d+ +\d+ +\d+'
         s2=r'( *(\(\w+\)--){0,1}[OV]){5}'
-        s3=r'Eigenvalues --'
+        s3=r'Eigenvalues -- +(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5})'
         s4=r'\d+ +(\d+) +([A-Za-z]+) +(\d[A-Z]+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
-        s51=r'\d+ +(\d[A-Z]+?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
-        s52=r'\d+ +(\d[A-Z]+? ?\+?-?\d?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
-        self.program.log_window_text.insert('end', f'正在获取 {title}\n')
+        s51=r'\d+ +(\d+[A-Z]+?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
+        s52=r'\d+ +(\d+[A-Z]+? ?\+?-?\d?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
+        self.program.log_window_text.insert('end', f'reading {title}...\n')
         title_line_num = self.titles[title]['num'] # 标题所在的行号
         logLines = self.logLines
         atoms = []
@@ -88,7 +86,8 @@ class Reader:
                 obtials = re.split(r' +', line_text)[1:] # 获取占据轨道还是非占据轨道
                 all_obtials.append(obtials)
             elif re.search(s3, line_text) is not None: # 情况3
-                pass
+                line_data=list(re.search(s3,line_text).groups())
+                self.Eigenvalues+=line_data
             elif re.search(s4,line_text) is not None:
                 # 第一词遇到这种情况要添加一个原子对象,每个原子拥有一个三维数据列表
                 # 第二次遇到这种情况在之前添加的原子的三维数据添加一个二维列表
@@ -129,7 +128,7 @@ class Reader:
                 return atoms
 
     def get_standard_basis(self):
-        self.program.log_window_text.insert('end', '正在获取 Overlap normalization\n')
+        self.program.log_window_text.insert('end', 'reading Overlap normalization...\n')
         logLines = self.logLines
         datas = []
         title_line_num = len(logLines)
@@ -154,11 +153,59 @@ class Reader:
 
     def get(self):
         self.get_titles()
-        print(self.titles)
         for title in list(self.titles.keys())[1:4]:
             if self.titles[title]['num'] is not None:
-                print(f'read {title}')
                 self.get_atoms_obtial_coefficients(title)
         self.get_atom_position_Matrix(self.titles['Standard orientation']['num'])
         self.get_standard_basis()
-        return self.data
+        self.data['Eigenvalues']=self.Eigenvalues
+        data=Data(self.data,self.program)
+        print(dir(data))
+        return data
+
+class Data:
+    def __init__(self,data,program) -> None:
+        self.program=program
+        self.data=data
+        self.atoms_pos=None
+        self.atoms=None
+        self.obtial_type=None
+        self.obtial_length=None
+        self.obtials=None
+        self.standard_basis=None
+        self.each_square_sum=None
+        self.all_sauare_sum=None
+        self.Eigenvalues=None
+        self.get()
+
+    def get(self):
+        data=self.data
+        keys = data.keys()
+        if 'Standard orientation' in keys:
+            self.atoms_pos = data['Standard orientation']
+        # 轨道类型有两种情况，正常的和劈裂为α、β的
+        if 'Molecular Orbital Coefficients' in keys:
+            self.obtial_type = 0
+            self.atoms = data['Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
+            obtial_num = data['Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.program.log_window_text.insert('end',f'{obtial_num} obtial are read\n')
+        elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
+            self.alpha_num = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.beta_num = data['Beta Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.program.log_window_text.insert('end',f'{self.alpha_num} Alpha obtial and {self.beta_num} Beta obtial are read\n')
+            self.obtial_type = 1
+            self.atoms = [{
+                'atom_id': alpha['atom_id'],
+                'atom_type': alpha['atom_type'],
+                'datas': pd.concat([alpha['datas'], beta['datas']], axis=1), # 将α和β的轨道数据横向拼接在一起[O,O,O,V,V,V,O,O,O,V,V,V]
+                'obtials': alpha['obtials'] + beta['obtials']
+            } for alpha, beta in
+                zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
+        self.obtials=self.atoms[0]['datas'].columns # 所有的轨道类型(占据或非占据，可能会有复杂的表示)
+        self.obtial_length = self.atoms[0]['datas'].shape[1] # 轨道的数量
+        if 'Standard basis' in data.keys():
+            self.standard_basis = data['Standard basis']
+        self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
+        self.all_sauare_sum=self.each_square_sum.sum(axis=0) # 所有原子所有轨道的平方和
+        self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
+        

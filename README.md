@@ -25,8 +25,6 @@
 - `data.json` 存储预设数据
 - `logs` 存储每次程序运行时的日志文件
 
-
-
 #### 安装教程
 1.  如果电脑上有python,第一次运行是需要输入命令  
     pip install -r requirements.txt
@@ -86,5 +84,10 @@ $f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 #### 技术规范
 - 在页面脚本中不进行计算
 
-d-dou+2r3-2-ts-f-01-opt-e.log -35
-cat2-m2-dou-3-e.log -1
+### 依赖包
+- numpy
+- pandas
+- matplotlib
+- sympy
+- xlsxwriter
+- flask

@@ -6,20 +6,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
     <!-- 新 Bootstrap4 核心 CSS 文件 -->
     <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
-
     <!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
-
     <!-- bootstrap.bundle.min.js 用于弹窗、提示、下拉菜单，包含了 popper.min.js -->
     <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
-
     <!-- 最新的 Bootstrap4 核心 JavaScript 文件 -->
     <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script>
-    <title>分子模型展示</title>
+    <title>show molecular</title>
 </head>
 
 <style>
@@ -36,15 +32,23 @@
         margin: 2rem 0px;
     }
 
-    div#button {
+    #show_btn {
         position: absolute;
+        width: 50px;
+        height: 50px;
         top: 0px;
+        left: -50px;
     }
 
     #control {
         position: absolute;
+        width: 30%;
         height: 100vh;
+        right: 0px;
         background-color: rgba(150, 150, 150, 0.5);
+        
+    }
+    #subControl{
         display: flex;
         flex-direction: column;
         margin: 0;
@@ -56,7 +60,8 @@
         flex-direction: row;
         flex-wrap: wrap;
     }
-    div.cloud{
+
+    div.cloud {
         width: 2rem;
         height: 2rem;
         margin: 0.2rem;
@@ -65,67 +70,111 @@
         user-select: none;
         text-align: center;
     }
+
+    div#info {
+        width: 100%;
+        height: 2rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
 </style>
 
 <body>
-    <div id="show_btn">
-        <img src="../static/img/info.svg" style="width: 100%;height: 100%;" alt="info">
-    </div>
-    <div id="control" class="container-fluid">
-        [[name]]
-        <div class="buttonLine">
-            <button @click="get_atoms" class="button">更新</button>
-            <button @click="get_normals" class="button">法向量</button>
-            <button @click="get_clouds" class="button">点云</button>
+    <div id="app">
+        <div id="info">
+            <p>[[info]]</p>
         </div>
-        <div id="atomMessage">
-            <table class="table">
-                <tbody>
-                    <tr>
-                        <th>label</th>
-                        <th>[[atomMsg.label]][[atomMsg.id+1]]</th>
-                    </tr>
-                    <tr>
-                        <th>x</th>
-                        <th>[[atomMsg.x]]</th>
-                    </tr>
-                    <tr>
-                        <th>y</th>
-                        <th>[[atomMsg.y]]</th>
-                    </tr>
-                    <tr>
-                        <th>z</th>
-                        <th>[[atomMsg.z]]</th>
-                    </tr>
-                </tbody>
-            </table>
-            <div id="clouds">
-                <div class="cloud" v-for="obtial in obtials" @click.stop="showCloud(obtial)">[[obtial+1]]</div>
+
+        <div id="control" class="container-fluid">
+            <div id="show_btn" @click="showMessageBar">
+                <img src="../static/img/info.svg" style="width: 100%;height: 100%;" alt="info">
             </div>
+            <div id="subControl">
+                <div class="buttonLine">
+                    <button @click="get_serverData" class="button">update</button>
+                    <button @click="get_clouds" class="button">point cloud</button>
+                </div>
+                <div id="atomMessage">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>label</th>
+                                <th>[[atomMsg.label]][[atomMsg.id+1]]</th>
+                            </tr>
+                            <tr>
+                                <th>x</th>
+                                <th>[[atomMsg.x]]</th>
+                            </tr>
+                            <tr>
+                                <th>y</th>
+                                <th>[[atomMsg.y]]</th>
+                            </tr>
+                            <tr>
+                                <th>z</th>
+                                <th>[[atomMsg.z]]</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div>
+                        <div id="clouds">
+                            <div class="cloud" v-for="obtial in obtials" @click.stop="showCloud(obtial)">[[obtial+1]]
+                            </div>
+                        </div>
+                        render range : <input type="range" min="0" max="0.1" step="0.01" v-model="cloudRange"
+                            @change="addClouds">[[cloudRange]]
+
+                    </div>
+                    <div class="buttonLine">
+                        <div><input type="radio" name="atomlabel" @change="showAtomLabel('atomIDGroup')" checked>atom
+                            labels
+                        </div>
+                        <div><input type="radio" name="atomlabel" @change="showAtomLabel('atomFreeGroup')">free valence
+                        </div>
+                    </div>
+                </div>
+                <div class="buttonLine">
+                    <button @click="export_obj" class="button">export 3D module</button>
+                </div>
+            </div>
+
         </div>
     </div>
-    <script src="../static/index.js"></script>
+
+
     <script type="module">
         import * as THREE from '../static/libs/threeJS/src/Three.js'
         import { OrbitControls } from '../static/libs/threeJS/examples/jsm/controls/OrbitControls.js'
         import { ConvexGeometry, ConvexBufferGeometry } from '../static/libs/threeJS/examples/jsm/geometries/ConvexGeometry.js'
+        import { OBJExporter } from '../static/libs/threeJS/examples/jsm/exporters/OBJExporter.js';
+        import { GLTFExporter } from '../static/libs/threeJS/examples/jsm/exporters/GLTFExporter.js';
 
-        const Counter = {
+        let Counter = {
             data() {
                 return {
-                    name: 'fly',
                     atomData: {
                         1: { symbol: 'H', color: 0x78e4f5, radius: 0.35 },
                         6: { symbol: 'C', color: 0x1d323b, radius: 0.5 },
                         7: { symbol: 'N', color: 0x9b89f5, radius: 0.5 },
                         8: { symbol: 'O', color: 0x5b42ff, radius: 0.5 },
-                        16:{ symbol: 'S', color: 0xffd103, radius: 0.5 },
+                        9: { symbol: 'F', color: 0x09ab16, radius: 0.5 },
+                        16: { symbol: 'S', color: 0xffd103, radius: 0.5 },
                     },
                     atomMsg: {},
-                    obtials: []
+                    obtials: [],
+                    cloudData: [],
+                    cloudRange: 0.02,
+                    progress: 0,
+                    info: 'welcome',
+                    atomLabels: [], //在原子位置显示的文本信息标签，只能有一种
+                    serverData: {}, //存储从服务器中获得的数据
+                    showMsgBar: true,
                 }
             },
-            mounted() {
+            beforeMount() {
                 this.init_scene()
             },
             delimiters: ['[[', ']]'],
@@ -137,14 +186,21 @@
                     this.normals = []
                     this.atomGroup = new THREE.Group()
                     this.bondGroup = new THREE.Group()
-                    this.labelGroup = new THREE.Group()
+                    this.atomIDGroup = new THREE.Group() //保存原子序号的组
+                    this.atomFreeGroup = new THREE.Group() //保存原子自由价的组
+                    this.atomFreeGroup.visible = false
+                    this.atomIDGroup.name = 'atomIDGroup'
+                    this.atomFreeGroup.name = 'atomFreeGroup'
+                    this.atomLabels.push(this.atomFreeGroup, this.atomIDGroup)
                     this.normalGroup = new THREE.Group()
                     this.cloudGroup = new THREE.Group()
                     this.scene.add(this.atomGroup)
                     this.scene.add(this.bondGroup)
-                    this.scene.add(this.labelGroup)
+                    this.scene.add(this.atomIDGroup)
+                    this.scene.add(this.atomFreeGroup)
                     this.scene.add(this.normalGroup)
                     this.scene.add(this.cloudGroup)
+
                     this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
                     this.render = new THREE.WebGLRenderer({ antialias: true });
                     this.render.setClearColor(0xe2d9ff, 1); //设置背景色
@@ -154,7 +210,7 @@
                     let loader = new THREE.TextureLoader();
                     this.texture = loader.load('../static/libs/threeJS/examples/textures/sprites/disc.png');
                     // 添加坐标轴
-                    let axes = new THREE.AxesHelper(50);
+                    let axes = new THREE.AxesHelper(10);
                     this.scene.add(axes);
                     //添加环境光源
                     let ambientLight = new THREE.AmbientLight(0xFFFFFF);
@@ -171,7 +227,9 @@
                     window.addEventListener('resize', this.onWindowResize, false)
                     this.renderScene();
                     this.get_atoms();
-                    document.body.onclick = (event) => { //定义一个函数，选中场景中的物体
+                    this.get_config();
+
+                    this.render.domElement.onclick = (event) => { //定义一个函数，选中场景中的物体
                         event.preventDefault();
                         // 声明 raycaster 和 mouse 变量
                         let raycaster = new THREE.Raycaster();
@@ -199,64 +257,92 @@
                     }
 
                 },
+                init_obj() { //初始化场景对象
+
+                },
                 // 循环渲染添加控制器后
                 onWindowResize() {
                     this.camera.aspect = window.innerWidth / window.innerHeight
                     this.camera.updateProjectionMatrix();
                     this.render.setSize(window.innerWidth, window.innerHeight)
+
                 },
                 renderScene() {
                     requestAnimationFrame(this.renderScene);
                     this.render.render(this.scene, this.camera);
-                    for (let i = 0; i < this.labelGroup.children.length; i++) {
-                        let label=this.labelGroup.children[i]
-                        let dx=this.camera.position.x-label.position.x
-                        let dy=this.camera.position.y-label.position.y
-                        let dz=this.camera.position.z-label.position.z
-                        let distance=(dx**2+dy**2+dz**2)**0.5
-                        let x=this.atomPoss[i][0]+dx/distance*0.51
-                        let y=this.atomPoss[i][1]+dy/distance*0.51
-                        let z=this.atomPoss[i][2]+dz/distance*0.51
-                        this.labelGroup.children[i].position.set(x,y,z)
-                        this.labelGroup.children[i].lookAt(this.camera.position)
+                    for (let j = 0; j < this.atomLabels.length; j++) {
+                        let group = this.atomLabels[j]
+                        for (let i = 0; i < group.children.length; i++) {
+                            let label = group.children[i]
+                            let idx = Number(label.name)
+                            let dx = this.camera.position.x - label.position.x
+                            let dy = this.camera.position.y - label.position.y
+                            let dz = this.camera.position.z - label.position.z
+                            let distance = (dx ** 2 + dy ** 2 + dz ** 2) ** 0.5
+                            let x = this.atomPoss[idx][0] + dx / distance * 0.51
+                            let y = this.atomPoss[idx][1] + dy / distance * 0.51
+                            let z = this.atomPoss[idx][2] + dz / distance * 0.51
+                            group.children[i].position.set(x, y, z)
+                            group.children[i].lookAt(this.camera.position)
+                        }
                     }
+
+                },
+                get_serverData() { //获取服务器中的信息(一些简单的信息)
+                    this.get_atoms()
+                    this.get_config()
+                    this.get_frees()
+                    this.get_normals()
                 },
                 get_atoms() {
                     axios.get('/data').then(res => {
                         let atomPos = res.data.atomPos
-                        for (let i = 0; i < atomPos.length; i++) {
-                            var type = atomPos[i][1]
-                            var x = atomPos[i][3]
-                            var y = atomPos[i][4]
-                            var z = atomPos[i][5]
-                            this.atomPoss.push([x, y, z])
-                            this.addAtom(type, i, x, y, z)
-                        }
-                        //添加键
-                        for (let i = 0; i < atomPos.length; i++) {
-                            for (let j = i; j < atomPos.length; j++) {
-                                var x1 = atomPos[i][3]
-                                var y1 = atomPos[i][4]
-                                var z1 = atomPos[i][5]
-                                var x2 = atomPos[j][3]
-                                var y2 = atomPos[j][4]
-                                var z2 = atomPos[j][5]
-                                if (i != j) {
-                                    this.addBond(x1, y1, z1, x2, y2, z2)
-                                }
+                        if (this.serverData['data'] != atomPos) {
+                            this.serverData['data'] = atomPos
+                            for (let i = 0; i < atomPos.length; i++) {
+                                var type = atomPos[i][1]
+                                var x = atomPos[i][3]
+                                var y = atomPos[i][4]
+                                var z = atomPos[i][5]
+                                this.atomPoss.push([x, y, z])
+                                this.addAtom(type, i, x, y, z)
+                            }
+                            //添加键
+                            this.bondGroup.children.length = 0
+                            for (let i = 0; i < atomPos.length; i++) {
+                                for (let j = i; j < atomPos.length; j++) {
+                                    var x1 = atomPos[i][3]
+                                    var y1 = atomPos[i][4]
+                                    var z1 = atomPos[i][5]
+                                    var x2 = atomPos[j][3]
+                                    var y2 = atomPos[j][4]
+                                    var z2 = atomPos[j][5]
+                                    if (i != j) {
+                                        this.addBond(x1, y1, z1, x2, y2, z2)
+                                    }
 
+                                }
                             }
                         }
+
                     }).catch(err => {
                         console.log(err)
                     })
                 },
-
+                get_config() {
+                    axios.get('/config').then(res => {
+                        console.log(res)
+                        this.config = res.data
+                    }).catch(err => {
+                        console.log('config', err)
+                    })
+                },
                 get_normals() {
                     console.log('获取法向量')
                     axios.get('/normals').then(res => {
                         if (res.data != 'None') {
                             let keys = Object.keys(res.data)
+                            this.normalGroup.children.length = 0
                             for (let i = 0; i < keys.length; i++) {
                                 let key = keys[i]
                                 let value = res.data[key]
@@ -271,12 +357,31 @@
                 },
                 get_clouds() {
                     axios.get('/clouds').then(res => {
-                        console.log(res.data)
                         let keys = Object.keys(res.data)
                         for (let i = 0; i < keys.length; i++) {
-                            console.log('添加点云')
                             let key = keys[i]
-                            this.addCloud(key, res.data[key][0])
+                            this.info = `获取点云:${key},${i + 1}/${keys.length}`
+                            this.cloudData.push([key, res.data[key][0]])
+                            this.addClouds()
+                        }
+                        this.info = `获取完成`
+                    }).catch(err => {
+                        console.log(err)
+                    })
+                },
+                get_frees() {
+                    axios.get('/frees').then(res => {
+                        console.log(res)
+                        let keys = Object.keys(res.data)
+                        this.atomFreeGroup.children.length = 0
+                        for (let i in keys) {
+                            let key = keys[i]
+                            let idx = Number(key)
+                            let x = this.atomPoss[idx][0]
+                            let y = this.atomPoss[idx][1]
+                            let z = this.atomPoss[idx][2]
+                            let text = `${res.data[key].toFixed(4)}`
+                            this.addLabel(this.atomFreeGroup, text, x, y, z, `${i}`)
                         }
                     }).catch(err => {
                         console.log(err)
@@ -289,16 +394,17 @@
                     ball.name = `${this.atomData[type].symbol}_${i}`
                     ball.position.set(x, y, z)
                     this.atomGroup.add(ball)
-                    this.addLabel(`${i + 1}`, x, y, z)
+                    this.atomIDGroup.children.length = 0
+                    this.addLabel(this.atomIDGroup, `${i + 1}`, x, y, z, `${i}`)
                 },
-                addLabel(text, x, y, z) {  //加载文字标签函数
-                    var loader = new THREE.FontLoader();
-                    var geometry;
-                    var material = new THREE.MeshBasicMaterial({
+                addLabel(group, text, x, y, z, name) {  //加载文字标签函数
+                    console.log(text, x, y, z)
+                    let loader = new THREE.FontLoader();
+                    let material = new THREE.MeshBasicMaterial({
                         color: '#ff1122',
                     });
                     loader.load("../static/libs/threeJS/examples/fonts/helvetiker_regular.typeface.json", (font) => {
-                        geometry = new THREE.TextGeometry(text, {
+                        let geometry = new THREE.TextGeometry(text, {
                             font: font,
                             height: 10
                         });
@@ -307,11 +413,10 @@
                         var mesh = new THREE.Mesh(geometry, material);
                         var scale = 0.0015
                         mesh.scale.set(scale, scale, scale);
-                        //mesh.material.depthTest = false;
-                        // mesh.material.depthTest = false;
                         mesh.renderOrder = 1
                         mesh.position.set(x, y, z)
-                        this.labelGroup.add(mesh)
+                        mesh.name = name
+                        group.add(mesh)
                     })
                 },
                 addBond(x1, y1, z1, x2, y2, z2) { //根据起始点坐标来添加一个圆柱，这点相当重要
@@ -320,6 +425,7 @@
                     var z = (z1 + z2) / 2
                     var id = `${x}-${y}-${z}`
                     var length = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2));
+
                     if (this.centers.indexOf(id) == -1 && length < 1.7) { //如果该点位置还没添加过
                         var p = new THREE.Vector3(x1, y1, z1);
                         var material = new THREE.MeshLambertMaterial({ color: 0x857123 });
@@ -334,24 +440,33 @@
                 },
                 addNormal(atom, vector) {
                     atom = Number(atom)
-                    let dx = vector[0]
-                    let dy = vector[1]
-                    let dz = vector[2]
+                    let length = (vector[0] ** 2 + vector[1] ** 2 + vector[2] ** 2) ** 0.5
+                    let dx = vector[0] / length
+                    let dy = vector[1] / length
+                    let dz = vector[2] / length
+
                     this.normals.push(`${dx.toFixed(3)}，${dy.toFixed(3)}，${dz.toFixed(3)}`)
                     let x = this.atomPoss[atom][0]
                     let y = this.atomPoss[atom][1]
                     let z = this.atomPoss[atom][2]
-                    let length = (dx ** 2 + dy ** 2 + dz ** 2) ** 0.5
                     let scale = 10
                     let p = new THREE.Vector3(x + dx * scale, y + dy * scale, z + dz * scale);
-                    let geometry = new THREE.ConeGeometry(0.3, 1.2, 8);
+                    let geometry = new THREE.ConeGeometry(0.3, length, 8);
                     geometry.applyMatrix(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(Math.PI / 2, Math.PI, 0)));
                     let material = new THREE.MeshLambertMaterial({ color: 0xffff00 });
                     let cone = new THREE.Mesh(geometry, material);
-                    cone.position.set(x + dx * 2, y + dy * 2, z + dz * 2)
+                    cone.position.set(x + dx / 2, y + dy / 2, z + dz / 2)
                     //改变朝向
                     cone.lookAt(p);
                     this.normalGroup.add(cone);
+                },
+                addClouds() {
+                    this.cloudGroup.children.length = 0
+                    for (let i = 0; i < this.cloudData.length; i++) {
+                        let key = this.cloudData[i][0]
+                        let data = this.cloudData[i][1]
+                        this.addCloud(key, data)
+                    }
                 },
                 addCloud(key, data) {
                     let atom = Number(key.split('-')[0])
@@ -364,12 +479,13 @@
                     let points = []
                     let colors = []
                     let index = 0
-                    for (let x = -1; x < 0.9; x += 0.1) {
-                        for (let y = -1; y < 0.9; y += 0.1) {
-                            for (let z = -1; z < 0.9; z += 0.1) {
-
+                    let size = this.config.renderSize
+                    let step = this.config.renderStep
+                    for (let x = -size; x < size; x += step) {
+                        for (let y = -size; y < size; y += step) {
+                            for (let z = -size; z < size; z += step) {
                                 let value = data[index]
-                                if (value >= 0.02 || value <= -0.02) {
+                                if (Math.abs(value) > this.cloudRange) {
                                     points.push(new THREE.Vector3(x, y, z))
                                     let clr
                                     if (value >= 0) {
@@ -428,7 +544,6 @@
                     console.log(obtials)
                 },
                 showCloud(obtial) {
-
                     console.log('显示轨道', obtial, this.atomMsg.id)
                     for (let i = 0; i < this.cloudGroup.children.length; i++) {
                         let cloud = this.cloudGroup.children[i]
@@ -442,12 +557,60 @@
                             this.cloudGroup.children[i].visible = false
                         }
                     }
+                },
+                showAtomLabel(e) {
+                    for (let i in this.atomLabels) {
+                        let each = this.atomLabels[i]
+                        if (each.name == e) {
+                            each.visible = true
+                            console.log(each, e)
+                        } else {
+                            each.visible = false
+                        }
+                    }
+                },
+                export_obj() {
+                    var exporter = new GLTFExporter();
+                    // Parse the input and generate the glTF output
+                    exporter.parse(this.scene, (result) => {
+                        if (result instanceof ArrayBuffer) {
+                            saveArrayBuffer(result, 'scene.glb');
+                        } else {
+                            var output = JSON.stringify(result, null, 2);
+                            console.log(output);
+                            this.download_txt('scene.gltf', output)
+                        }
+                    }, {
+                        trs: true, onlyVisible: true
+                    });
+                },
+                download_txt(filename, text) {
+                    var pom = document.createElement('a');
+                    pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                    pom.setAttribute('download', filename);
+                    if (document.createEvent) {
+                        var event = document.createEvent('MouseEvents');
+                        event.initEvent('click', true, true);
+                        pom.dispatchEvent(event);
+                    } else {
+                        pom.click();
+                    }
+                },
+                showMessageBar() {
+                    
+                    if(this.showMsgBar){
+                        document.getElementById('control').style.right='-30%'
+                    }else{
+                        document.getElementById('control').style.right='0%'
+                    }
+                    console.log(document.getElementById('control').style)
+                    this.showMsgBar=!this.showMsgBar
                 }
 
             }
         }
         var app = Vue.createApp(Counter)
-        app.mount('#control')
+        app.mount('#app')
     </script>
 </body>
 
