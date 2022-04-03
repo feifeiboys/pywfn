@@ -46,9 +46,10 @@
         height: 100vh;
         right: 0px;
         background-color: rgba(150, 150, 150, 0.5);
-        
+
     }
-    #subControl{
+
+    #subControl {
         display: flex;
         flex-direction: column;
         margin: 0;
@@ -369,7 +370,7 @@
                         console.log(err)
                     })
                 },
-                get_frees() {
+                get_frees() { //获取原子自由价，可能有一个或者两个
                     axios.get('/frees').then(res => {
                         console.log(res)
                         let keys = Object.keys(res.data)
@@ -380,8 +381,15 @@
                             let x = this.atomPoss[idx][0]
                             let y = this.atomPoss[idx][1]
                             let z = this.atomPoss[idx][2]
-                            let text = `${res.data[key].toFixed(4)}`
-                            this.addLabel(this.atomFreeGroup, text, x, y, z, `${i}`)
+                            let textList = res.data[key]
+                            let textStr = ''
+                            for (let i = 0; i < textList.length; i++) {
+                                textStr += `${textList[i].toFixed(4)}`
+                                if (i != textList.length - 1) {
+                                    textStr += '\n'
+                                }
+                            }
+                            this.addLabel(this.atomFreeGroup, textStr, x, y, z, `${i}`,'#294cff',0.7)
                         }
                     }).catch(err => {
                         console.log(err)
@@ -397,11 +405,11 @@
                     this.atomIDGroup.children.length = 0
                     this.addLabel(this.atomIDGroup, `${i + 1}`, x, y, z, `${i}`)
                 },
-                addLabel(group, text, x, y, z, name) {  //加载文字标签函数
+                addLabel(group, text, x, y, z, name,color='#ff1122',size=1) {  //加载文字标签函数
                     console.log(text, x, y, z)
                     let loader = new THREE.FontLoader();
                     let material = new THREE.MeshBasicMaterial({
-                        color: '#ff1122',
+                        color: color,
                     });
                     loader.load("../static/libs/threeJS/examples/fonts/helvetiker_regular.typeface.json", (font) => {
                         let geometry = new THREE.TextGeometry(text, {
@@ -411,7 +419,7 @@
                         geometry.computeBoundingBox();
                         geometry.center()
                         var mesh = new THREE.Mesh(geometry, material);
-                        var scale = 0.0015
+                        var scale = 0.0015*scale
                         mesh.scale.set(scale, scale, scale);
                         mesh.renderOrder = 1
                         mesh.position.set(x, y, z)
@@ -597,14 +605,14 @@
                     }
                 },
                 showMessageBar() {
-                    
-                    if(this.showMsgBar){
-                        document.getElementById('control').style.right='-30%'
-                    }else{
-                        document.getElementById('control').style.right='0%'
+
+                    if (this.showMsgBar) {
+                        document.getElementById('control').style.right = '-30%'
+                    } else {
+                        document.getElementById('control').style.right = '0%'
                     }
                     console.log(document.getElementById('control').style)
-                    this.showMsgBar=!this.showMsgBar
+                    this.showMsgBar = !this.showMsgBar
                 }
 
             }

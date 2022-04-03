@@ -11,7 +11,7 @@ class Reader:
         self.Eigenvalues=[]
         self.titles = {  # 用来所搜的
             'Standard orientation':{
-                'title':'Standard orientation',
+                # 'title':'Standard orientation',
                 'num':None
             },
             '  Molecular Orbital Coefficients':{
@@ -206,6 +206,6 @@ class Data:
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
         self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
-        self.all_sauare_sum=self.each_square_sum.sum(axis=0) # 所有原子所有轨道的平方和
+        self.all_sauare_sum=self.each_square_sum.sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
         

@@ -91,3 +91,14 @@ $f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 - sympy
 - xlsxwriter
 - flask
+
+## config说明
+- `baseOrder` 基准物质的键级之和
+- `pageWidth` 页面的宽度
+- `pageHeight` 页面的高度
+- `sdContribute` s轨道与d轨道的贡献之和的限制
+- `pContribute` p轨道的贡献的限制
+- `normalValue` 法向量方向函数值的限制
+- `pPosanValue` 空间格点波函数最大值的限制
+- `renderSize` 渲染点云的尺寸
+- `renderStep` 渲染点云的步长

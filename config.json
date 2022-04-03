@@ -1,14 +1,11 @@
 {
-    "base_level":1.6602000452467225,
+    "baseOrder":1.6602,
     "pageWidth":500,
     "pageHeight":640,
-    "judgeValues":[0.008,0.01],
+    "sdContribute":0.1,
+    "pContribute":0.008,
+    "normalValue":0.018,
+    "pPosanValue":0.04,
     "renderSize":3,
-    "renderStep":0.2,
-    "Os":[
-        "O"
-    ],
-    "Vs":[
-        "V"
-    ]
+    "renderStep":0.2
 }
