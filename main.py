@@ -3,14 +3,14 @@ import os
 import re
 cwd = os.getcwd()
 import sys
-sys.setrecursionlimit(10000000)
+sys.setrecursionlimit(10000000) #设置递归深度
 import json
 sys.path.append(cwd)  # 将当前工作路径添加到环境变量中，以便找到自定义包
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter.filedialog import askopenfilename, asksaveasfilename
-
+from Viewer import Viewer
 from logReader import Reader
 # 导入所有页面，以字典形式
 from pages import pages
@@ -29,9 +29,7 @@ def getConfig():
 from server import server
 import webbrowser
 import socket
-viewTread=threading.Thread(target=lambda:server.app.run(threaded=True,host='0.0.0.0'))
-viewTread.setDaemon(True)
-viewTread.start()
+
 class App:
     def __init__(self):
         self.config=getConfig()
@@ -67,6 +65,7 @@ class App:
         self.viewbar=tk.Menu(self.menubar,tearoff=False)
         self.viewbar.add_command(label='web',command=self.view_web)
         self.viewbar.add_command(label='default',command=self.view_default)
+        self.viewbar.add_command(label='local',command=self.view_local)
         self.menubar.add_cascade(label='view',menu=self.viewbar)
 
         self.toolsbar = tk.Menu(self.menubar,tearoff=False) #菜单栏中添加菜单栏
@@ -127,14 +126,23 @@ class App:
         self.Data = self.reader.get()
         self.log_window_text.insert('end', 'search done\n')
         self.server.atomPos=self.Data.atoms_pos
+        
 
     def show_page(self,name):
         page = pages[name].Page(program=self)
         page.run()
     
     def view_web(self): #展示分子网页
+        viewTread=threading.Thread(target=lambda:server.app.run(threaded=True,host='0.0.0.0'))
+        viewTread.setDaemon(True)
+        viewTread.start()
         ip = socket.gethostbyname(socket.gethostname())
         webbrowser.open(f'http://{ip}:5000/')
+
+
+    def view_local(self):
+        self.Viewer=Viewer(self.Data,self.server)
+        self.Viewer.show()
 
     def view_default(self):
         os.startfile(self.log_path)

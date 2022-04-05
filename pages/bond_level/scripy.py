@@ -16,6 +16,7 @@ class Caculater:
         self.pass_pObtials=[]
         self.sContributs={} #记录所有分子轨道的s组分的贡献
         self.selectedObtials={}
+        self.p_vectors={} #记录p轨道方向
         
 
     def set_data(self):
@@ -72,12 +73,12 @@ class Caculater:
             self.logger.info('atom is H')
             return False
         all_square_sum = self.all_sauare_sum[:, obtial]
-        center_p_contribute=get_coefficients('P',self.atoms,center,obtial)/all_square_sum
+        center_p_contribute=get_coefficients('SP',self.atoms,center,obtial)/all_square_sum
 
-        around_p_contribute=get_coefficients('P',self.atoms,around,obtial)/all_square_sum
+        around_p_contribute=get_coefficients('SP',self.atoms,around,obtial)/all_square_sum
         
-        self.logger.info(f'center P:{center_p_contribute[0]:.4f}')
-        self.logger.info(f'around P:{around_p_contribute[0]:.4f}')
+        self.logger.info(f'center SP:{center_p_contribute[0]:.4f}')
+        self.logger.info(f'around SP:{around_p_contribute[0]:.4f}')
 
         if max([center_p_contribute[0],around_p_contribute[0]]) <= self.program.config["pContribute"]:
             self.logger.info(f'p contribute {center_p_contribute[0]:.4f},{around_p_contribute[0]:.4f} is smaller than {self.program.config["pContribute"]}')
@@ -91,10 +92,49 @@ class Caculater:
         center_ts=get_coefficients('P',self.atoms,center,obtial,raw=True)
         around_paras = np.array(self.standard_basis[around])
         around_ts=get_coefficients('P',self.atoms,around,obtial,raw=True)
+        # 计算p轨道所在的方向 (下面都是原本属于N==2是的内容)
+        cvs=posan_function(centerPos,centerPos+self.gridPoints,center_paras[:,0],center_paras[:,2],center_ts) # center values
+        avs=posan_function(aroundPos,aroundPos+self.gridPoints,around_paras[:,0],around_paras[:,2],around_ts)
+        c_maxID=np.argmax(cvs)
+        a_maxID=np.argmax(avs)
+        c_pv=self.gridPoints[:,c_maxID] # 中心原子p轨道的方向 center p obtial vector
+        a_pv=self.gridPoints[:,a_maxID] # 邻接原子p轨道的方向
+        self.p_vectors[f'{center}-{obtial}']=c_pv
+        self.p_vectors[f'{around}-{obtial}']=a_pv
+        b_vector=aroundPos-centerPos # 键轴的向量
+
+        c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p obtial vectors
+        cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras[:,0],center_paras[:,2],center_ts) #center p obtial vector values
+        scope=get_changeScope(get_slope(cpvvs,0.1,2))
+        self.logger.info(f'{cpvvs=}')
+        self.logger.info(f'{scope=}')
+        if np.max(cpvvs)*np.min(cpvvs)<0:
+            self.logger.info('there are cross profile in p obtial way') #p轨道方向有节点
+            return False
+        c_angle=vector_angle(c_pv,b_vector)
+        a_angle=vector_angle(a_pv,b_vector)
+        c_value,a_value=np.max(cvs),np.max(avs)
+
+        self.logger.info(f'c_value{c_value},a_value{a_value}')
+        self.logger.info(f'c_angle{c_angle},a_angle{a_angle}')
+        self.pvectors[f'{center}-{obtial}']=c_pv  #只有连接数是2的时候法向量为
+        self.pvectors[f'{around}-{obtial}']=a_pv
+        self.point2[f'{center}-{obtial}']=[c_value,-c_value]
+        self.point2[f'{around}-{obtial}']=[a_value,-a_value] #保存每两个分子的法向量值
+        if min([abs(c_angle-0.5),abs(a_angle-0.5)])>0.1 or min([c_value,a_value])<self.program.config["pPosanValue"]:
+            self.logger.info(f'p obtial vector is not verpendicular to bond or max posan function value is smaller than pPosanValue {self.program.config["pPosanValue"]}')
+            return False
         if self.N==3:
             # 求出过与中心原子相连的三个原子的平面的法向量
             cn=self.normals[f'{center}']
             an=self.normals[f'{around}']
+            cnp_angle=vector_angle(cn,c_pv) #p轨道方向和法向量方向的夹角
+            anp_angle=vector_angle(an,a_pv)
+            self.logger.info(f'{cn=},{an=},{c_pv=},{a_pv=},{cnp_angle=},{anp_angle=}')
+            if min([abs(cnp_angle-0.5),abs(anp_angle-0.5)])>0.3: #p轨道法相与法向量方向的夹角
+                return True
+            else:
+                return False
             cns=cn.reshape(3,1)*np.arange(0.1,3.0,0.1)[np.newaxis,:]
             ans=an.reshape(3,1)*np.arange(0.1,3.0,0.1)[np.newaxis,:]
             cv1s=posan_function(centerPos,centerPos+cns,center_paras[:,0],center_paras[:,2],center_ts)
@@ -103,7 +143,7 @@ class Caculater:
             av2s=posan_function(aroundPos,aroundPos-ans,around_paras[:,0],around_paras[:,2],around_ts)
 
             if np.max(cv1s)*np.min(cv1s)<=0 or np.max(av1s)*np.min(av1s)<=0:  # 法向量方向上不能有节点
-                self.logger.info('there are cross profile in normal vector')
+                self.logger.info(f'there are cross profile in normal vector maxcv1={np.max(cv1s)},mincv1={np.min(cv1s)},maxcv2={np.max(cv2s)},mincv1={np.min(cv2s)}')
                 return False
             vc=get_vertical(cn,(aroundPos-centerPos).flatten()).reshape(3,1) #垂直于键轴和法向量的单位向量 
             vcv=posan_function(centerPos,centerPos+vc*0.2,center_paras[:,0],center_paras[:,2],center_ts)
@@ -126,38 +166,8 @@ class Caculater:
                 self.logger.info(f'the values of normal-vector and un-normal-vector have the same symbol or value is smaller than {self.program.config["normalValue"]}')
                 return False
         if self.N==2:
-            cvs=posan_function(centerPos,centerPos+self.gridPoints,center_paras[:,0],center_paras[:,2],center_ts) # center values
-            avs=posan_function(aroundPos,aroundPos+self.gridPoints,around_paras[:,0],around_paras[:,2],around_ts)
-            c_maxID=np.argmax(cvs)
-            a_maxID=np.argmax(avs)
-            c_pv=self.gridPoints[:,c_maxID] # 中心原子p轨道的方向 center p obtial vector
-            a_pv=self.gridPoints[:,a_maxID] # 邻接原子p轨道的方向
-            b_vector=aroundPos-centerPos # 键轴的向量
-
-            c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p obtial vectors
-            cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras[:,0],center_paras[:,2],center_ts) #center p obtial vector values
-            scope=get_changeScope(get_slope(cpvvs,0.1,2))
-            self.logger.info(f'{cpvvs=}')
-            self.logger.info(f'{scope=}')
-            if np.max(cpvvs)*np.min(cpvvs)<0:
-                self.logger.info('there are cross profile in p obtial way') #p轨道方向有节点
-                return False
-            c_angle=vector_angle(c_pv,b_vector)
-            a_angle=vector_angle(a_pv,b_vector)
-            c_value,a_value=np.max(cvs),np.max(avs)
-
-            self.logger.info(f'c_value{c_value},a_value{a_value}')
-            self.logger.info(f'c_angle{c_angle},a_angle{a_angle}')
-            self.pvectors[f'{center}-{obtial}']=c_pv  #只有连接数是2的时候法向量为
-            self.pvectors[f'{around}-{obtial}']=a_pv
-            self.point2[f'{center}-{obtial}']=[c_value,-c_value]
-            self.point2[f'{around}-{obtial}']=[a_value,-a_value] #保存每两个分子的法向量值
-            if min([abs(c_angle-0.5),abs(a_angle-0.5)])<0.1 and min([c_value,a_value])>self.program.config["pPosanValue"]:
-                self.logger.info('this molecular obtial is sp π obtial')
-                return True
-            else:
-                self.logger.info(f'p obtial vector is not verpendicular to bond or max posan function value is smaller than pPosanValue {self.program.config["pPosanValue"]}')
-                return False
+            self.logger.info('this molecular obtial is sp π obtial')
+            return True
         else:
             self.logger.info(f'center atom connection number not equal to 2 or 3 which is {self.N}')
             return False
@@ -192,7 +202,36 @@ class Caculater:
         return res
 
     def get_unit(self, center, around, obtial):  # 判断两原子之间的正负关系
-        # 计算两个原子间法向量的夹角
+        # 计算两个原子间p轨道的夹角
+        # 在两原子键轴中心取一点，计算周围空间格点函数值的变化
+        center_pVector=self.p_vectors[f'{center}-{obtial}'] #中心原子法向量
+        center_pos=self.get_atomPos(center).reshape(3,1)
+        around_pos=self.get_atomPos(around).reshape(3,1)
+        # bond_pos=(center_pos+around_pos)/2
+        center_paras = np.array(self.standard_basis[center])
+        center_ts=get_coefficients('P',self.atoms,center,obtial,raw=True)
+        around_paras = np.array(self.standard_basis[around])
+        around_ts=get_coefficients('P',self.atoms,around,obtial,raw=True)
+        # grid_points=get_gridPoints(0.5,0.2)
+        before_values=posan_function(center_pos,center_pos+center_pVector.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
+        after_values=before_values+posan_function(around_pos,center_pos+center_pVector.reshape(3,1),around_paras[:,0],around_paras[:,2],around_ts)
+        before_value=np.mean(before_values**2)
+        after_value=np.mean(after_values**2)
+        self.logger.info(f'before:{before_value},after:{after_value}')
+        if after_value>before_value:
+            return 1
+        else:
+            return -1
+        
+        cp_vector=self.p_vectors[f'{center}-{obtial}']
+        ap_vector=self.p_vectors[f'{around}-{obtial}']
+        angle=vector_angle(cp_vector,ap_vector)
+        self.logger.info(f'center:{center+1},around:{around+1},orbital:{obtial+1},{angle=}')
+        if angle<0.5:
+            return 1
+        else:
+            return -1
+
         if self.N==3:
             n1=self.normals[f'{center}']
             n2=self.normals[f'{around}']
@@ -220,7 +259,7 @@ class Caculater:
         for index,way_obtial in enumerate(way_obtials): # 两个way
             if len(way_obtial)!=0:
                 around_units = [self.get_unit(center, around, obtial) for obtial in way_obtial] # 周围原子与中心原子之间的正负系数
-                self.logger.info(f'units:{around_units}')
+                self.logger.info(f'center:{center+1},aroudn:{around+1},units:{around_units}')
                 around_units = np.array(around_units).reshape(1, len(way_obtial))
                 center_units = np.ones((1, len(way_obtial)))
 

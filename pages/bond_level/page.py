@@ -24,8 +24,8 @@ class Page:
     def init_component(self):
         tk.Label(self.window, text='Enter the central atom number').place(x=0, y=100, anchor='nw')
         self.entry1 = tk.Entry(self.window, show=None, width=200)
-        self.select_button=ttk.Button(self.window,text='select',command=lambda:threading.Thread(target=self.select).start())
-        self.caculate_button = ttk.Button(self.window, text='start', command=lambda:threading.Thread(target=self.caculate).start(),bootstyle=(SECONDARY,OUTLINE))
+        self.select_button=ttk.Button(self.window,text='1. select',command=lambda:threading.Thread(target=self.select).start())
+        self.caculate_button = ttk.Button(self.window, text='2. calculate', command=lambda:threading.Thread(target=self.caculate).start(),bootstyle=(SECONDARY,OUTLINE))
 
     def set_conponent_pos(self):
         self.entry1.place(x=0, y=150, anchor='nw')
