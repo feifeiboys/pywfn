@@ -1,6 +1,8 @@
 # 此脚本用来组织程序的页面布局
 import os
 import re
+
+from sympy import true
 cwd = os.getcwd()
 import sys
 sys.setrecursionlimit(10000000) #设置递归深度
@@ -12,6 +14,7 @@ from ttkbootstrap.constants import *
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from Viewer import Viewer
 from logReader import Reader
+import pandas as pd
 # 导入所有页面，以字典形式
 from pages import pages
 import datetime
@@ -29,6 +32,7 @@ def getConfig():
 from server import server
 import webbrowser
 import socket
+from pages.bond_level.scripy import Caculater
 
 class App:
     def __init__(self):
@@ -73,7 +77,7 @@ class App:
         self.toolsbar.add_command(label='select obtial', command=lambda:self.show_page('挑选轨道'))
         self.toolsbar.add_command(label='render cloud', command=lambda:self.show_page('渲染云图'))
         self.menubar.add_cascade(label='tools', menu=self.toolsbar)  # 添加子菜单
-
+        self.menubar.add_command(label='batchCalculate',command=self.batch_calculate)
         self.menubar.add_command(label='save',command=self.save)
         self.menubar.add_command(label='config',command=self.update_config)
         self.menubar.add_command(label='help',command=self.show_help)
@@ -102,24 +106,12 @@ class App:
 
     def select_file(self):  # 选择文件并读取
         self.log_path = askopenfilename(filetypes=[('log', '.log'), ('out', '.out')])
+        if not self.log_path:
+            return
         self.logger.info(self.log_path) # 日志中记录打开文件的位置
         self.log_window_text.insert('end', f'open file {self.log_path}\n')
-        file_type = self.log_path.split('.')[-1]
-        if file_type == 'log' or file_type == 'out':
-            # self.inform_var.set(self.log_path)
-            with open(self.log_path, 'r', encoding='utf-8') as f:
-                self.reader = Reader(program=self) #每次要读取文件时就创建一个新的reader对象
-                # 对初始文件中不必要的数据进行处理
-                data = f.read()
-                self.log_text = data
-                self.log_lines = self.log_text.split('\n')
-                self.reader.logLines = self.log_lines
-                t=threading.Thread(target=self.get_data)
-                t.start()
-                # self.get_data()
-        else:
-            self.log_window_text.insert('end', 'Can only read .log or .out files\n')
-
+        self.reader = Reader(program=self,logPath=self.log_path)
+        threading.Thread(target=self.get_data).start()
 
     def get_data(self):
         self.log_window_text.insert('end', 'start search...\n')
@@ -127,6 +119,28 @@ class App:
         self.log_window_text.insert('end', 'search done\n')
         self.server.atomPos=self.Data.atoms_pos
         
+    def batch_calculate(self):
+        fileName=askopenfilename(filetypes=[('xlsx', '.xlsx')])
+        if not fileName:
+            return
+        data=pd.read_excel(fileName,dtype=str)
+        t=threading.Thread(target=lambda:self.batch_calculate_thrend(data))
+        t.setDaemon(True)
+        t.setName('batchCalculation')
+        t.start()
+    def batch_calculate_thrend(self,data):
+        for i in range(len(data)):
+            file=data.iloc[i,0]
+            self.log_window_text.insert('end','-'*70+'\n')
+            self.log_window_text.insert('end', f'open file {file}\n')
+            atoms=data.iloc[i,1]
+            self.reader=Reader(program=self,logPath=file)
+            self.get_data()
+            caculater=Caculater(program=self)
+            centers=[int(each)-1 for each in atoms.split(',')]
+            caculater.select(centers)
+            caculater.caculate(centers)
+
 
     def show_page(self,name):
         page = pages[name].Page(program=self)

@@ -135,36 +135,6 @@ class Caculater:
                 return True
             else:
                 return False
-            cns=cn.reshape(3,1)*np.arange(0.1,3.0,0.1)[np.newaxis,:]
-            ans=an.reshape(3,1)*np.arange(0.1,3.0,0.1)[np.newaxis,:]
-            cv1s=posan_function(centerPos,centerPos+cns,center_paras[:,0],center_paras[:,2],center_ts)
-            cv2s=posan_function(centerPos,centerPos-cns,center_paras[:,0],center_paras[:,2],center_ts)
-            av1s=posan_function(aroundPos,aroundPos+ans,around_paras[:,0],around_paras[:,2],around_ts)
-            av2s=posan_function(aroundPos,aroundPos-ans,around_paras[:,0],around_paras[:,2],around_ts)
-
-            if np.max(cv1s)*np.min(cv1s)<=0 or np.max(av1s)*np.min(av1s)<=0:  # 法向量方向上不能有节点
-                self.logger.info(f'there are cross profile in normal vector maxcv1={np.max(cv1s)},mincv1={np.min(cv1s)},maxcv2={np.max(cv2s)},mincv1={np.min(cv2s)}')
-                return False
-            vc=get_vertical(cn,(aroundPos-centerPos).flatten()).reshape(3,1) #垂直于键轴和法向量的单位向量 
-            vcv=posan_function(centerPos,centerPos+vc*0.2,center_paras[:,0],center_paras[:,2],center_ts)
-            cv1=cv1s[0][1] #不同情况只是法向量不同，但是原子的位置归根到底是不会变的，所以确定法向量即可确定四处函数值
-            self.logger.info(f'vc:{vc},vcv:{vcv},cv1:{cv1},differ:{abs(cv1)-abs(vcv)}')
-            if abs(cv1)-abs(vcv)<0: # 法向量方向的函数值要大于垂直于法向量和键轴方向的函数值
-                self.logger.info('posan value on normal vector is smaller than value on the way perpendicular to bond and normal vector')
-                return False
-            cv2=cv2s[0][1]
-            av1=av1s[0][1]
-            av2=av2s[0][1]
-            self.point2[f'{around}-{obtial}']=[av1,av2] #保存每两个分子的法向量值
-            self.point2[f'{center}-{obtial}']=[cv1,cv2]
-            value=np.min(np.abs(np.array([cv1,cv2,av1,av2]))) #normalValue
-            self.logger.info(f'cv1={cv1},cv2={cv2},av1={av1},av2={av2},value={value}')
-            if  cv1*cv2<0 and av1*av2<0 and value>self.program.config['normalValue']: #根据这四个数值也能判断原子之间轨道贡献正负，法向量与法向量反方向不能同号
-                self.logger.info('this molecular obtial is sp2 π obtial')
-                return True
-            else:
-                self.logger.info(f'the values of normal-vector and un-normal-vector have the same symbol or value is smaller than {self.program.config["normalValue"]}')
-                return False
         if self.N==2:
             self.logger.info('this molecular obtial is sp π obtial')
             return True
@@ -188,7 +158,7 @@ class Caculater:
                 if res:
                     V_obtials.append(obtial)
             else:
-                print(f'unkonw:{obtialName},{obtialName[-1]}')
+                raise Exception(f'unkonw:{obtialName},{obtialName[-1]}')
         return O_obtials,V_obtials
 
     def get_connections(self, atom):  # 计算所有原子与指定原子之间的距离,进而判断与之相连的原子
@@ -197,7 +167,7 @@ class Caculater:
         dys = atoms_pos.loc[:, 'Y'] - atoms_pos.iloc[atom].loc['Y']
         dzs = atoms_pos.loc[:, 'Z'] - atoms_pos.iloc[atom].loc['Z']
         distances = (dxs ** 2 + dys ** 2 + dzs ** 2) ** 0.5
-        res = np.where(distances < 1.7)[0].tolist()
+        res = np.where(distances < 1.9)[0].tolist()
         res.remove(atom)
         return res
 
@@ -222,40 +192,18 @@ class Caculater:
             return 1
         else:
             return -1
-        
-        cp_vector=self.p_vectors[f'{center}-{obtial}']
-        ap_vector=self.p_vectors[f'{around}-{obtial}']
-        angle=vector_angle(cp_vector,ap_vector)
-        self.logger.info(f'center:{center+1},around:{around+1},orbital:{obtial+1},{angle=}')
-        if angle<0.5:
-            return 1
-        else:
-            return -1
-
-        if self.N==3:
-            n1=self.normals[f'{center}']
-            n2=self.normals[f'{around}']
-            angle=vector_angle(n1,n2)
-            res=np.sum(np.array(self.point2[f'{center}-{obtial}']*np.array(self.point2[f'{around}-{obtial}'])))
-            if angle>0.5:
-                res*=-1
-            self.logger.info(f'{center+1},{around+1},{obtial+1},res={res},angle={angle}')
-            return 1 if res > 0 else -1
-        if self.N==2:
-            n1=self.pvectors[f'{center}-{obtial}']
-            n2=self.pvectors[f'{around}-{obtial}']
-            angle=vector_angle(n1,n2)
-            return 1 if angle<=0.5 else -1
 
     def get_bond_level_between_tow_atom(self, center, around):  # 计算两个原子之间两个方向的键级（平面分子只有一个，线性分子有两个，分别用V和H表示）
         O_obtials,V_obtials=self.selectedObtials[f'{center}-{around}-O'],self.selectedObtials[f'{center}-{around}-V']
         bond_orders=[]
         if self.N==3:
             way_obtials=[O_obtials,[]]
-        if self.N==2:
+        elif self.N==2:
             Vo,Ho=obtial_classify(center,self.pvectors,O_obtials)
             self.logger.info(f'{Vo=}\n{Ho=}')
             way_obtials=[Vo,Ho]
+        else:
+            raise Exception(f'N=={self.N}，连接数量错误')
         for index,way_obtial in enumerate(way_obtials): # 两个way
             if len(way_obtial)!=0:
                 around_units = [self.get_unit(center, around, obtial) for obtial in way_obtial] # 周围原子与中心原子之间的正负系数
@@ -263,12 +211,6 @@ class Caculater:
                 around_units = np.array(around_units).reshape(1, len(way_obtial))
                 center_units = np.ones((1, len(way_obtial)))
 
-                # if self.obtial_type == 0:
-                #     userful_str = [str(i+1) for i in way_obtial]
-                #     self.program.log_window_text.insert('end',f'{center+1}->{around+1},π obtials:'+','.join(userful_str)+'\n')
-                # else:
-                #     userful_str = [f'α{i+1}' if i < self.alpha_num else f'β{i+1-self.alpha_num}' for i in way_obtial]
-                #     self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},π obtials:' + ','.join(userful_str) + '\n')
                 
                 all_square_sum = self.all_sauare_sum[:, way_obtial]
                 center_square_sum = self.each_square_sum[center, way_obtial]
@@ -359,7 +301,7 @@ class Caculater:
             all_dCoefficients=get_allDCoefficients(self.atoms,obtial,self.all_sauare_sum)
             sd_sum=all_sCoefficients+all_dCoefficients
             self.sContributs[f'{obtial}']=sd_sum
-            self.program.update_progress('s/d coefficience',obtial/self.obtial_length)
+            self.program.update_progress('s/d coefficience',(obtial+1)/self.obtial_length)
             self.logger.info(f'all atom s obtial {obtial+1} coefficients sum S={all_sCoefficients} D={all_dCoefficients} SUM={all_sCoefficients+all_dCoefficients}')
         for center in centers:
             self.normals[f'{center}']=self.search_Normal(center)

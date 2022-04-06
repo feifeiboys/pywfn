@@ -5,7 +5,10 @@ import pandas as pd
 import json
 
 class Reader:
-    def __init__(self, program):
+    def __init__(self, program,logPath):
+        
+        with open(logPath,'r',encoding='utf-8') as f:
+            self.logLines=f.readlines()
         self.program = program
         self.data = {}
         self.Eigenvalues=[]
@@ -31,7 +34,6 @@ class Reader:
                 'num':None
             },
         }  # 记录标题行
-        self.logLines = None
         
 
     def get_titles(self):
@@ -83,7 +85,7 @@ class Reader:
             if re.search(s1, line_text) is not None: #情况1
                 pass
             elif re.search(s2, line_text) is not None: # 情况2，获得column
-                obtials = re.split(r' +', line_text)[1:] # 获取占据轨道还是非占据轨道
+                obtials = re.split(r' +', line_text.replace('\n',''))[1:] # 获取占据轨道还是非占据轨道
                 all_obtials.append(obtials)
             elif re.search(s3, line_text) is not None: # 情况3
                 line_data=list(re.search(s3,line_text).groups())
