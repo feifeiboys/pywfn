@@ -53,18 +53,18 @@ def posan_function(centerPos,aroundPos,alphas,cs,ts): # 为了代码可读性，
     mo=sum([t*p for t,p in zip(ts,ps)])
     return mo
 
-def get_gridPoints(range,step): 
+def get_gridPoints(range,step,ball=False): 
     '''获取空间格点'''
-    xs=[]
-    ys=[]
-    zs=[]
+    points=[]
     for x in np.arange(-range,range,step):
         for y in np.arange(-range,range,step):
             for z in np.arange(-range,range,step):
-                xs.append(x)
-                ys.append(y)
-                zs.append(z)
-    return np.array([xs,ys,zs])
+                if ball:
+                    distance=(x**2+y**2+z**2)**0.5
+                    if distance>range:
+                        continue
+                points.append([x,y,z])
+    return np.array(points).T
 
 def vector_angle(a,b): # 计算两向量之间的夹角
     '''计算两向量之间的夹角'''
@@ -177,7 +177,9 @@ def get_sCoefficients(stype,atoms,atom,obtials,raw=False):
         return np.sum(res.to_numpy()**2,axis=0)
 def get_pCoefficients(atoms,atom,obtials,raw=False):
     '''获得2S,3S,2PX,2PY,2PZ,3PX,3PY,3PZ的归一化后的系数'''
+    
     res=atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,obtials]
+    
     if raw: #是否返回原始数据
         return res
     else:

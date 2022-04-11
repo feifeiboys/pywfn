@@ -1,8 +1,6 @@
 # 此脚本用来组织程序的页面布局
 import os
-import re
 
-from sympy import true
 cwd = os.getcwd()
 import sys
 sys.setrecursionlimit(10000000) #设置递归深度
@@ -131,6 +129,7 @@ class App:
     def batch_calculate_thrend(self,data):
         for i in range(len(data)):
             file=data.iloc[i,0]
+            self.log_path=file
             self.log_window_text.insert('end','-'*70+'\n')
             self.log_window_text.insert('end', f'open file {file}\n')
             atoms=data.iloc[i,1]

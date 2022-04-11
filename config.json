@@ -5,7 +5,9 @@
     "sdContribute":0.1,
     "pContribute":0.008,
     "normalValue":0.018,
+    "pbAngle":0.25,
     "pPosanValue":0.04,
+    "pnAngle":0.25,
     "renderSize":3,
     "renderStep":0.2
 }
