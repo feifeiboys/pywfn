@@ -21,6 +21,9 @@ import threading
 start_time=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S') # 时:分:秒
 logging.basicConfig(filename=f'logs/{start_time}.txt',format='%(message)s',level=logging.INFO)
 
+# 检查是否有logs文件夹存在
+
+
 def getConfig():
     with open('config.json','r',encoding='utf-8') as f:
         config=json.loads(f.read())
