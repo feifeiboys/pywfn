@@ -108,6 +108,7 @@ class Caculater:
         capAngle=vector_angle(c_pv,a_pv)
         if abs(capAngle-0.5)<self.program.config['2pAngle']:
             self.logger.info(f'the angle between center p orbital and around p orbital:{capAngle:.4f} is too big!')
+            return False
 
         b_vector=aroundPos-centerPos # 键轴的向量
         c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p obtial vectors
@@ -127,8 +128,9 @@ class Caculater:
             return False
         if self.N==2:
             pbAngle=self.program.config["pbAngle"]
+            self.logger.info(f'the ange between p orbital and bond of center:{c_angle},around:{a_angle},and they should in the range of 0.5+-{pbAngle}')
             if max([abs(c_angle-0.5),abs(a_angle-0.5)])>pbAngle or min([c_value,a_value])<self.program.config["pPosanValue"]:
-                self.logger.info(f'the ange between p orbital and bond of center:{c_angle},around:{a_angle},and they should in the range of 0.5+-{self.program.config["pbAngle"]}')
+                
                 self.logger.info(f'4. p obtial vector is not verpendicular to bond')
                 return False
             else:
