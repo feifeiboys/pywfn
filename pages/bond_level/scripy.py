@@ -35,7 +35,7 @@ class Caculater:
         if f'{atom}' not in self.normals.keys(): # 每个原子的法向量应该只计算一次
             atomPos=self.get_atomPos(atom)
             connections=self.get_connections(atom)
-            p1,p2,p3=[(self.get_atomPos(each)-atomPos)*(1 if each==to else 0.1) for each in connections]
+            p1,p2,p3=[(self.get_atomPos(each)-atomPos)*(1 if each==to else 1) for each in connections]
             n=get_normalVector(p1,p2,p3)
             self.normals[f'{atom}-{to}']=n
         return self.normals[f'{atom}-{to}']
@@ -75,8 +75,7 @@ class Caculater:
         center_p_contribute=(get_coefficients('SP',self.atoms,center,obtial)/all_square_sum)[0]
         around_p_contribute=(get_coefficients('SP',self.atoms,around,obtial)/all_square_sum)[0]
         
-        self.logger.info(f'center SP contribution:{center_p_contribute:.4f}')
-        self.logger.info(f'around SP contribution:{around_p_contribute:.4f}')
+        self.logger.info(f'sp contribution center:{center_p_contribute:.4f}, around:{around_p_contribute:.4f}')
 
         if center_p_contribute <= self.program.config["pContribute"] or around_p_contribute <= self.program.config["pContribute"]:
             self.logger.info(f'2. p contribute {center_p_contribute:.4f},{around_p_contribute:.4f} is smaller than {self.program.config["pContribute"]}')
@@ -100,14 +99,13 @@ class Caculater:
         a_maxID=np.argmax(avs)
         c_pv=self.gridPoints[:,c_maxID] # 中心原子p轨道的方向 center p obtial vector
         a_pv=self.gridPoints[:,a_maxID] # 邻接原子p轨道的方向
-        self.logger.info(f'center:{center+1},{obtial+1} p orbital vector:{[round(each,3) for each in c_pv]}')
-        self.logger.info(f'around:{around+1},{obtial+1} p orbital vector:{[round(each,3) for each in a_pv]}')
+        self.logger.info(f'p orbital vectors center:{[round(each,3) for each in c_pv]}, around:{[round(each,3) for each in a_pv]}')
         
         self.p_vectors[f'{center}-{obtial}']=c_pv
         self.p_vectors[f'{around}-{obtial}']=a_pv
         capAngle=vector_angle(c_pv,a_pv)
         if abs(capAngle-0.5)<self.program.config['2pAngle']:
-            self.logger.info(f'the angle between center p orbital and around p orbital:{capAngle:.4f} is too big!')
+            self.logger.info(f'the angle between center and around p orbitals:{capAngle:.4f} is too big!')
             return False
 
         b_vector=aroundPos-centerPos # 键轴的向量
