@@ -69,7 +69,9 @@ def get_gridPoints(range,step,ball=False):
 def vector_angle(a,b): # 计算两向量之间的夹角
     '''计算两向量之间的夹角'''
     value=(np.dot(a,b))/(np.linalg.norm(a)*np.linalg.norm(b))
-    return np.arccos(value if value<=1 else 1)/math.pi
+    if value>1:
+        value=1
+    return np.arccos(value)/math.pi
 
 def get_normalVector(p1,p2,p3):
     '''获取三点确定的平面的单位法向量'''
@@ -209,6 +211,8 @@ def get_coefficients(type,atoms,atom,obtials,raw=False):
         return get_pCoefficients(atoms,atom,obtials,raw)
     elif type=='D':
         return get_dCoefficients(atoms,atom,obtials,raw)
+    elif type=='SD':
+        return get_sCoefficients('1S',atoms,atom,obtials,raw)+get_dCoefficients(atoms,atom,obtials,raw)
 
 def get_allSCoefficients(atoms,obtial,all_square_sum):
     all_sCoefficients=np.array([])

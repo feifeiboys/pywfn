@@ -67,20 +67,25 @@ class Caculater:
         self.logger.info(f'*'*70)
         self.logger.info(f'center:{center+1},around:{around+1},obtial:{obtial+1}')
         all_square_sum = self.all_sauare_sum[:, obtial]
-        sContribute=get_coefficients('1S',self.atoms,center,obtial)/all_square_sum
-        if sContribute>self.program.config['sdContribute']:
-            self.logger.info(f'1. s+d obtial contribute {sContribute[0]:.4f} is biger than {self.program.config["sdContribute"]}')
+        center_sContribute=(get_coefficients('SD',self.atoms,center,obtial)/all_square_sum)[0]
+        around_sContribute=(get_coefficients('SD',self.atoms,around,obtial)/all_square_sum)[0]
+        sdContribute=self.program.config['sdContribute']
+        self.logger.info(f'1. s+d obtial contribute of center:{center_sContribute:.4f},around:{around_sContribute:.4f}')
+        if center_sContribute>sdContribute or around_sContribute>sdContribute:
+            self.logger.info(f's+d obtial contribute is biger than {self.program.config["sdContribute"]}')
             return False
         
-        center_p_contribute=(get_coefficients('SP',self.atoms,center,obtial)/all_square_sum)[0]
-        around_p_contribute=(get_coefficients('SP',self.atoms,around,obtial)/all_square_sum)[0]
-        
-        self.logger.info(f'sp contribution center:{center_p_contribute:.4f}, around:{around_p_contribute:.4f}')
-
-        if center_p_contribute <= self.program.config["pContribute"] or around_p_contribute <= self.program.config["pContribute"]:
-            self.logger.info(f'2. p contribute {center_p_contribute:.4f},{around_p_contribute:.4f} is smaller than {self.program.config["pContribute"]}')
+        center_pContribute=(get_coefficients('SP',self.atoms,center,obtial)/all_square_sum)[0]
+        around_pContribute=(get_coefficients('SP',self.atoms,around,obtial)/all_square_sum)[0]
+        self.logger.info(f'sp contribution center:{center_pContribute:.4f}, around:{around_pContribute:.4f}')
+        if center_pContribute <= self.program.config["pContribute"] or around_pContribute <= self.program.config["pContribute"]:
+            self.logger.info(f'2. p contribute {center_pContribute:.4f},{around_pContribute:.4f} is smaller than {self.program.config["pContribute"]}')
             return False # 判断条件1，s轨道的数值太小的排除
         
+        if center_sContribute>center_pContribute or around_sContribute>around_pContribute:
+            self.logger.info('s+d contribute is bigger than s+p contribute')
+            return False
+
         centerPos=self.get_atomPos(center).reshape(3,1)
         aroundPos=self.get_atomPos(around).reshape(3,1)
         bondLength=np.linalg.norm(aroundPos-centerPos)
@@ -104,8 +109,10 @@ class Caculater:
         self.p_vectors[f'{center}-{obtial}']=c_pv
         self.p_vectors[f'{around}-{obtial}']=a_pv
         capAngle=vector_angle(c_pv,a_pv)
-        if abs(capAngle-0.5)<self.program.config['2pAngle']:
-            self.logger.info(f'the angle between center and around p orbitals:{capAngle:.4f} is too big!')
+        two_pAngle=self.program.config['2pAngle']
+        self.logger.info(f'the angle between center and around p orbitals:{capAngle:.4f} should not in the range of 0.5+-{two_pAngle}')
+        if abs(capAngle-0.5)<two_pAngle:
+            self.logger.info(f'but too big')
             return False
 
         b_vector=aroundPos-centerPos # 键轴的向量
@@ -203,6 +210,7 @@ class Caculater:
         # 根据两原子p轨道的夹角计算
         c_pv,a_pv=self.p_vectors[f'{center}-{obtial}'],self.p_vectors[f'{around}-{obtial}']
         capAngle=vector_angle(c_pv,a_pv)
+        self.logger.info(f'{center+1},{around+1},{obtial+1},the angle between 2 atoms 2p orbital is {capAngle}')
         if capAngle<0.5:
             return 1
         elif capAngle>=0.5:
