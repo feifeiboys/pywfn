@@ -11,7 +11,7 @@ class Caculater:
         self.pvectors={}
         self.searched=[] #记录已经搜索的原子
         self.set_data()
-        self.gridPoints=get_gridPoints(1,0.1,ball=True)
+        self.gridPoints=get_gridPoints(1,0.05,ball=True)
         self.pass_pObtials=[]
         self.sContributs={} #记录所有分子轨道的s组分的贡献
         self.selectedObtials={}
@@ -38,27 +38,17 @@ class Caculater:
             p1,p2,p3=[(self.get_atomPos(each)-atomPos)*(1 if each==to else 1) for each in connections]
             n=get_normalVector(p1,p2,p3)
             self.normals[f'{atom}-{to}']=n
+            
         return self.normals[f'{atom}-{to}']
 
-    def search_Normal(self,atom,to): #递归搜索向量(要十分小心，不然程序就死了)
+    def search_Normal(self,atom,to):
         connections=self.get_connections(atom) # 该原子连接的原子
-        # 下一轮搜索就不要搜索已经搜过的了
         if len(connections)==3:
             n=self.get_Normal(atom,to)
-            return n
-        if len(connections)==4 or len(connections)==2 or len(connections)==1:
-            for each in connections:
-                if len(self.get_connections(each))==3:
-                    return self.get_Normal(each,to)
-            self.searched.append(atom)
-            for each in connections:
-                if self.atoms[each]['atom_type']=='H':
-                    continue
-                if each not in self.searched:
-                    # print('递归搜索',atom+1,len(connections),[each+1 for each in connections],each)
-                    return self.search_Normal(each,to)
         else:
-            print(f'{atom},连接数量错误,{len(connections)}')
+            n=self.get_Normal(to,atom)
+        self.logger.info(f'normal vector from={atom+1},to={to+1},{n}')
+        return n
     # 判断两个原子之间的轨道是不是π轨道,(中心原子序号，周围原子序号，轨道序号)
     
     def get_obtial_is_userful(self, center, around, obtial): #判断两原子之间的π轨道是不是π轨道
@@ -108,18 +98,18 @@ class Caculater:
         
         self.p_vectors[f'{center}-{obtial}']=c_pv
         self.p_vectors[f'{around}-{obtial}']=a_pv
-        capAngle=vector_angle(c_pv,a_pv)
-        two_pAngle=self.program.config['2pAngle']
-        self.logger.info(f'the angle between center and around p orbitals:{capAngle:.4f} should not in the range of 0.5+-{two_pAngle}')
-        if abs(capAngle-0.5)<two_pAngle:
-            self.logger.info(f'but too big')
-            return False
+        # capAngle=vector_angle(c_pv,a_pv)
+        # two_pAngle=self.program.config['2pAngle']
+        # self.logger.info(f'the angle between center and around p orbitals:{capAngle:.4f} should not in the range of 0.5+-{two_pAngle}')
+        # if 0.5-two_pAngle < capAngle < 0.5+two_pAngle:
+        #     self.logger.info(f'err: but too big')
+        #     return False
 
         b_vector=aroundPos-centerPos # 键轴的向量
         c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p obtial vectors
         cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras[:,0],center_paras[:,2],center_ts) #center p obtial vector values
         if np.max(cpvvs)*np.min(cpvvs)<0:
-            self.logger.info('3. there are cross profile in p obtial way') #p轨道方向有节点
+            self.logger.info('err: there are cross profile in p obtial way') #p轨道方向有节点
             return False
         c_angle,a_angle=vector_angle(c_pv,b_vector),vector_angle(a_pv,b_vector) #p轨道与键轴的夹角
         c_value,a_value=np.max(cvs),np.max(avs)
@@ -129,14 +119,13 @@ class Caculater:
         self.pvectors[f'{center}-{obtial}']=c_pv  #只有连接数是2的时候法向量为
         self.pvectors[f'{around}-{obtial}']=a_pv
         if min([c_value,a_value])<self.program.config["pPosanValue"]:
-            self.logger.info(f'max posan function value is too smaller')
+            self.logger.info(f'err max posan function value is too smaller')
             return False
         if self.N==2:
             pbAngle=self.program.config["pbAngle"]
             self.logger.info(f'the ange between p orbital and bond of center:{c_angle},around:{a_angle},and they should in the range of 0.5+-{pbAngle}')
             if max([abs(c_angle-0.5),abs(a_angle-0.5)])>pbAngle or min([c_value,a_value])<self.program.config["pPosanValue"]:
-                
-                self.logger.info(f'4. p obtial vector is not verpendicular to bond')
+                self.logger.info(f'err: p obtial vector is not verpendicular to bond')
                 return False
             else:
                 self.logger.info('this molecular obtial is sp obtial')
@@ -147,12 +136,13 @@ class Caculater:
             an=self.normals[f'{around}-{center}']
             cnp_angle=vector_angle(cn,c_pv) #p轨道方向和法向量方向的夹角
             anp_angle=vector_angle(an,a_pv)
+            self.logger.info(f'the angle between p orbital direction and normal vector of center is {cnp_angle:.4f} around is {anp_angle:.4f}')
             
             if abs(cnp_angle-0.5)>self.program.config['pnAngle'] and  abs(anp_angle-0.5)>self.program.config['pnAngle']: #p轨道法相与法向量方向的夹角
                 self.logger.info('this molecular obtial is sp2 obtial')
                 return True
             else:
-                self.logger.info(f'5. the angle between p orbital direction and normal vector of center is {cnp_angle:.4f} around is {anp_angle:.4f}')
+                self.logger.info(f'err: angle is too big ')
                 return False
         else:
             self.logger.info(f'6. center atom connection number not equal to 2 or 3 which is {self.N}')
@@ -211,9 +201,9 @@ class Caculater:
         c_pv,a_pv=self.p_vectors[f'{center}-{obtial}'],self.p_vectors[f'{around}-{obtial}']
         capAngle=vector_angle(c_pv,a_pv)
         self.logger.info(f'{center+1},{around+1},{obtial+1},the angle between 2 atoms 2p orbital is {capAngle}')
-        if capAngle<0.5:
+        if capAngle<0.75:
             return 1
-        elif capAngle>=0.5:
+        elif capAngle>=0.75:
             return  -1
         else:
             raise f'wrongAngle between center and around p orbitals{capAngle}'
