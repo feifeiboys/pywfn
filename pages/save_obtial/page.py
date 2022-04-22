@@ -1,12 +1,16 @@
 import tkinter as tk
+import ttkbootstrap as ttk
 from .script import Writer
 import re
+from ..utils import get_nums
 class Page:
     def __init__(self,program) -> None:
-        self.program=program
-        self.window = tk.Tk()
-        self.window.geometry('480x640')
-        self.window.title('title')
+        self.program = program
+        self.window = tk.Toplevel()
+        pageWidth,pageHeight=self.program.config['pageWidth'],self.program.config['pageHeight']
+        screenWidth,screenHeight=self.window.winfo_screenwidth(),self.window.winfo_screenheight()
+        self.window.geometry(f'{pageWidth}x{pageHeight}+{int(screenWidth/2)}+{int(screenHeight/2-pageHeight/2)}')
+        self.window.title('saveData')
         self.init_variable()
         self.init_component()
         self.set_conponent_pos()
@@ -28,19 +32,10 @@ class Page:
     def run(self): # 运行页面
         self.window.mainloop()
 
-    def get_nums(self,content):
-        res=[]
-        for each in re.split(',|，',content):
-            if re.search(r'-',each) is None:
-                res.append(int(each))
-            else:
-                a,b=re.split('-',each)
-                res+=list(range(int(a),int(b)+1))
-        return res
 
     def get_input_para(self):  # 获取用户输入的参数
-        atoms = self.get_nums(self.entry1.get())
-        obtials = self.get_nums(self.entry2.get())
+        atoms = get_nums(self.entry1.get())
+        obtials = get_nums(self.entry2.get())
         self.program.log_window_text.insert('end', '选择的原子有:' + ','.join([f'{each}' for each in atoms]) + '\n')
         self.program.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in obtials]) + '\n')
         print(atoms,obtials)

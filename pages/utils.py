@@ -237,3 +237,13 @@ def get_allDCoefficients(atoms,obtial,all_square_sum):
             eachCofficients=0
         all_sCoefficients=np.append(all_sCoefficients,eachCofficients)
     return all_sCoefficients.sum()
+
+def connectH(atom,connections):
+    '''
+    如果连接的有H,就返回C-H键的向量,否则返回None
+    '''
+    CHVectors=[]
+    for each in connections:
+        if each['atom_type']=='H':
+            CHVectors.append(each['pos']-atom['pos'])
+    return CHVectors

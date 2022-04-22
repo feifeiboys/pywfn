@@ -203,11 +203,15 @@ class Data:
                 'obtials': alpha['obtials'] + beta['obtials']
             } for alpha, beta in
                 zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
+        for i in range(len(self.atoms)):
+            self.atoms[i]['pos']=self.atoms_pos.loc[i,['X','Y','Z']].to_numpy(dtype=np.float64)
         self.obtials=self.atoms[0]['datas'].columns # 所有的轨道类型(占据或非占据，可能会有复杂的表示)
         self.obtial_length = self.atoms[0]['datas'].shape[1] # 轨道的数量
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
         self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
         self.all_sauare_sum=self.each_square_sum.sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
+        self.each_sum=np.concatenate([np.sum(atom['datas'].to_numpy(),axis=0,keepdims=True) for atom in self.atoms])
+        self.all_sum=self.each_sum.sum(axis=0)[np.newaxis,:]
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
         
