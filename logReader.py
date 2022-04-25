@@ -179,6 +179,8 @@ class Data:
         self.all_sauare_sum=None
         self.Eigenvalues=None
         self.get()
+        self.bondVectors={}
+        self.allConnect={}
 
     def get(self):
         data=self.data
@@ -211,7 +213,34 @@ class Data:
             self.standard_basis = data['Standard basis']
         self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
         self.all_sauare_sum=self.each_square_sum.sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
-        self.each_sum=np.concatenate([np.sum(atom['datas'].to_numpy(),axis=0,keepdims=True) for atom in self.atoms])
-        self.all_sum=self.each_sum.sum(axis=0)[np.newaxis,:]
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
+    
+
+    def connections(self,atom):
+        '''输入原子序号，获取与指定原子相连的原子序号'''
+        atoms_pos = self.atoms_pos
+        if f'{atom}' not in self.allConnect:
+            dxs = atoms_pos.loc[:, 'X'] - atoms_pos.iloc[atom].loc['X']
+            dys = atoms_pos.loc[:, 'Y'] - atoms_pos.iloc[atom].loc['Y']
+            dzs = atoms_pos.loc[:, 'Z'] - atoms_pos.iloc[atom].loc['Z']
+            distances = (dxs ** 2 + dys ** 2 + dzs ** 2) ** 0.5
+            res = np.where(distances < 1.9)[0].tolist()
+            res.remove(atom)
+            self.allConnect[f'{atom}']=res
+        else:
+            res=self.allConnect[f'{atom}']
+        return res.copy()
+
+
+    def atomPos(self,atom):
+        '''获取指定原子的坐标'''
+        return self.atoms_pos.iloc[atom].loc[['X','Y','Z']].to_numpy(dtype=np.float64)
+
+    def bondVector(self,start,end):
+        if f'{start}-{end}' not in self.bondVectors:
+            res=self.atomPos(start)-self.atomPos(end)
+            self.bondVectors[f'{start}-{end}']=res
+        else:
+            res=self.bondVectors[f'{start}-{end}']
+        return res.copy()
         
