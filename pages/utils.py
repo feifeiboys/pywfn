@@ -37,8 +37,8 @@ def get_points_between_two_pos(pos1,pos2,n):
     return np.array(all_pos)
 def posan_function(centerPos,aroundPos,alphas,cs,ts): # 为了代码可读性，可以适当写出来罗嗦点的代码
     '''计算中心原子周围点处的函数值'''
-    x,y,z=aroundPos
-    x0,y0,z0=centerPos
+    x,y,z=aroundPos.reshape(3,-1)
+    x0,y0,z0=centerPos.reshape(3,-1)
     R=np.sum((centerPos-aroundPos)**2,axis=0,keepdims=True)
     psx=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(x-x0)*math.e**(-1*a*R)
     psy=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(y-y0)*math.e**(-1*a*R)
@@ -193,7 +193,7 @@ def get_dCoefficients(atoms,atom,obtials,raw=False):
     if hasD:
         res=atoms[atom]['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,obtials]
     else:
-        res=np.zeros(6,len(obtials) if isinstance(obtials,list) else 1)
+        res=np.zeros(shape=(6,len(obtials) if isinstance(obtials,list) else 1))
     if raw:
         return res
     else:

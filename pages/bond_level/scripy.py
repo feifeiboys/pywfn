@@ -153,14 +153,31 @@ class Caculater:
             Angels=connect_angles+[0.5-abs(cnp_angle-0.5)] # 包含法向量与2p轨道夹角
             self.logger.info(f'{Angels=}')
             if min(Angels)<self.program.config['pnAngle']: # 所有夹角的最小值要小于一定值(0.2)
-                if np.argmin(Angels)!=len(Angels)-1: # 如果最小值不是最后一位,中心原子的法向量是C-H方向
-                    self.logger.info('C-H angle is min')
-                if 0.5-abs(anp_angle-0.5)<self.program.config['pnAngle']: # 相邻原子与其2p轨道偏差
-                    self.logger.info('this molecular obtial is sp2 obtial')
-                    return True
-                else:
+                if 0.5-abs(anp_angle-0.5)>self.program.config['pnAngle']: # 相邻原子与其2p轨道偏差
                     self.logger.info(f'around normal and p orbital angle:{0.5-abs(anp_angle-0.5)}')
                     return False
+                elif np.argmin(Angels)!=len(Angels)-1: # 如果最小值不是最后一位,中心原子的法向量是C-R方向
+                    self.logger.info('center 2p direction on bond')
+                    # 计算周围原子叠加前后的波函数值的变化，判断成键反键或者是不是π轨道
+                    center_up_value=posan_function(centerPos,aroundPos+c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
+                    center_down_value=posan_function(centerPos,aroundPos-c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
+                    around_up_value=posan_function(aroundPos,aroundPos+c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
+                    around_down_value=posan_function(aroundPos,aroundPos-c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
+                    up_overlap_value=center_up_value+around_up_value
+                    down_overlap_value=center_down_value+around_down_value
+                    if (up_overlap_value**2-around_up_value**2)>0 and (down_overlap_value**2-around_down_value**2)>0:
+                        self.units[f'{center}-{around}-{obtial}']=1
+                        return True
+                    elif (up_overlap_value**2-around_up_value**2)<0 and (down_overlap_value**2-around_down_value**2)<0:
+                        self.units[f'{center}-{around}-{obtial}']=-1
+                        return True
+                    else:
+                        return False
+                    
+                
+                else:
+                    self.logger.info(f'')
+                    return True
             else:
                 self.logger.info(f'err: angle is too big ')
                 return False
@@ -190,10 +207,18 @@ class Caculater:
         return O_obtials,V_obtials
 
 
-    def get_unit(self, center, around, obtial):  # 判断两原子之间的正负关系
-        # return self.units[f'{center}-{around}-{obtial}']
+    def get_unit(self, center, around, obtial):  # 判断两原子之间的正负关系\
+        if f'{center}-{around}-{obtial}' in self.units.keys():
+            return self.units[f'{center}-{around}-{obtial}']
         # 根据两原子p轨道的夹角计算
+        c_nv,a_nv=self.normals[f'{center}-{around}'],self.normals[f'{around}-{center}']
+        if vector_angle(c_nv,a_nv)>0.5:
+            a_nv*=-1
         c_pv,a_pv=self.p_vectors[f'{center}-{obtial}'],self.p_vectors[f'{around}-{obtial}']
+        if (0.6-vector_angle(c_nv,c_pv))*(0.6-vector_angle(a_nv,a_pv))>0: #
+            return 1
+        else:
+            return -1
         capAngle=vector_angle(c_pv,a_pv)
         self.logger.info(f'{center+1},{around+1},{obtial+1},the angle between 2 atoms 2p orbital is {capAngle}')
         if capAngle<0.75:
