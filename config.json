@@ -6,9 +6,9 @@
     "pContribute":0.005,
     "normalValue":0.018,
     "pbAngle":0.1,
-    "2pAngle":0.25,
+    "2pAngle":0.2,
     "pPosanValue":0.04,
-    "pnAngle":0.2,
+    "pnAngle":0.25,
     "renderSize":3,
     "renderStep":0.2
 }

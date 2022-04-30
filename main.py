@@ -33,7 +33,7 @@ def getConfig():
 from server import server
 import webbrowser
 import socket
-from pages.bond_level.scripy import Caculater
+from pages.bond_order.scripy import Caculater
 
 class App:
     def __init__(self):
@@ -75,7 +75,7 @@ class App:
 
         self.toolsbar = tk.Menu(self.menubar,tearoff=False) #菜单栏中添加菜单栏
         self.toolsbar.add_command(label='free valence', command=lambda:self.show_page('计算键级'))
-        self.toolsbar.add_command(label='select obtial', command=lambda:self.show_page('挑选轨道'))
+        self.toolsbar.add_command(label='select orbital', command=lambda:self.show_page('挑选轨道'))
         self.toolsbar.add_command(label='render cloud', command=lambda:self.show_page('渲染云图'))
         self.menubar.add_cascade(label='tools', menu=self.toolsbar)  # 添加子菜单
         self.menubar.add_command(label='batchCalculate',command=self.batch_calculate)

@@ -102,3 +102,7 @@ $f=p_x\times \phi_{p,x}+p_y\times \phi_{p,y}+p_z\times \phi_{p,z}$
 - `pPosanValue` 空间格点波函数最大值的限制
 - `renderSize` 渲染点云的尺寸
 - `renderStep` 渲染点云的步长
+## 迁迁师姐测试
+"C:\Documents\gaussianFile\shiqianqian\cat2-m2-dou-3-e(1).log" 35
+"C:\Documents\gaussianFile\shiqianqian\d-dou+2r3-2-ts-f-01-opt-e.log" 36
+"C:\Documents\gaussianFile\shiqianqian\d-dou-1-pop(1).log" 25

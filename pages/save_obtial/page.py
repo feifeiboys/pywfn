@@ -35,11 +35,11 @@ class Page:
 
     def get_input_para(self):  # 获取用户输入的参数
         atoms = get_nums(self.entry1.get())
-        obtials = get_nums(self.entry2.get())
+        orbitals = get_nums(self.entry2.get())
         self.program.log_window_text.insert('end', '选择的原子有:' + ','.join([f'{each}' for each in atoms]) + '\n')
-        self.program.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in obtials]) + '\n')
-        print(atoms,obtials)
+        self.program.log_window_text.insert('end', '选择的轨道有:' + ','.join([f'{each}' for each in orbitals]) + '\n')
+        print(atoms,orbitals)
         writer=Writer(self.program)
-        writer.save(atoms,obtials)
+        writer.save(atoms,orbitals)
 
     

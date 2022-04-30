@@ -31,17 +31,17 @@ class Render:
         return np.array([x,y,z])
 
 
-    def render(self,atoms,obtials):
+    def render(self,atoms,orbitals):
         cloudData={}
         for atom in atoms:
             if self.atoms[atom]['atom_type']!='H':
-                for obtial in obtials:
+                for orbital in orbitals:
                     centerPos=self.get_atomPos(atom).reshape(3,1)
                     paras = np.array(self.standard_basis[atom])
-                    ts=self.atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,obtial] #获取某个原子某个轨道的2px,2py,2pz,3px,3py,3pz
+                    ts=self.atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,orbital] #获取某个原子某个轨道的2px,2py,2pz,3px,3py,3pz
                     aroundPos=centerPos+self.arounds
                     values=posan_function(centerPos=centerPos,aroundPos=aroundPos,alphas=paras[:,0],cs=paras[:,2],ts=ts)
                     print(aroundPos.shape,values.shape)
-                    cloudData[f'{atom}-{obtial}']=values.tolist()
+                    cloudData[f'{atom}-{orbital}']=values.tolist()
         self.program.server.setCloud(cloudData)
         self.program.log_window_text.insert('end','rendering complete, view in browser\n')

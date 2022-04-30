@@ -134,24 +134,24 @@ def linear_classify(points): #将向量分类转为表示角度的数值分类
         types[idx].append(each)
         idxs[idx].append(i)
     return idxs
-def obtial_classify(atom,vectors,O_obtials):
+def orbital_classify(atom,vectors,O_orbitals):
     '''定义函数将轨道分类'''
     points=[]
-    obtials=[]
+    orbitals=[]
     keys=vectors.keys()
     for key in keys:
         atomidx=int(key.split('-')[0])
-        obtialidx=int(key.split('-')[1])
-        if atomidx==atom and obtialidx in O_obtials and vectors[key] is not None:
+        orbitalidx=int(key.split('-')[1])
+        if atomidx==atom and orbitalidx in O_orbitals and vectors[key] is not None:
             vector=vectors[key]/np.linalg.norm(vectors[key])
             points.append(vector)
-            obtials.append(obtialidx)
+            orbitals.append(orbitalidx)
     if len(points)>0:
         points=np.array(points)
         idxs=linear_classify(points)
     else:
         idxs=[[],[]]
-    V,H=[[obtials[id] for id in idx] for idx in idxs]
+    V,H=[[orbitals[id] for id in idx] for idx in idxs]
     return V,H
 
 def list_remove(l,x):
@@ -167,72 +167,72 @@ def get_slope(data,step,n):
 def get_changeScope(slope):
     return np.sum((slope-slope.mean())**2)
 
-def get_sCoefficients(stype,atoms,atom,obtials,raw=False):
+def get_sCoefficients(stype,atoms,atom,orbitals,raw=False):
     '''获得1S,2S,3S的归一化后的系数'''
     if stype=='1S':
-        res=atoms[atom]['datas'].loc[['1S'],:].iloc[:,obtials]
+        res=atoms[atom]['datas'].loc[['1S'],:].iloc[:,orbitals]
     elif stype=='2S':
-        res=atoms[atom]['datas'].loc[['2S','3S'],:].iloc[:,obtials]
+        res=atoms[atom]['datas'].loc[['2S','3S'],:].iloc[:,orbitals]
     if raw: #是否返回原始数据
         return res
     else:
         return np.sum(res.to_numpy()**2,axis=0)
-def get_pCoefficients(atoms,atom,obtials,raw=False):
+def get_pCoefficients(atoms,atom,orbitals,raw=False):
     '''获得2S,3S,2PX,2PY,2PZ,3PX,3PY,3PZ的归一化后的系数'''
     
-    res=atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,obtials]
+    res=atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,orbitals]
     
     if raw: #是否返回原始数据
         return res
     else:
         return np.sum(res.to_numpy()**2,axis=0)
 
-def get_dCoefficients(atoms,atom,obtials,raw=False):
+def get_dCoefficients(atoms,atom,orbitals,raw=False):
     
     hasD=False if sum([1 if each in atoms[atom]['datas'].index else 0 for each in ['4XX','4YY','4ZZ','4XY','4XZ','4YZ']])==0 else True
     if hasD:
-        res=atoms[atom]['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,obtials]
+        res=atoms[atom]['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,orbitals]
     else:
-        res=np.zeros(shape=(6,len(obtials) if isinstance(obtials,list) else 1))
+        res=np.zeros(shape=(6,len(orbitals) if isinstance(orbitals,list) else 1))
     if raw:
         return res
     else:
         return np.sum(res.to_numpy()**2,axis=0)
     
 
-def get_coefficients(type,atoms,atom,obtials,raw=False):
+def get_coefficients(type,atoms,atom,orbitals,raw=False):
     if type=='1S':
-        return get_sCoefficients('1S',atoms,atom,obtials,raw)
+        return get_sCoefficients('1S',atoms,atom,orbitals,raw)
     elif type=='2S':
-        return get_sCoefficients('2S',atoms,atom,obtials,raw)
+        return get_sCoefficients('2S',atoms,atom,orbitals,raw)
     elif type=='SP':
-        return get_sCoefficients('2S',atoms,atom,obtials,raw)+get_pCoefficients(atoms,atom,obtials,raw)
+        return get_sCoefficients('2S',atoms,atom,orbitals,raw)+get_pCoefficients(atoms,atom,orbitals,raw)
     elif type=='P':
-        return get_pCoefficients(atoms,atom,obtials,raw)
+        return get_pCoefficients(atoms,atom,orbitals,raw)
     elif type=='D':
-        return get_dCoefficients(atoms,atom,obtials,raw)
+        return get_dCoefficients(atoms,atom,orbitals,raw)
     elif type=='SD':
-        return get_sCoefficients('1S',atoms,atom,obtials,raw)+get_dCoefficients(atoms,atom,obtials,raw)
+        return get_sCoefficients('1S',atoms,atom,orbitals,raw)+get_dCoefficients(atoms,atom,orbitals,raw)
 
-def get_allSCoefficients(atoms,obtial,all_square_sum):
+def get_allSCoefficients(atoms,orbital,all_square_sum):
     all_sCoefficients=np.array([])
     for atom in atoms:
         hasS=False if sum([1 if each in atom['datas'].index else 0 for each in ['1S']])==0 else True
         if hasS:
-            eachCofficients=atom['datas'].loc[['1S'],:].iloc[:,obtial]
-            eachCofficients=np.sum(eachCofficients.to_numpy()**2,axis=0)/all_square_sum[:,obtial]
+            eachCofficients=atom['datas'].loc[['1S'],:].iloc[:,orbital]
+            eachCofficients=np.sum(eachCofficients.to_numpy()**2,axis=0)/all_square_sum[:,orbital]
         else:
             eachCofficients=0
         all_sCoefficients=np.append(all_sCoefficients,eachCofficients)
     return all_sCoefficients.sum()
 
-def get_allDCoefficients(atoms,obtial,all_square_sum):
+def get_allDCoefficients(atoms,orbital,all_square_sum):
     all_sCoefficients=np.array([])
     for atom in atoms:
         hasD=False if sum([1 if each in atom['datas'].index else 0 for each in ['4XX','4YY','4ZZ','4XY','4XZ','4YZ']])==0 else True
         if hasD:
-            eachCofficients=atom['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,obtial]
-            eachCofficients=np.sum(eachCofficients.to_numpy()**2,axis=0)/all_square_sum[:,obtial]
+            eachCofficients=atom['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,orbital]
+            eachCofficients=np.sum(eachCofficients.to_numpy()**2,axis=0)/all_square_sum[:,orbital]
         else:
             eachCofficients=0
         all_sCoefficients=np.append(all_sCoefficients,eachCofficients)

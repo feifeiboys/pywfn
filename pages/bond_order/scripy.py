@@ -1,7 +1,7 @@
 from cv2 import sepFilter2D
 import numpy as np
 import math
-from pages.utils import get_vertical,posan_function,get_gridPoints,vector_angle,get_normalVector,obtial_classify,list_remove,get_changeScope\
+from pages.utils import get_vertical,posan_function,get_gridPoints,vector_angle,get_normalVector,orbital_classify,list_remove,get_changeScope\
 ,get_slope,get_coefficients,get_allSCoefficients,get_allDCoefficients,connectH
 
 class Caculater:
@@ -14,9 +14,9 @@ class Caculater:
         self.searched=[] #记录已经搜索的原子
         self.gridPoints=get_gridPoints(1,0.05,ball=True)
         self.gridPointsBox=get_gridPoints(2,0.1,ball=True)
-        self.pass_pObtials=[]
+        self.pass_porbitals=[]
         self.sContributs={} #记录所有分子轨道的s组分的贡献
-        self.selectedObtials={}
+        self.selectedorbitals={}
         self.p_vectors={} #记录p轨道方向
         self.units={} #记录成键还是反键
         self.savedArray=[]
@@ -44,38 +44,38 @@ class Caculater:
         if file not in self.savedArray:
             np.save(file=file,arr=array)
 
-    def get_obtial_is_userful(self, center, around, obtial): #判断两原子之间的π轨道是不是π轨道
+    def get_orbital_is_userful(self, center, around, orbital): #判断两原子之间的π轨道是不是π轨道
         if self.Data.atoms[around]['atom_type']=='H':
             return False
 
         self.logger.info(f'*'*70)
-        self.logger.info(f'center:{center+1},around:{around+1},obtial:{obtial+1}')
-        all_square_sum = self.Data.all_sauare_sum[:, obtial]
-        center_sContribute=(get_coefficients('SD',self.Data.atoms,center,obtial)/all_square_sum)[0]
-        around_sContribute=(get_coefficients('SD',self.Data.atoms,around,obtial)/all_square_sum)[0]
+        self.logger.info(f'center:{center+1},around:{around+1},orbital:{orbital+1}')
+        all_square_sum = self.Data.all_sauare_sum[:, orbital]
+        center_sContribute=(get_coefficients('SD',self.Data.atoms,center,orbital)/all_square_sum)[0]
+        around_sContribute=(get_coefficients('SD',self.Data.atoms,around,orbital)/all_square_sum)[0]
         sdContribute=self.program.config['sdContribute']
-        self.logger.info(f's+d obtial contribute of center:{center_sContribute:.4f},around:{around_sContribute:.4f}')
+        self.logger.info(f's+d orbital contribute of center:{center_sContribute:.4f},around:{around_sContribute:.4f}')
         if center_sContribute>sdContribute or around_sContribute>sdContribute:
-            self.logger.info(f's+d obtial contribute is biger than {self.program.config["sdContribute"]}')
+            self.logger.info(f'err-1: s+d orbital contribute is biger than {self.program.config["sdContribute"]}')
             return False
         
-        center_spContribute=(get_coefficients('SP',self.Data.atoms,center,obtial)/all_square_sum)[0]
-        around_spContribute=(get_coefficients('SP',self.Data.atoms,around,obtial)/all_square_sum)[0]
+        center_spContribute=(get_coefficients('SP',self.Data.atoms,center,orbital)/all_square_sum)[0]
+        around_spContribute=(get_coefficients('SP',self.Data.atoms,around,orbital)/all_square_sum)[0]
         self.logger.info(f'sp contribution center:{center_spContribute:.4f}, around:{around_spContribute:.4f}')
         if center_spContribute <= self.program.config["pContribute"] or around_spContribute <= self.program.config["pContribute"]:
-            self.logger.info(f'err: sp contribute is smaller than {self.program.config["pContribute"]}')
+            self.logger.info(f'err-2: sp contribute is smaller than {self.program.config["pContribute"]}')
             return False # 判断条件1，s轨道的数值太小的排除
         
         # 再判断p的贡献
-        center_pContribute=(get_coefficients('SP',self.Data.atoms,center,obtial)/all_square_sum)[0]
-        around_pContribute=(get_coefficients('SP',self.Data.atoms,around,obtial)/all_square_sum)[0]
+        center_pContribute=(get_coefficients('SP',self.Data.atoms,center,orbital)/all_square_sum)[0]
+        around_pContribute=(get_coefficients('SP',self.Data.atoms,around,orbital)/all_square_sum)[0]
         self.logger.info(f'p contribution center:{center_pContribute:.4f}, around:{around_pContribute:.4f}')
         if center_pContribute <= self.program.config["pContribute"]/2 or around_pContribute <= self.program.config["pContribute"]/2:
-            self.logger.info(f'err: p contribute is smaller than {self.program.config["pContribute"]/2}')
+            self.logger.info(f'err-3: p contribute is smaller than {self.program.config["pContribute"]/2}')
             return False # 判断条件1，s轨道的数值太小的排除
 
         if center_sContribute>center_spContribute or around_sContribute>around_spContribute:
-            self.logger.info('err: s+d contribute is bigger than s+p contribute')
+            self.logger.info('err-4: s+d contribute is bigger than s+p contribute')
             return False
 
         centerPos=self.Data.atomPos(center).reshape(3,1)
@@ -86,15 +86,15 @@ class Caculater:
         # 计算两原子键轴中间处的函数值，如果太大则不是π轨道
         # 去键轴上十个点，分别带入函数求得函数值
         center_paras = np.array(self.Data.standard_basis[center])
-        center_ts=get_coefficients('P',self.Data.atoms,center,obtial,raw=True)
+        center_ts=get_coefficients('P',self.Data.atoms,center,orbital,raw=True)
         around_paras = np.array(self.Data.standard_basis[around])
-        around_ts=get_coefficients('P',self.Data.atoms,around,obtial,raw=True)
+        around_ts=get_coefficients('P',self.Data.atoms,around,orbital,raw=True)
 
         #将两原子键轴中点的函数值保存在文件中
         # bondGrid=(centerPos+aroundPos)/2+self.gridPointsBox
         # centerArray=posan_function(centerPos,bondGrid,center_paras[:,0],center_paras[:,2],center_ts)
         # aroundArray=posan_function(aroundPos,bondGrid,around_paras[:,0],around_paras[:,2],around_ts)
-        # self.saveArray(f'datas//{center+1}-{around+1}-{obtial+1}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
+        # self.saveArray(f'datas//{center+1}-{around+1}-{orbital+1}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
 
 
         # 计算p轨道所在的方向 (下面都是原本属于N==2是的内容)
@@ -103,38 +103,36 @@ class Caculater:
 
         c_maxID=np.argmax(cvs)
         a_maxID=np.argmax(avs)
-        c_pv=self.gridPoints[:,c_maxID] # 中心原子p轨道的方向 center p obtial vector
+        c_pv=self.gridPoints[:,c_maxID] # 中心原子p轨道的方向 center p orbital vector
         a_pv=self.gridPoints[:,a_maxID] # 邻接原子p轨道的方向
         self.logger.info(f'p orbital vectors center:{[round(each,3) for each in c_pv]}, around:{[round(each,3) for each in a_pv]}')
         
-        self.p_vectors[f'{center}-{obtial}']=c_pv
-        self.p_vectors[f'{around}-{obtial}']=a_pv
+        self.p_vectors[f'{center}-{orbital}']=c_pv
+        self.p_vectors[f'{around}-{orbital}']=a_pv
 
 
         b_vector=aroundPos-centerPos # 键轴的向量
-        c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p obtial vectors
-        cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras[:,0],center_paras[:,2],center_ts) #center p obtial vector values
+        c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p orbital vectors
+        cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras[:,0],center_paras[:,2],center_ts) #center p orbital vector values
         if np.max(cpvvs)*np.min(cpvvs)<0:
-            self.logger.info('err: there are cross profile in p obtial way') #p轨道方向有节点
+            self.logger.info('err-5: there are cross profile in p orbital way') #p轨道方向有节点
             return False
         c_angle,a_angle=vector_angle(c_pv,b_vector),vector_angle(a_pv,b_vector) #p轨道与键轴的夹角
         c_value,a_value=np.max(cvs),np.max(avs)
 
         # self.logger.info(f'max wave function value of center:{c_value:.4f},around:{a_value:.4f},and they should bigger pPosanValue {self.program.config["pPosanValue"]}')
        
-        self.pvectors[f'{center}-{obtial}']=c_pv  #只有连接数是2的时候法向量为
-        self.pvectors[f'{around}-{obtial}']=a_pv
-        # if min([c_value,a_value])<self.program.config["pPosanValue"]:
-        #     self.logger.info(f'err max posan function value is too smaller')
-        #     return False
+        self.pvectors[f'{center}-{orbital}']=c_pv  #只有连接数是2的时候法向量为
+        self.pvectors[f'{around}-{orbital}']=a_pv
+
         if self.N==2:
             pbAngle=self.program.config["pbAngle"]
             self.logger.info(f'the ange between p orbital and bond of center:{c_angle},around:{a_angle},and they should in the range of 0.5+-{pbAngle}')
             if max([abs(c_angle-0.5),abs(a_angle-0.5)])>pbAngle or min([c_value,a_value])<self.program.config["pPosanValue"]:
-                self.logger.info(f'err: p obtial vector is not verpendicular to bond')
+                self.logger.info(f'err-6: p orbital vector is not verpendicular to bond')
                 return False
             else:
-                self.logger.info('this molecular obtial is sp obtial')
+                self.logger.info('this molecular orbital is sp orbital')
                 return True
         elif self.N==3:
             # 求出过与中心原子相连的三个原子的平面的法向量
@@ -154,7 +152,7 @@ class Caculater:
             self.logger.info(f'{Angels=}')
             if min(Angels)<self.program.config['pnAngle']: # 所有夹角的最小值要小于一定值(0.2)
                 if 0.5-abs(anp_angle-0.5)>self.program.config['pnAngle']: # 相邻原子与其2p轨道偏差
-                    self.logger.info(f'around normal and p orbital angle:{0.5-abs(anp_angle-0.5)}')
+                    self.logger.info(f'err-7:around normal and p orbital angle:{0.5-abs(anp_angle-0.5)} is far away')
                     return False
                 elif np.argmin(Angels)!=len(Angels)-1: # 如果最小值不是最后一位,中心原子的法向量是C-R方向
                     self.logger.info('center 2p direction on bond')
@@ -166,12 +164,13 @@ class Caculater:
                     up_overlap_value=center_up_value+around_up_value
                     down_overlap_value=center_down_value+around_down_value
                     if (up_overlap_value**2-around_up_value**2)>0 and (down_overlap_value**2-around_down_value**2)>0:
-                        self.units[f'{center}-{around}-{obtial}']=1
+                        self.units[f'{center}-{around}-{orbital}']=1
                         return True
                     elif (up_overlap_value**2-around_up_value**2)<0 and (down_overlap_value**2-around_down_value**2)<0:
-                        self.units[f'{center}-{around}-{obtial}']=-1
+                        self.units[f'{center}-{around}-{orbital}']=-1
                         return True
                     else:
+                        self.logger.info('err-8: not increase or decrease at the same time')
                         return False
                     
                 
@@ -179,48 +178,50 @@ class Caculater:
                     self.logger.info(f'')
                     return True
             else:
-                self.logger.info(f'err: angle is too big ')
+                self.logger.info(f'err-9:all angle is too big ')
                 return False
 
         else:
-            self.logger.info(f'6. center atom connection number not equal to 2 or 3 which is {self.N}')
+            self.logger.info(f'err-10: center atom connection number not equal to 2 or 3 which is {self.N}')
             return False
 
-    def get_obtial_between_atoms(self, center, around):  # 挑选两个原子之间π键有哪些
-        obtial_num = self.Data.obtial_length
-        O_obtials=[]
-        V_obtials=[]
+    def get_orbital_between_atoms(self, center, around):  # 挑选两个原子之间π键有哪些
+        orbital_num = self.Data.orbital_length
+        O_orbitals=[]
+        V_orbitals=[]
         
-        for obtial in range(obtial_num):  # 所有的O轨道都判断
-            obtialName=self.Data.obtials[obtial]
-            res = self.get_obtial_is_userful(center,around,obtial)
-            if obtialName[-1]=='O':
+        # 计算与中心原子法向量与所有周围原子键轴的夹角
+
+        for orbital in range(orbital_num):  # 所有的O轨道都判断
+            orbitalName=self.Data.orbitals[orbital]
+            res = self.get_orbital_is_userful(center,around,orbital)
+            if orbitalName[-1]=='O':
                 if res:
-                    O_obtials.append(obtial)
-            elif obtialName[-1]=='V':
+                    O_orbitals.append(orbital)
+            elif orbitalName[-1]=='V':
                 
                 if res:
-                    V_obtials.append(obtial)
+                    V_orbitals.append(orbital)
             else:
-                raise Exception(f'unkonw:{obtialName},{obtialName[-1]}')
-            self.program.update_progress(f'{center+1}-{around+1}',(obtial+1)/obtial_num)
-        return O_obtials,V_obtials
+                raise Exception(f'unkonw:{orbitalName},{orbitalName[-1]}')
+            self.program.update_progress(f'{center+1}-{around+1}',(orbital+1)/orbital_num)
+        return O_orbitals,V_orbitals
 
 
-    def get_unit(self, center, around, obtial):  # 判断两原子之间的正负关系\
-        if f'{center}-{around}-{obtial}' in self.units.keys():
-            return self.units[f'{center}-{around}-{obtial}']
+    def get_unit(self, center, around, orbital):  # 判断两原子之间的正负关系\
+        if f'{center}-{around}-{orbital}' in self.units.keys():
+            return self.units[f'{center}-{around}-{orbital}']
         # 根据两原子p轨道的夹角计算
         c_nv,a_nv=self.normals[f'{center}-{around}'],self.normals[f'{around}-{center}']
         if vector_angle(c_nv,a_nv)>0.5:
             a_nv*=-1
-        c_pv,a_pv=self.p_vectors[f'{center}-{obtial}'],self.p_vectors[f'{around}-{obtial}']
+        c_pv,a_pv=self.p_vectors[f'{center}-{orbital}'],self.p_vectors[f'{around}-{orbital}']
         if (0.6-vector_angle(c_nv,c_pv))*(0.6-vector_angle(a_nv,a_pv))>0: #
             return 1
         else:
             return -1
         capAngle=vector_angle(c_pv,a_pv)
-        self.logger.info(f'{center+1},{around+1},{obtial+1},the angle between 2 atoms 2p orbital is {capAngle}')
+        self.logger.info(f'{center+1},{around+1},{orbital+1},the angle between 2 atoms 2p orbital is {capAngle}')
         if capAngle<0.75:
             return 1
         elif capAngle>=0.75:
@@ -229,102 +230,105 @@ class Caculater:
             raise f'wrongAngle between center and around p orbitals{capAngle}'
 
 
-    def get_bond_level_between_tow_atom(self, center, around):  # 计算两个原子之间两个方向的键级（平面分子只有一个，线性分子有两个，分别用V和H表示）
-        keys=self.selectedObtials.keys()
+    def get_bond_order_between_tow_atom(self, center, around):  # 计算两个原子之间两个方向的键级（平面分子只有一个，线性分子有两个，分别用V和H表示）
+        keys=self.selectedorbitals.keys()
         if f'{center}-{around}-O' in keys and f'{center}-{around}-V' in keys:
-            O_obtials,V_obtials=self.selectedObtials[f'{center}-{around}-O'],self.selectedObtials[f'{center}-{around}-V']
+            O_orbitals,V_orbitals=self.selectedorbitals[f'{center}-{around}-O'],self.selectedorbitals[f'{center}-{around}-V']
         else:
-            O_obtials,V_obtials=self.get_obtial_between_atoms(center,around)
+            O_orbitals,V_orbitals=self.get_orbital_between_atoms(center,around)
         bond_orders=[]
         if self.N==3:
-            way_obtials=[O_obtials,[]]
+            way_orbitals=[O_orbitals,[]]
         elif self.N==2:
-            Vo,Ho=obtial_classify(center,self.pvectors,O_obtials)
+            Vo,Ho=orbital_classify(center,self.pvectors,O_orbitals)
             self.logger.info(f'center:{center+1}->{around+1},Vo={[each +1 for each in Vo]}\nHo={[each +1 for each in Ho]}')
-            way_obtials=[Vo,Ho]
+            way_orbitals=[Vo,Ho]
         else:
             raise Exception(f'N=={self.N}，连接数量错误')
-        for index,way_obtial in enumerate(way_obtials): # 两个way
-            if len(way_obtial)!=0:
-                around_units = [self.get_unit(center, around, obtial) for obtial in way_obtial] # 周围原子与中心原子之间的正负系数
+        for index,way_orbital in enumerate(way_orbitals): # 两个way
+            if len(way_orbital)!=0:
+                around_units = [self.get_unit(center, around, orbital) for orbital in way_orbital] # 周围原子与中心原子之间的正负系数
                 self.logger.info(f'center:{center+1},aroudn:{around+1},units:{around_units}')
-                around_units = np.array(around_units).reshape(1, len(way_obtial))
-                center_units = np.ones((1, len(way_obtial)))
+                around_units = np.array(around_units).reshape(1, len(way_orbital))
+                center_units = np.ones((1, len(way_orbital)))
 
                 
-                all_square_sum = self.Data.all_sauare_sum[:, way_obtial]
-                center_square_sum = self.Data.each_square_sum[center, way_obtial]
-                around_square_sum = self.Data.each_square_sum[around, way_obtial]
+                all_square_sum = self.Data.all_sauare_sum[:, way_orbital]
+                center_square_sum = self.Data.each_square_sum[center, way_orbital]
+                around_square_sum = self.Data.each_square_sum[around, way_orbital]
                 center_res = (center_square_sum / all_square_sum) ** 0.5 * center_units
                 around_res = (around_square_sum / all_square_sum) ** 0.5 * around_units
-                bond_order = np.sum((2 if self.Data.obtial_type == 0 else 1) * center_res * around_res)
+                bond_order = np.sum((2 if self.Data.orbital_type == 0 else 1) * center_res * around_res)
 
                 bond_orders.append(bond_order)
             else:
                 bond_orders.append(0)
-        return bond_orders,O_obtials,V_obtials
+        return bond_orders,O_orbitals,V_orbitals
 
-    def get_atom_bond_levels(self, center):  # 计算某个原子与周围原子之间的键级
-        bond_levels = []
+    def get_atom_bond_orders(self, center):  # 计算某个原子与周围原子之间的键级
+        bond_orders = []
         arounds=self.Data.connections(center)
         self.N=len(arounds)
         
-        same_O_obtials=[] #三个间之间共有的Π轨道
-        same_V_obtials=[]
+        same_O_orbitals=[] #三个间之间共有的Π轨道
+        same_V_orbitals=[]
         for around in arounds:
             cn=self.search_Normal(center,around) #中心原子法向量
             self.normals[f'{center}-{around}']=cn
             an=self.search_Normal(around,center)
             self.normals[f'{around}-{center}']=an
-            bond_level,O_obtials,V_obtials = self.get_bond_level_between_tow_atom(center, around) #bondlevel可以有一个或者两个
-            same_O_obtials+=O_obtials
-            same_V_obtials+=V_obtials
-            bond_levels.append(bond_level)
-            bond_level=list_remove(bond_level,0)
-            if len(bond_level)>0:
-                self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},bond order:{",".join([f"{each:.4f}" for each in bond_level])}\n')
-        same_O_obtials=sorted(list(set(same_O_obtials)))
-        same_V_obtials=sorted(list(set(same_V_obtials)))
+            # 中心原子与周围原子键轴的夹角
+            nbAngles=0.5-abs(vector_angle(cn,self.Data.bondVector(around,center))-0.5)
+            self.logger.info(f'{center=},{around=},{nbAngles=}')
+            bond_order,O_orbitals,V_orbitals = self.get_bond_order_between_tow_atom(center, around) #bondlevel可以有一个或者两个
+            same_O_orbitals+=O_orbitals
+            same_V_orbitals+=V_orbitals
+            bond_orders.append(bond_order)
+            bond_order=list_remove(bond_order,0)
+            if len(bond_order)>0:
+                self.program.log_window_text.insert('end', f'{center + 1}->{around + 1},bond order:{",".join([f"{each:.4f}" for each in bond_order])}\n')
+        same_O_orbitals=sorted(list(set(same_O_orbitals)))
+        same_V_orbitals=sorted(list(set(same_V_orbitals)))
         # 挑选出来的非占据轨道有很多不合理的，删去
-        new_same_V_obtials=[]
-        if len(same_V_obtials)>len(same_O_obtials):
-            if len(same_O_obtials)>0:
-                baseId=same_V_obtials[len(same_O_obtials)-1]
+        new_same_V_orbitals=[]
+        if len(same_V_orbitals)>len(same_O_orbitals):
+            if len(same_O_orbitals)>0:
+                baseId=same_V_orbitals[len(same_O_orbitals)-1]
                 baseEnergy=self.Data.Eigenvalues[baseId]
-                for each in same_V_obtials:
+                for each in same_V_orbitals:
                     if self.Data.Eigenvalues[each]<baseEnergy+0.05:
-                        new_same_V_obtials.append(each)
-            same_V_obtials=new_same_V_obtials
-        self.logger.info(f'atom:{center+1},Oobtials:{[i+1 for i in sorted(same_O_obtials)]}')
-        self.logger.info(f'atom:{center+1},Vobtials:{[i+1 for i in sorted(same_V_obtials)]}')
+                        new_same_V_orbitals.append(each)
+            same_V_orbitals=new_same_V_orbitals
+        self.logger.info(f'atom:{center+1},Oorbitals:{[i+1 for i in sorted(same_O_orbitals)]}')
+        self.logger.info(f'atom:{center+1},Vorbitals:{[i+1 for i in sorted(same_V_orbitals)]}')
 
-        O_center_square_sum=get_coefficients('P',self.Data.atoms,center,same_O_obtials)
-        O_all_square_sum = self.Data.all_sauare_sum[:, same_O_obtials]
+        O_center_square_sum=get_coefficients('P',self.Data.atoms,center,same_O_orbitals)
+        O_all_square_sum = self.Data.all_sauare_sum[:, same_O_orbitals]
         O_center_res = (O_center_square_sum / O_all_square_sum) ** 0.5 
-        self.logger.info(f'O obtial coefficients：{O_center_res}')
-        O_atom_charge = np.sum((2 if self.Data.obtial_type == 0 else 1) * O_center_res * O_center_res)
-        O_atom_charge_energy = np.sum((2 if self.Data.obtial_type == 0 else 1) * O_center_res * O_center_res*self.Data.Eigenvalues[same_O_obtials])
+        self.logger.info(f'O orbital coefficients：{O_center_res}')
+        O_atom_charge = np.sum((2 if self.Data.orbital_type == 0 else 1) * O_center_res * O_center_res)
+        O_atom_charge_energy = np.sum((2 if self.Data.orbital_type == 0 else 1) * O_center_res * O_center_res*self.Data.Eigenvalues[same_O_orbitals])
 
-        V_center_square_sum=get_coefficients('P',self.Data.atoms,center,same_V_obtials)
+        V_center_square_sum=get_coefficients('P',self.Data.atoms,center,same_V_orbitals)
         
-        V_all_square_sum = self.Data.all_sauare_sum[:, same_V_obtials]
+        V_all_square_sum = self.Data.all_sauare_sum[:, same_V_orbitals]
         V_center_res = (V_center_square_sum / V_all_square_sum) ** 0.5 
-        self.logger.info(f'V obtial coefficients：{V_center_res}')
-        # V_atom_charge = np.sum((2 if self.Data.obtial_type == 0 else 1) * V_center_res * V_center_res)
-        V_atom_charge_energy = np.sum((2 if self.Data.obtial_type == 0 else 1) * V_center_res * V_center_res*self.Data.Eigenvalues[same_V_obtials])
+        self.logger.info(f'V orbital coefficients：{V_center_res}')
+        # V_atom_charge = np.sum((2 if self.Data.orbital_type == 0 else 1) * V_center_res * V_center_res)
+        V_atom_charge_energy = np.sum((2 if self.Data.orbital_type == 0 else 1) * V_center_res * V_center_res*self.Data.Eigenvalues[same_V_orbitals])
         self.program.log_window_text.insert('end', f'charge density:{O_atom_charge:.4f}\n')
         self.program.log_window_text.insert('end', f'nucleophilic energy:{O_atom_charge_energy:.4f}\n')
         self.program.log_window_text.insert('end', f'electrophilic energy:{V_atom_charge_energy:.4f}\n')
         self.program.server.set_normals(self.normals)
-        return np.array(bond_levels)
+        return np.array(bond_orders)
 
     def caculate(self,centers):
         for i, center in enumerate(centers):
             self.program.log_window_text.insert('end', f'{center + 1}:\n')  # 提示原子序号
-            bond_levels = self.get_atom_bond_levels(center)
-            if bond_levels.ndim==1:
-                bond_levels=bond_levels[:,np.newaxis]
-            bond_order=np.sum(bond_levels,axis=0)
+            bond_orders = self.get_atom_bond_orders(center)
+            if bond_orders.ndim==1:
+                bond_orders=bond_orders[:,np.newaxis]
+            bond_order=np.sum(bond_orders,axis=0)
             show_bond_order=list(bond_order)
             show_bond_order=list_remove(show_bond_order,0)
             self.program.log_window_text.insert('end', f'sum of bond orders:{",".join([f"{each:.4f}" for each in show_bond_order])}\n')
@@ -342,7 +346,7 @@ class Caculater:
             for around in arounds:
                 self.normals[f'{center}-{around}']=self.search_Normal(center,around)
                 self.normals[f'{around}-{center}']=self.search_Normal(around,center)
-                O_obtials,V_obtials=self.get_obtial_between_atoms(center,around)
-                self.selectedObtials[f'{center}-{around}-O']=O_obtials
-                self.selectedObtials[f'{center}-{around}-V']=V_obtials
-        return self.selectedObtials
+                O_orbitals,V_orbitals=self.get_orbital_between_atoms(center,around)
+                self.selectedorbitals[f'{center}-{around}-O']=O_orbitals
+                self.selectedorbitals[f'{center}-{around}-V']=V_orbitals
+        return self.selectedorbitals

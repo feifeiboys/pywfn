@@ -23,7 +23,7 @@ class Page:
     def init_component(self): # 定义tkinter组件
         tk.Label(self.window, text='Enter atom number, split with , and -:').place(x=0, y=100, anchor='nw')
         self.entry1 = tk.Entry(self.window, show=None, width=200)
-        tk.Label(self.window, text='Enter obtial number, split with , and -:').place(x=0, y=200, anchor='w')
+        tk.Label(self.window, text='Enter orbital number, split with , and -:').place(x=0, y=200, anchor='w')
         self.entry2 = tk.Entry(self.window, show=None, width=200)
         self.caculate_button = ttk.Button(self.window, text='render', command=lambda:threading.Thread(target=self.render).start(),bootstyle=(SECONDARY,OUTLINE))
 
@@ -38,6 +38,6 @@ class Page:
 
     def render(self):
         atoms = get_nums(self.entry1.get())
-        obtials= get_nums(self.entry2.get())
-        print(atoms,obtials)
-        self.Render.render(atoms,obtials)
+        orbitals= get_nums(self.entry2.get())
+        print(atoms,orbitals)
+        self.Render.render(atoms,orbitals)

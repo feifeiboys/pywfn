@@ -41,7 +41,7 @@ class Page:
 
     def get_select(self): #用户可以读取修改过的信息，所以要在输出窗口中重新读取
         texts=self.program.log_window_text.get(1.0,'end')
-        all_obtials=self.program.Data.atoms[0]['obtials']
+        all_orbitals=self.program.Data.atoms[0]['orbitals']
         begin=0
         end=0
         lines=texts.split('\n')
@@ -52,53 +52,53 @@ class Page:
                 end=i
         contents=lines[begin+1:end]
         for each in contents:
-            obtials_str=each.split(':')[1]
-            if len(obtials_str)==0:
-                obtials=[]
+            orbitals_str=each.split(':')[1]
+            if len(orbitals_str)==0:
+                orbitals=[]
             else:
-                obtials=[int(each)-1 for each in obtials_str.split(',')]
-            if self.program.Data.obtial_type==0:
+                orbitals=[int(each)-1 for each in orbitals_str.split(',')]
+            if self.program.Data.orbital_type==0:
                 key=each.split(':')[0]
                 
                 center=int(key.split('->')[0])-1
                 around=int(key.split('->')[1])-1
-                self.selectedObtials[f'{center}-{around}-O']=obtials
-            elif self.program.Data.obtial_type==1:
+                self.selectedorbitals[f'{center}-{around}-O']=orbitals
+            elif self.program.Data.orbital_type==1:
                 key=each.split(':')[0][:-1]
                 center=int(key.split('->')[0])-1
                 around=int(key.split('->')[1])-1
-                obtialType=each.split(':')[0][-1]
-                if obtialType=='α':
-                    self.selectedObtials[f'{center}-{around}-O']=obtials
-                elif obtialType=='β':
-                    self.selectedObtials[f'{center}-{around}-O']+=[each+len(all_obtials)//2 for each in obtials]
-        self.caculater.selectedObtials=self.selectedObtials
+                orbitalType=each.split(':')[0][-1]
+                if orbitalType=='α':
+                    self.selectedorbitals[f'{center}-{around}-O']=orbitals
+                elif orbitalType=='β':
+                    self.selectedorbitals[f'{center}-{around}-O']+=[each+len(all_orbitals)//2 for each in orbitals]
+        self.caculater.selectedorbitals=self.selectedorbitals
 
 
     def select(self):
         self.program.log_window_text.insert('end','<'*50+'\n')
         centers = get_nums(self.entry1.get())
-        all_obtials=self.program.Data.atoms[0]['obtials']
+        all_orbitals=self.program.Data.atoms[0]['orbitals']
         res=self.caculater.select(centers) # 获得挑选出的轨道，并将挑选出的轨道按照格式输出
-        self.selectedObtials=res
+        self.selectedorbitals=res
         for key in res.keys():
             center=int(key.split('-')[0])+1
             around=int(key.split('-')[1])+1
-            obtialType=key.split('-')[2]
-            if obtialType=='O':
-                if self.program.Data.obtial_type==0:
+            orbitalType=key.split('-')[2]
+            if orbitalType=='O':
+                if self.program.Data.orbital_type==0:
                     self.program.log_window_text.insert('end',f'{center}->{around}:'+','.join(f'{each+1}' for each in res[key])+'\n')
-                elif self.program.Data.obtial_type==1:
+                elif self.program.Data.orbital_type==1:
                     #将轨道分为两种类型
-                    Aobtials=[]
-                    Bobtials=[]
+                    Aorbitals=[]
+                    Borbitals=[]
                     for each in res[key]:
-                        if each<len(all_obtials)/2:
-                            Aobtials.append(each)
+                        if each<len(all_orbitals)/2:
+                            Aorbitals.append(each)
                         else:
-                            Bobtials.append(each)
-                    self.program.log_window_text.insert('end',f'{center}->{around}α:'+','.join(f'{each+1}' for each in Aobtials)+'\n')
-                    self.program.log_window_text.insert('end',f'{center}->{around}β:'+','.join(f'{each+1-len(all_obtials)//2}' for each in Bobtials)+'\n')
+                            Borbitals.append(each)
+                    self.program.log_window_text.insert('end',f'{center}->{around}α:'+','.join(f'{each+1}' for each in Aorbitals)+'\n')
+                    self.program.log_window_text.insert('end',f'{center}->{around}β:'+','.join(f'{each+1-len(all_orbitals)//2}' for each in Borbitals)+'\n')
         self.program.log_window_text.insert('end','>'*50+'\n')
     def caculate(self):  # 获取用户输入的参数
         centers = get_nums(self.entry1.get())

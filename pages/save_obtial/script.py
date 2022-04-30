@@ -14,9 +14,9 @@ class Writer:
             if each[0]!='_':
                 setattr(self,each,getattr(Data,each))
     
-    def save(self,atoms,obtials): #保存文件
+    def save(self,atoms,orbitals): #保存文件
         path=self.program.log_path
-        dataframe=pd.concat([self.atoms[each]['datas'].iloc[:,obtials] for each in atoms])
+        dataframe=pd.concat([self.atoms[each]['datas'].iloc[:,orbitals] for each in atoms])
         self.file_path = asksaveasfilename(defaultextension='.xlsx', title='保存文件',initialfile=os.path.splitext(os.path.basename(path))[0])
         dataframe.to_excel(self.file_path)
         self.program.log_window_text.insert('end', '文件保存成功\n')
