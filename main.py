@@ -139,6 +139,7 @@ class App:
             self.log_window_text.insert('end', f'open file {file}\n')
             atoms=data.iloc[i,1]
             self.reader=Reader(program=self,logPath=file)
+            self.reader.Batch=True
             self.get_data()
             caculater=Caculater(program=self)
             centers=[int(each)-1 for each in atoms.split(',')]
