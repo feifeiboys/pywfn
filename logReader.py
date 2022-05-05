@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import json
 
+from pages.utils import vector_angle
+
 class Reader:
     def __init__(self, program,logPath):
         
@@ -231,6 +233,28 @@ class Data:
             res=self.allConnect[f'{atom}']
         return res.copy()
 
+    def connectH(self,atom):
+        '''返回与原子连接的H原子的序号'''
+        res=[]
+        connection=self.connections(atom)
+        for each in connection:
+            if self.atoms[each]['atom_type']=='H':
+                res.append(each)
+        return res
+    
+    def closestVector(self,des,center,around):
+        '''获得原子与指定向量离的最近的键轴向量'''
+        connections=self.connections(center).copy()
+        connections.remove(around)
+        angle=1
+        atom=None
+        for each in connections:
+            vector=self.bondVector(center,each)
+            va=0.5-abs(vector_angle(vector,des)-0.5)
+            if va<angle:
+                angle=va
+                atom=each
+        return self.bondVector(center,atom)
 
     def atomPos(self,atom):
         '''获取指定原子的坐标'''

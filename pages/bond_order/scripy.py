@@ -41,9 +41,7 @@ class Caculater:
         self.logger.info(f'normal vector from={atom+1},to={to+1},{n}')
         return n
     # 判断两个原子之间的轨道是不是π轨道,(中心原子序号，周围原子序号，轨道序号)
-    def saveArray(self,file,array):
-        if file not in self.savedArray:
-            np.save(file=file,arr=array)
+    
 
     def get_orbital_is_userful(self, center, around, orbital): #判断两原子之间的π轨道是不是π轨道
         if self.Data.atoms[around]['atom_type']=='H':
@@ -143,11 +141,11 @@ class Caculater:
             
             cnp_angle=vector_angle(cn,c_pv) #p轨道方向和法向量方向的夹角
             anp_angle=vector_angle(an,a_pv)
-            self.logger.info(f'the angle between p orbital direction and normal vector of center is {cnp_angle:.4f} around is {anp_angle:.4f}')
+            self.logger.info(f'the angle between p orbital direction and normal vector of center is {0.5-abs(cnp_angle-0.5):.4f} around is {0.5-abs(anp_angle-0.5):.4f}')
             if M!=4:
                 self.logger.info(f'{M=}')
                 if 0.5-abs(anp_angle-0.5)>self.program.config['pbAngle']: #周围原子必须与法向量平行
-                    self.logger.info(f'normal not parallel to p')
+                    self.logger.info(f'err-7: normal not parallel to p')
                     return False
                 connections=self.Data.connections(center).copy()
                 connections.remove(around)
@@ -182,18 +180,28 @@ class Caculater:
                     return False
             elif M==4: #周围原子连接四个原子，sp3杂化
                 self.logger.info(f'{M=}')
-                if 0.5-abs(cnp_angle-0.5)>self.program.config['pnAngle']: #中心原子必须与法向量平行
-                    self.logger.info(f'normal not parallel to p')
-                    return False
-                connections=self.Data.connections(around).copy()
-                connections.remove(center)
-                connect_vectors=[self.Data.bondVector(around,each) for each in connections]
-                connect_angles=[0.5-abs(vector_angle(each,a_pv)-0.5) for each in connect_vectors]
-                self.logger.info(connect_angles)
-                if min(connect_angles)<self.program.config['pbAngle']: #周围原子平行于键轴
+                center_connections=self.Data.connections(center).copy()
+                center_connections.remove(around)
+                center_connect_vectors=[self.Data.bondVector(each,center) for each in center_connections]
+                center_connect_angles=[0.5-abs(vector_angle(each,c_pv)-0.5) for each in center_connect_vectors]
+                around_connections=self.Data.connections(around).copy()
+                around_connections.remove(center)
+                around_connect_vectors=[self.Data.bondVector(each,around) for each in around_connections]
+                around_connect_angles=[0.5-abs(vector_angle(each,a_pv)-0.5) for each in around_connect_vectors]
+                # center_Angels=center_connect_angles+[0.5-abs(cnp_angle-0.5)]
+                self.logger.info(f'{center_connect_angles=},{around_connect_angles}')
+                # 1.如果中心原子是法向量方向，并且周围原子p轨道在键轴方向
+                if 0.5-abs(cnp_angle-0.5)<self.program.config['pnAngle'] and min(around_connect_angles)<self.program.config['pbAngle']: #中心原子必须与法向量平行
+                    self.logger.info(f'yes-N3M4-1')
+                    return True
+                # 2.如果中心原子p轨道是键轴方向，并且周围原子是最接近于法向量的键轴方向的p轨道
+                pbAngle=self.program.config['pbAngle']
+                pnAngle=self.program.config['pnAngle']
+                if min(center_connect_angles)<pbAngle and min(around_connect_angles)<pbAngle and 0.5-abs(vector_angle(cn,a_pv)-0.5)<pnAngle: #周围原子平行于键轴
+                    self.logger.info(f'yes-N3M4-2')
                     return True
                 else:
-                    self.logger.info(f'around bonds not parallel to p')
+                    self.logger.info(f'err-12: around bonds not parallel to p')
                     return False
         else:
             self.logger.info(f'err-10: center atom connection number not equal to 2 or 3 which is {self.N}')

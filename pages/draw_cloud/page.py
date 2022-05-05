@@ -25,19 +25,25 @@ class Page:
         self.entry1 = tk.Entry(self.window, show=None, width=200)
         tk.Label(self.window, text='Enter orbital number, split with , and -:').place(x=0, y=200, anchor='w')
         self.entry2 = tk.Entry(self.window, show=None, width=200)
-        self.caculate_button = ttk.Button(self.window, text='render', command=lambda:threading.Thread(target=self.render).start(),bootstyle=(SECONDARY,OUTLINE))
+        self.atomRender_button = ttk.Button(self.window, text='atomRender', command=lambda:threading.Thread(target=self.atomRender).start(),bootstyle=(SECONDARY,OUTLINE))
+        self.bondRender_button = ttk.Button(self.window, text='bondRender', command=lambda:threading.Thread(target=self.bondRender).start(),bootstyle=(SECONDARY,OUTLINE))
 
 
     def set_conponent_pos(self): # 定义tkinter组件位置
         self.entry1.place(x=0, y=150, anchor='nw')
         self.entry2.place(x=0, y=250, anchor='nw')
-        self.caculate_button.place(x=240, y=500, anchor='center')
+        self.atomRender_button.place(x=240, y=500, anchor='center')
+        self.bondRender_button.place(x=240, y=600, anchor='center')
 
     def run(self): # 运行页面
         self.window.mainloop()
 
-    def render(self):
+    def atomRender(self):
         atoms = get_nums(self.entry1.get())
         orbitals= get_nums(self.entry2.get())
         print(atoms,orbitals)
-        self.Render.render(atoms,orbitals)
+        self.Render.atomRender(atoms,orbitals)
+    def bondRender(self):
+        atoms = get_nums(self.entry1.get())
+        orbitals= get_nums(self.entry2.get())
+        self.Render.bondRender(atoms,orbitals)

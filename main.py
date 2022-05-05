@@ -111,7 +111,9 @@ class App:
             return
         self.logger.info(self.log_path) # 日志中记录打开文件的位置
         # 再打开的文件位置创建一个文件夹
-        
+        self.dataForder=os.path.splitext(self.log_path)[0]
+        if not os.path.exists(self.dataForder):
+            os.mkdir(self.dataForder)
         self.log_window_text.insert('end', f'open file {self.log_path}\n')
         self.reader = Reader(program=self,logPath=self.log_path)
         threading.Thread(target=self.get_data).start()
