@@ -66,12 +66,16 @@ def get_gridPoints(range,step,ball=False):
                 points.append([x,y,z])
     return np.array(points).T
 
-def vector_angle(a,b): # 计算两向量之间的夹角
+def vector_angle(a,b,trans=False): # 计算两向量之间的夹角
     '''计算两向量之间的夹角'''
     value=(np.dot(a,b))/(np.linalg.norm(a)*np.linalg.norm(b))
     if value>1:
         value=1
-    return np.arccos(value)/math.pi
+    angle=np.arccos(value)/math.pi
+    if not trans:
+        return angle
+    else:
+        return 0.5-abs(angle-0.5)
 
 def get_normalVector(p1,p2,p3):
     '''获取三点确定的平面的单位法向量'''

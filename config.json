@@ -9,6 +9,8 @@
     "2pAngle":0.2,
     "pPosanValue":0.04,
     "pnAngle":0.25,
+    "pnAngleM4":0.3,
     "renderSize":3,
-    "renderStep":0.2
+    "renderStep":0.2,
+    "betweenChange":0.00012
 }

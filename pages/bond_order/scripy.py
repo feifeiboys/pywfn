@@ -139,21 +139,39 @@ class Caculater:
             cn=self.normals[f'{center}-{around}']
             an=self.normals[f'{around}-{center}']
             
-            cnp_angle=vector_angle(cn,c_pv) #p轨道方向和法向量方向的夹角
-            anp_angle=vector_angle(an,a_pv)
-            self.logger.info(f'the angle between p orbital direction and normal vector of center is {0.5-abs(cnp_angle-0.5):.4f} around is {0.5-abs(anp_angle-0.5):.4f}')
+            cnp_angle=vector_angle(cn,c_pv,trans=True) #p轨道方向和法向量方向的夹角
+            anp_angle=vector_angle(an,a_pv,trans=True)
+            self.logger.info(f'the angle between p orbital direction and normal vector of center is {cnp_angle:.4f} around is {anp_angle:.4f}')
+
+            # 计算两原子法向量中心处的函数值变化率
+            center_normal=cn.reshape(3,1)
+            around_normal=an.reshape(3,1)
+            if vector_angle(cn,an)>0.5:
+                around_normal*=-1
+            between_up=(centerPos+center_normal+aroundPos+around_normal)/2
+            between_down=(centerPos-center_normal+aroundPos-around_normal)/2
+            between_up_before=posan_function(centerPos,between_up,center_paras[:,0],center_paras[:,2],center_ts)
+            between_down_before=posan_function(centerPos,between_down,center_paras[:,0],center_paras[:,2],center_ts)
+            between_up_after=posan_function(aroundPos,between_up,center_paras[:,0],center_paras[:,2],center_ts)+between_up_before
+            between_down_after=posan_function(aroundPos,between_down,center_paras[:,0],center_paras[:,2],center_ts)+between_down_before
+            between_up_change=abs(between_up_after**2-between_up_before**2).item()
+            between_down_change=abs(between_down_after**2-between_down_before**2).item()
+            self.logger.info(f'{between_up_change=},{between_down_change=}')
+            if min([between_up_change,between_down_change])<self.program.config['betweenChange']:
+                return False
+
             if M!=4:
                 self.logger.info(f'{M=}')
-                if 0.5-abs(anp_angle-0.5)>self.program.config['pbAngle']: #周围原子必须与法向量平行
+                if anp_angle>self.program.config['pbAngle']: #周围原子必须与法向量平行
                     self.logger.info(f'err-7: normal not parallel to p')
                     return False
                 connections=self.Data.connections(center).copy()
                 connections.remove(around)
                 connect_vectors=[self.Data.bondVector(each,center) for each in connections]
-                connect_angles=[0.5-abs(vector_angle(each,c_pv)-0.5) for each in connect_vectors]
-                Angels=connect_angles+[0.5-abs(cnp_angle-0.5)] # 包含法向量与2p轨道夹角
+                connect_angles=[vector_angle(each,c_pv,trans=True) for each in connect_vectors]
+                Angels=connect_angles+[cnp_angle] # 包含法向量与2p轨道夹角
                 self.logger.info(f'{Angels=}')
-                if min(connect_angles)<self.program.config['pnAngle'] or 0.5-abs(cnp_angle-0.5)<self.program.config['pbAngle']: # 所有夹角的最小值要小于一定值(0.2)
+                if min(connect_angles)<self.program.config['pnAngle'] or cnp_angle<self.program.config['pbAngle']: # 所有夹角的最小值要小于一定值(0.2)
                     if np.argmin(Angels)!=len(Angels)-1: # 如果最小值不是最后一位,中心原子的法向量是C-R方向
                         self.logger.info('center 2p direction on bond')
                         # 计算周围原子叠加前后的波函数值的变化，判断成键反键或者是不是π轨道
@@ -183,21 +201,26 @@ class Caculater:
                 center_connections=self.Data.connections(center).copy()
                 center_connections.remove(around)
                 center_connect_vectors=[self.Data.bondVector(each,center) for each in center_connections]
-                center_connect_angles=[0.5-abs(vector_angle(each,c_pv)-0.5) for each in center_connect_vectors]
+                center_connect_angles=[vector_angle(each,c_pv,trans=True) for each in center_connect_vectors]
                 around_connections=self.Data.connections(around).copy()
                 around_connections.remove(center)
                 around_connect_vectors=[self.Data.bondVector(each,around) for each in around_connections]
-                around_connect_angles=[0.5-abs(vector_angle(each,a_pv)-0.5) for each in around_connect_vectors]
-                # center_Angels=center_connect_angles+[0.5-abs(cnp_angle-0.5)]
-                self.logger.info(f'{center_connect_angles=},{around_connect_angles}')
-                # 1.如果中心原子是法向量方向，并且周围原子p轨道在键轴方向
-                if 0.5-abs(cnp_angle-0.5)<self.program.config['pnAngle'] and min(around_connect_angles)<self.program.config['pbAngle']: #中心原子必须与法向量平行
+                around_connect_angles=[vector_angle(each,a_pv,trans=True) for each in around_connect_vectors]
+                self.logger.info(f'{center_connect_angles=},{around_connect_angles=}')
+                self.logger.info(f'{anp_angle=}')
+
+                
+                
+                # 中心原子可以是法向量或者键轴方向，相邻原子需要时法向量方向，但范围可以放宽
+                bondVector=self.Data.bondVector(around,center) #键轴向量
+                pbAngle=vector_angle(bondVector,c_pv) #键轴与p轨道的夹角
+                self.logger.info(f'{pbAngle=}')
+                if pbAngle>0.2 and anp_angle<self.program.config['pnAngleM4']:
+                    return True
+                if cnp_angle<self.program.config['pnAngle'] and anp_angle<self.program.config['pnAngleM4']: #中心原子必须与法向量平行
                     self.logger.info(f'yes-N3M4-1')
                     return True
-                # 2.如果中心原子p轨道是键轴方向，并且周围原子是最接近于法向量的键轴方向的p轨道
-                pbAngle=self.program.config['pbAngle']
-                pnAngle=self.program.config['pnAngle']
-                if min(center_connect_angles)<pbAngle and min(around_connect_angles)<pbAngle and 0.5-abs(vector_angle(cn,a_pv)-0.5)<pnAngle: #周围原子平行于键轴
+                if min(center_connect_angles)<self.program.config['pnAngle'] and anp_angle<self.program.config['pnAngleM4']: #周围原子平行于键轴
                     self.logger.info(f'yes-N3M4-2')
                     return True
                 else:
@@ -305,7 +328,7 @@ class Caculater:
             an=self.search_Normal(around,center)
             self.normals[f'{around}-{center}']=an
             # 中心原子与周围原子键轴的夹角
-            nbAngles=0.5-abs(vector_angle(cn,self.Data.bondVector(around,center))-0.5)
+            nbAngles=vector_angle(cn,self.Data.bondVector(around,center),trans=True)
             self.logger.info(f'{center=},{around=},{nbAngles=}')
             bond_order,O_orbitals,V_orbitals = self.get_bond_order_between_tow_atom(center, around) #bondlevel可以有一个或者两个
             same_O_orbitals+=O_orbitals
