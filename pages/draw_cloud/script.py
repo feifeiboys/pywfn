@@ -41,10 +41,13 @@ class Render:
                 for orbital in orbitals:
                     centerPos=self.get_atomPos(atom).reshape(3,1)
                     paras = np.array(self.standard_basis[atom])
-                    ts=self.atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,orbital] #获取某个原子某个轨道的2px,2py,2pz,3px,3py,3pz
-                    aroundPos=centerPos+self.arounds
-                    values=posan_function(centerPos=centerPos,aroundPos=aroundPos,alphas=paras[:,0],cs=paras[:,2],ts=ts)
-                    print(aroundPos.shape,values.shape)
+                    # ts=self.atoms[atom]['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].iloc[:,orbital] #获取某个原子某个轨道的2px,2py,2pz,3px,3py,3pz
+                    ts=get_coefficients('2SP',self.Data.atoms,atom,orbital,raw=True)
+                    # aroundPos=centerPos+self.arounds
+                    atomGrid=centerPos+self.gridPointsBox
+                    values=posan_function(centerPos=centerPos,aroundPos=atomGrid,paras=paras,ts=ts)
+                    
+                    self.saveArray(f'{self.program.dataForder}//atomClouds//{atom+1}-{orbital+1}',np.concatenate([atomGrid,values]).T)
                     cloudData[f'{atom}-{orbital}']=values.tolist()
         self.program.server.setCloud(cloudData)
         self.program.log_window_text.insert('end','rendering complete, view in browser\n')
@@ -58,13 +61,13 @@ class Render:
                     centerPos=self.Data.atomPos(center).reshape(3,1)
                     aroundPos=self.Data.atomPos(around).reshape(3,1)
                     center_paras = np.array(self.Data.standard_basis[center])
-                    center_ts=get_coefficients('P',self.Data.atoms,center,orbital,raw=True)
+                    center_ts=get_coefficients('2SP',self.Data.atoms,center,orbital,raw=True)
                     around_paras = np.array(self.Data.standard_basis[around])
-                    around_ts=get_coefficients('P',self.Data.atoms,around,orbital,raw=True)
+                    around_ts=get_coefficients('2SP',self.Data.atoms,around,orbital,raw=True)
                     bondGrid=(centerPos+aroundPos)/2+self.gridPointsBox
-                    centerArray=posan_function(centerPos,bondGrid,center_paras[:,0],center_paras[:,2],center_ts)
-                    aroundArray=posan_function(aroundPos,bondGrid,around_paras[:,0],around_paras[:,2],around_ts)
-                    self.saveArray(f'{self.program.dataForder}//{center+1}-{around+1}-{orbital+1}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
+                    centerArray=posan_function(centerPos,bondGrid,center_paras,center_ts)
+                    aroundArray=posan_function(aroundPos,bondGrid,around_paras,around_ts)
+                    self.saveArray(f'{self.program.dataForder}//bondClouds//{center+1}-{around+1}-{orbital+1}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
     def saveArray(self,file,array):
         if file not in self.savedArray:
             np.save(file=file,arr=array)

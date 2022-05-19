@@ -112,12 +112,16 @@ class App:
         self.logger.info(self.log_path) # 日志中记录打开文件的位置
         # 再打开的文件位置创建一个文件夹
         self.dataForder=os.path.splitext(self.log_path)[0]
-        if not os.path.exists(self.dataForder):
-            os.mkdir(self.dataForder)
+        self.mkDir(self.dataForder)
+        self.mkDir(f'{self.dataForder}//bondClouds')
+        self.mkDir(f'{self.dataForder}//atomClouds')
         self.log_window_text.insert('end', f'open file {self.log_path}\n')
         self.reader = Reader(program=self,logPath=self.log_path)
         threading.Thread(target=self.get_data).start()
 
+    def mkDir(self,path):
+        if not os.path.exists(path):
+            os.mkdir(path)
     def get_data(self):
         self.log_window_text.insert('end', 'start search...\n')
         self.Data = self.reader.get()
@@ -172,7 +176,7 @@ class App:
         ip = socket.gethostbyname(socket.gethostname())
         webbrowser.open(f'http://{ip}:5000/help')
 
-    def save(self):
+    def save(self): #将当前log窗口的文本保存为文本文件
         file=asksaveasfilename(initialfile=f'{os.path.splitext(os.path.basename(self.log_path))[0]}.txt',title='save document',filetypes=[('text document','.txt')])
         with open(file,'w',encoding='utf-8') as f:
             f.write(self.log_window_text.get(1.0,'end'))

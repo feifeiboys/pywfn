@@ -35,21 +35,27 @@ def get_points_between_two_pos(pos1,pos2,n):
     dp=pos2-pos1
     all_pos=[pos1+dp/(n-1)*i for i in range(n)]
     return np.array(all_pos)
-def posan_function(centerPos,aroundPos,alphas,cs,ts): # 为了代码可读性，可以适当写出来罗嗦点的代码
+def posan_function(centerPos,aroundPos,paras,ts): # 为了代码可读性，可以适当写出来罗嗦点的代码
     '''计算中心原子周围点处的函数值'''
+    alphas=paras[:,0]
+    c_s=paras[:,1]
+    c_p=paras[:,2]
     x,y,z=aroundPos.reshape(3,-1)
     x0,y0,z0=centerPos.reshape(3,-1)
     R=np.sum((centerPos-aroundPos)**2,axis=0,keepdims=True)
     psx=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(x-x0)*math.e**(-1*a*R)
     psy=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(y-y0)*math.e**(-1*a*R)
     psz=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(z-z0)*math.e**(-1*a*R)
-    px2=sum([c*psx(a) for c,a in zip(cs[:-1],alphas[:-1])])  # 对于3-21
-    py2=sum([c*psy(a) for c,a in zip(cs[:-1],alphas[:-1])])
-    pz2=sum([c*psz(a) for c,a in zip(cs[:-1],alphas[:-1])])
-    px3=cs[-1]*psx(alphas[-1])
-    py3=cs[-1]*psy(alphas[-1])
-    pz3=cs[-1]*psz(alphas[-1])
-    ps=[px2,py2,pz2,px3,py3,pz3]
+    s=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*math.e**(-1*a*R)
+    px2=sum([c*psx(a) for c,a in zip(c_p[:-1],alphas[:-1])])  # 对于3-21
+    py2=sum([c*psy(a) for c,a in zip(c_p[:-1],alphas[:-1])])
+    pz2=sum([c*psz(a) for c,a in zip(c_p[:-1],alphas[:-1])])
+    px3=c_p[-1]*psx(alphas[-1])
+    py3=c_p[-1]*psy(alphas[-1])
+    pz3=c_p[-1]*psz(alphas[-1])
+    s2=sum([c*s(a) for c,a in zip(c_s[:-1],alphas[:-1])])
+    s3=c_p[-1]*s(alphas[-1])
+    ps=[s2,px2,py2,pz2,s3,px3,py3,pz3]
     mo=sum([t*p for t,p in zip(ts,ps)])
     return mo
 
@@ -190,6 +196,13 @@ def get_pCoefficients(atoms,atom,orbitals,raw=False):
         return res
     else:
         return np.sum(res.to_numpy()**2,axis=0)
+def get_2spCoefficients(atoms,atom,orbitals,raw=False):
+    res=atoms[atom]['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].iloc[:,orbitals]
+    
+    if raw: #是否返回原始数据
+        return res
+    else:
+        return np.sum(res.to_numpy()**2,axis=0)
 
 def get_dCoefficients(atoms,atom,orbitals,raw=False):
     
@@ -211,6 +224,8 @@ def get_coefficients(type,atoms,atom,orbitals,raw=False):
         return get_sCoefficients('2S',atoms,atom,orbitals,raw)
     elif type=='SP':
         return get_sCoefficients('2S',atoms,atom,orbitals,raw)+get_pCoefficients(atoms,atom,orbitals,raw)
+    elif type=='2SP':
+        return get_2spCoefficients(atoms,atom,orbitals,raw)
     elif type=='P':
         return get_pCoefficients(atoms,atom,orbitals,raw)
     elif type=='D':

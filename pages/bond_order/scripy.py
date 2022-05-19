@@ -1,6 +1,8 @@
 from cv2 import sepFilter2D
 import numpy as np
 import math
+
+from sqlalchemy import true
 from pages.utils import posan_function,get_gridPoints,vector_angle,get_normalVector,orbital_classify,list_remove,get_changeScope\
 ,get_coefficients
 
@@ -21,6 +23,7 @@ class Caculater:
         self.units={} #记录成键还是反键
         self.savedArray=[]
         self.Batch=False
+        self.includeV=False
 
     def get_Normal(self,atom,to): #对获得标量函数的封装
         if f'{atom}' not in self.normals.keys(): # 每个原子的法向量应该只计算一次
@@ -44,6 +47,9 @@ class Caculater:
     
 
     def get_orbital_is_userful(self, center, around, orbital): #判断两原子之间的π轨道是不是π轨道
+        orbitalName=self.Data.orbitals[orbital]
+        if orbitalName[-1]=='V' and (not self.includeV):
+            return False
         if self.Data.atoms[around]['atom_type']=='H':
             return False
 
@@ -85,20 +91,13 @@ class Caculater:
         # 计算两原子键轴中间处的函数值，如果太大则不是π轨道
         # 去键轴上十个点，分别带入函数求得函数值
         center_paras = np.array(self.Data.standard_basis[center])
-        center_ts=get_coefficients('P',self.Data.atoms,center,orbital,raw=True)
+        center_ts=get_coefficients('2SP',self.Data.atoms,center,orbital,raw=True)
         around_paras = np.array(self.Data.standard_basis[around])
-        around_ts=get_coefficients('P',self.Data.atoms,around,orbital,raw=True)
-
-        #将两原子键轴中点的函数值保存在文件中
-        # bondGrid=(centerPos+aroundPos)/2+self.gridPointsBox
-        # centerArray=posan_function(centerPos,bondGrid,center_paras[:,0],center_paras[:,2],center_ts)
-        # aroundArray=posan_function(aroundPos,bondGrid,around_paras[:,0],around_paras[:,2],around_ts)
-        # self.saveArray(f'datas//{center+1}-{around+1}-{orbital+1}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
-
+        around_ts=get_coefficients('2SP',self.Data.atoms,around,orbital,raw=True)
 
         # 计算p轨道所在的方向 (下面都是原本属于N==2是的内容)
-        cvs=posan_function(centerPos,centerPos+self.gridPoints,center_paras[:,0],center_paras[:,2],center_ts) # center values
-        avs=posan_function(aroundPos,aroundPos+self.gridPoints,around_paras[:,0],around_paras[:,2],around_ts)
+        cvs=posan_function(centerPos,centerPos+self.gridPoints,center_paras,center_ts) # center values
+        avs=posan_function(aroundPos,aroundPos+self.gridPoints,around_paras,around_ts)
 
         c_maxID=np.argmax(cvs)
         a_maxID=np.argmax(avs)
@@ -112,7 +111,7 @@ class Caculater:
 
         b_vector=aroundPos-centerPos # 键轴的向量
         c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p orbital vectors
-        cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras[:,0],center_paras[:,2],center_ts) #center p orbital vector values
+        cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras,center_ts) #center p orbital vector values
         if np.max(cpvvs)*np.min(cpvvs)<0:
             self.logger.info('err-5: there are cross profile in p orbital way') #p轨道方向有节点
             return False
@@ -141,6 +140,8 @@ class Caculater:
             
             cnp_angle=vector_angle(cn,c_pv,trans=True) #p轨道方向和法向量方向的夹角
             anp_angle=vector_angle(an,a_pv,trans=True)
+            if cnp_angle<0.1 and anp_angle<0.1:
+                return True
             self.logger.info(f'the angle between p orbital direction and normal vector of center is {cnp_angle:.4f} around is {anp_angle:.4f}')
 
             # 计算两原子法向量中心处的函数值变化率
@@ -150,14 +151,26 @@ class Caculater:
                 around_normal*=-1
             between_up=(centerPos+center_normal+aroundPos+around_normal)/2
             between_down=(centerPos-center_normal+aroundPos-around_normal)/2
-            between_up_before=posan_function(centerPos,between_up,center_paras[:,0],center_paras[:,2],center_ts)
-            between_down_before=posan_function(centerPos,between_down,center_paras[:,0],center_paras[:,2],center_ts)
-            between_up_after=posan_function(aroundPos,between_up,center_paras[:,0],center_paras[:,2],center_ts)+between_up_before
-            between_down_after=posan_function(aroundPos,between_down,center_paras[:,0],center_paras[:,2],center_ts)+between_down_before
-            between_up_change=abs(between_up_after**2-between_up_before**2).item()
-            between_down_change=abs(between_down_after**2-between_down_before**2).item()
+            between_up_before=posan_function(centerPos,between_up,center_paras,center_ts).item()
+            between_down_before=posan_function(centerPos,between_down,center_paras,center_ts).item()
+            around_between_up_before=posan_function(aroundPos,between_up,around_paras,around_ts).item()
+            around_between_down_before=posan_function(aroundPos,between_down,around_paras,around_ts).item()
+            between_up_after=around_between_up_before+between_up_before
+            between_down_after=around_between_down_before+between_down_before
+            between_up_change=between_up_after**2-between_up_before**2
+            between_down_change=between_down_after**2-between_down_before**2
+            self.logger.info(f'{between_up_before=},{between_down_before=}')
+            self.logger.info(f'{around_between_up_before=},{around_between_down_before=}')
+            self.logger.info(f'{between_up_after=},{between_down_after=}')
             self.logger.info(f'{between_up_change=},{between_down_change=}')
-            if min([between_up_change,between_down_change])<self.program.config['betweenChange']:
+            if not (between_up_before*between_down_before<0 or around_between_up_before*around_between_down_before<0):
+                self.logger.info('err-1')
+                return False
+            if between_up_change*between_down_change<0:
+                self.logger.info('err-2')
+                return False
+            if min([abs(between_up_change),abs(between_down_change)])<self.program.config['betweenChange']:
+                self.logger.info('err-3')
                 return False
 
             if M!=4:
@@ -175,10 +188,10 @@ class Caculater:
                     if np.argmin(Angels)!=len(Angels)-1: # 如果最小值不是最后一位,中心原子的法向量是C-R方向
                         self.logger.info('center 2p direction on bond')
                         # 计算周围原子叠加前后的波函数值的变化，判断成键反键或者是不是π轨道
-                        center_up_value=posan_function(centerPos,aroundPos+c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
-                        center_down_value=posan_function(centerPos,aroundPos-c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
-                        around_up_value=posan_function(aroundPos,aroundPos+c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
-                        around_down_value=posan_function(aroundPos,aroundPos-c_pv.reshape(3,1),center_paras[:,0],center_paras[:,2],center_ts)
+                        center_up_value=posan_function(centerPos,aroundPos+c_pv.reshape(3,1),center_paras,center_ts)
+                        center_down_value=posan_function(centerPos,aroundPos-c_pv.reshape(3,1),center_paras,center_ts)
+                        around_up_value=posan_function(aroundPos,aroundPos+c_pv.reshape(3,1),center_paras,center_ts)
+                        around_down_value=posan_function(aroundPos,aroundPos-c_pv.reshape(3,1),center_paras,center_ts)
                         up_overlap_value=center_up_value+around_up_value
                         down_overlap_value=center_down_value+around_down_value
                         if (up_overlap_value**2-around_up_value**2)>0 and (down_overlap_value**2-around_down_value**2)>0:
