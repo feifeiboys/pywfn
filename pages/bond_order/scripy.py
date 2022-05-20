@@ -70,7 +70,6 @@ class Caculater:
         if center_spContribute <= self.program.config["pContribute"] or around_spContribute <= self.program.config["pContribute"]:
             self.logger.info(f'err-2: sp contribute is smaller than {self.program.config["pContribute"]}')
             return False # 判断条件1，s轨道的数值太小的排除
-        
         # 再判断p的贡献
         center_pContribute=(get_coefficients('SP',self.Data.atoms,center,orbital)/all_square_sum)[0]
         around_pContribute=(get_coefficients('SP',self.Data.atoms,around,orbital)/all_square_sum)[0]
@@ -81,6 +80,9 @@ class Caculater:
 
         if center_sContribute>center_spContribute or around_sContribute>around_spContribute:
             self.logger.info('err-4: s+d contribute is bigger than s+p contribute')
+            return False
+        if center_spContribute/center_sContribute<5 or around_spContribute/around_sContribute<5:
+            self.logger.info(f'err:')
             return False
 
         centerPos=self.Data.atomPos(center).reshape(3,1)
@@ -112,9 +114,9 @@ class Caculater:
         b_vector=aroundPos-centerPos # 键轴的向量
         c_pvs=c_pv.reshape(3,1)/np.linalg.norm(c_pv)*np.arange(0.1,3.0,0.1)[np.newaxis,:] #center p orbital vectors
         cpvvs=posan_function(centerPos,centerPos+c_pvs,center_paras,center_ts) #center p orbital vector values
-        if np.max(cpvvs)*np.min(cpvvs)<0:
-            self.logger.info('err-5: there are cross profile in p orbital way') #p轨道方向有节点
-            return False
+        # if np.max(cpvvs)*np.min(cpvvs)<0:
+        #     self.logger.info('err-5: there are cross profile in p orbital way') #p轨道方向有节点
+        #     return False
         c_angle,a_angle=vector_angle(c_pv,b_vector),vector_angle(a_pv,b_vector) #p轨道与键轴的夹角
         c_value,a_value=np.max(cvs),np.max(avs)
 
@@ -159,25 +161,47 @@ class Caculater:
             between_down_after=around_between_down_before+between_down_before
             between_up_change=between_up_after**2-between_up_before**2
             between_down_change=between_down_after**2-between_down_before**2
+            
             self.logger.info(f'{between_up_before=},{between_down_before=}')
             self.logger.info(f'{around_between_up_before=},{around_between_down_before=}')
             self.logger.info(f'{between_up_after=},{between_down_after=}')
             self.logger.info(f'{between_up_change=},{between_down_change=}')
-            if not (between_up_before*between_down_before<0 or around_between_up_before*around_between_down_before<0):
+            
+            # self.logger.info('change ratio',between_up_after**2/between_up_before**2,between_down_after**2/between_down_before**2)
+            if between_up_after*between_down_after>0: #叠加后两个点要不同号
+                self.logger.info(f'err-4')
+                return False
+            if between_up_change>0 and between_down_change>=0:
+                self.units[f'{center}-{around}-{orbital}']=1
+            elif between_up_change<0 and between_down_change<0:
+                self.units[f'{center}-{around}-{orbital}']=-1
+            if not (between_up_before*between_down_before<=0 or around_between_up_before*around_between_down_before<=0):
                 self.logger.info('err-1')
                 return False
-            if between_up_change*between_down_change<0:
+            if between_up_change*between_down_change<=0:
                 self.logger.info('err-2')
                 return False
+            
+            center_up_ratio=abs(abs(between_up_after)-abs(between_up_before))/abs(between_up_before)
+            center_down_ratio=abs(abs(between_down_after)-abs(between_down_before))/abs(between_down_before)
+            around_up_ratio=abs(abs(between_up_after)-abs(around_between_up_before))/abs(around_between_up_before)
+            around_down_ratio=abs(abs(between_down_after)-abs(around_between_down_before))/abs(around_between_down_before)
+            self.logger.info(f'change-ratio:{center_up_ratio=},{center_down_ratio=},{around_up_ratio=},{around_down_ratio=}')
+            if center_up_ratio<0.05 or center_down_ratio<0.05 or around_up_ratio<0.05 or around_down_ratio<0.05:
+                return False
+
             if min([abs(between_up_change),abs(between_down_change)])<self.program.config['betweenChange']:
                 self.logger.info('err-3')
                 return False
-
+            
+            # if abs(between_up_after/between_down_after)<2:
+            #     return False
+            return True
             if M!=4:
-                self.logger.info(f'{M=}')
-                if anp_angle>self.program.config['pbAngle']: #周围原子必须与法向量平行
-                    self.logger.info(f'err-7: normal not parallel to p')
-                    return False
+                # self.logger.info(f'{M=}')
+                # if anp_angle>self.program.config['pbAngle']: #周围原子必须与法向量平行
+                #     self.logger.info(f'err-7: normal not parallel to p')
+                #     return False
                 connections=self.Data.connections(center).copy()
                 connections.remove(around)
                 connect_vectors=[self.Data.bondVector(each,center) for each in connections]

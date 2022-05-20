@@ -12,5 +12,5 @@
     "pnAngleM4":0.3,
     "renderSize":3,
     "renderStep":0.2,
-    "betweenChange":0.00012
+    "betweenChange":0.0004
 }
