@@ -1,23 +1,29 @@
 import numpy as np
-import math
-import matplotlib.pyplot as plt
-points=np.random.rand(1000,3)*2-1
-nv=points[0]
-def angle(a,b):
-    value=(np.dot(a,b))/(np.linalg.norm(a)*np.linalg.norm(b))
-    return np.arccos(value if value<=1 else 1)/math.pi
-angles=np.array([angle(each,nv) for each in points])
-y=np.abs(0.5-angles)
-types=[[],[]]
-idxs=[[],[]]
-for i,each in enumerate(y):
-    distance=np.abs(each-np.array([0,0.5]))
-    idx=np.argmin(distance)
-    types[idx].append(each)
-    idxs[idx].append(i)
+import pyvista as pv
+from sympy import sieve
 
-fig=plt.figure()
-ax=fig.add_subplot(1,1,1,projection='3d')
-ax.scatter(points[idxs[0]][:,0],points[idxs[0]][:,1],points[idxs[0]][:,2])
-ax.scatter(points[idxs[1]][:,0],points[idxs[1]][:,1],points[idxs[1]][:,2])
-plt.show()
+
+ups = [
+    [ 5.02299219e-01,  1.20940600e+00,  5.02299219e-01],
+       [ 1.40535778e+00,  0.00000000e+00, -1.40535778e+00],
+       [ 6.28036983e-15,  1.00000000e+00,  6.28036983e-15]
+]
+downs=[
+     [ 1.91651278e+00,  1.20940600e+00,  1.91651278e+00],
+       [-8.85578119e-03,  0.00000000e+00,  8.85578119e-03],
+       [-6.28036983e-15, -1.00000000e+00, -6.28036983e-15]
+]
+atoms=[
+    [1.209406  ,  0.698251  , 0.000000],
+    [1.209406  , -0.698251  ,  0.000000],
+    
+
+]
+size=50.0
+plotter=pv.Plotter()
+plotter.add_axes()
+plotter.background_color='white'
+plotter.add_points(np.array(ups).T,color='red',point_size=size/2,render_points_as_spheres=True)
+plotter.add_points(np.array(downs).T,color='green',point_size=size/2,render_points_as_spheres=True)
+plotter.add_points(np.array(atoms),color='black',point_size=size,render_points_as_spheres=True)
+plotter.show()

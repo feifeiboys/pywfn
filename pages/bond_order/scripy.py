@@ -4,7 +4,7 @@ import math
 
 from sqlalchemy import true
 from pages.utils import posan_function,get_gridPoints,vector_angle,get_normalVector,orbital_classify,list_remove,get_changeScope\
-,get_coefficients
+,get_coefficients,differ_function
 
 class Caculater:
     def __init__(self, program):
@@ -16,6 +16,7 @@ class Caculater:
         self.searched=[] #记录已经搜索的原子
         self.gridPoints=get_gridPoints(1,0.05,ball=True)
         self.gridPointsBox=get_gridPoints(2,0.1,ball=True)
+        self.centerGridPoints=get_gridPoints(0.1,0.01,ball=True)
         self.pass_porbitals=[]
         self.sContributs={} #记录所有分子轨道的s组分的贡献
         self.selectedorbitals={}
@@ -102,11 +103,16 @@ class Caculater:
         avs=posan_function(aroundPos,aroundPos+self.gridPoints,around_paras,around_ts)
 
         c_maxID=np.argmax(cvs)
+        c_minID=np.argmin(cvs)
         a_maxID=np.argmax(avs)
+        a_minID=np.argmin(avs)
         c_pv=self.gridPoints[:,c_maxID] # 中心原子p轨道的方向 center p orbital vector
+
         a_pv=self.gridPoints[:,a_maxID] # 邻接原子p轨道的方向
         self.logger.info(f'p orbital vectors center:{[round(each,3) for each in c_pv]}, around:{[round(each,3) for each in a_pv]}')
         
+        if np.linalg.norm(c_pv)<=0.01 or np.linalg.norm(a_pv)==0.01:
+            return False
         self.p_vectors[f'{center}-{orbital}']=c_pv
         self.p_vectors[f'{around}-{orbital}']=a_pv
 
@@ -136,6 +142,12 @@ class Caculater:
                 self.logger.info('this molecular orbital is sp orbital')
                 return True
         elif self.N==3:
+            # 计算中心原子三个键轴与p轨道的方向，如果夹角都大于0.2才能继续
+            connections=self.Data.connections(center)
+            angles=[vector_angle((self.Data.atomPos(each)-centerPos.flatten()),c_pv,trans=True) for each in connections]
+            self.logger.info(f'{angles=}')
+            if min(angles)<0.2:
+                return False
             # 求出过与中心原子相连的三个原子的平面的法向量
             cn=self.normals[f'{center}-{around}']
             an=self.normals[f'{around}-{center}']
@@ -145,40 +157,84 @@ class Caculater:
             if cnp_angle<0.1 and anp_angle<0.1:
                 return True
             self.logger.info(f'the angle between p orbital direction and normal vector of center is {cnp_angle:.4f} around is {anp_angle:.4f}')
+            
 
-            # 计算两原子法向量中心处的函数值变化率
+            # if vector_angle(c_pv,an)>0.5:
+            #     an*=-1
+            # if vector_angle(c_pv,a_pv)>0.5:
+            #     a_pv*=-1
             center_normal=cn.reshape(3,1)
             around_normal=an.reshape(3,1)
             if vector_angle(cn,an)>0.5:
                 around_normal*=-1
+            # 这些都是叠加前的
+            centerNormalValueUp=posan_function(centerPos,centerPos+center_normal,center_paras,center_ts).item()
+            aroundNormalValueUp=posan_function(aroundPos,aroundPos+center_normal,around_paras,around_ts).item()
+            centerNormalValueDown=posan_function(centerPos,centerPos-center_normal,center_paras,center_ts).item()
+            aroundNormalValueDown=posan_function(aroundPos,aroundPos-center_normal,around_paras,around_ts).item()
+            self.logger.info(f'{centerNormalValueUp=},{aroundNormalValueUp=},{centerNormalValueDown=},{aroundNormalValueDown=}')
+            antibonding=False
             between_up=(centerPos+center_normal+aroundPos+around_normal)/2
             between_down=(centerPos-center_normal+aroundPos-around_normal)/2
-            between_up_before=posan_function(centerPos,between_up,center_paras,center_ts).item()
-            between_down_before=posan_function(centerPos,between_down,center_paras,center_ts).item()
-            around_between_up_before=posan_function(aroundPos,between_up,around_paras,around_ts).item()
-            around_between_down_before=posan_function(aroundPos,between_down,around_paras,around_ts).item()
-            between_up_after=around_between_up_before+between_up_before
-            between_down_after=around_between_down_before+between_down_before
+            select_upPos=np.concatenate([centerPos+center_normal,between_up,aroundPos+around_normal],axis=1)
+            select_downPos=np.concatenate([centerPos-center_normal,between_down,aroundPos-around_normal],axis=1)
+            self.logger.info(f'select_upPos:\n{select_upPos.tolist()}\nselect_downPos:\n{select_downPos.tolist()}')
+            if centerNormalValueUp*aroundNormalValueUp<0 and centerNormalValueDown*aroundNormalValueDown<0: #有可能是法向量，要进一步判断
+                
+                # 计算两原子法向量与中心处共六个点处差值图的函数值
+                # differ_cp=(c_pv/np.linalg.norm(c_pv)/2).reshape(3,1)
+                # differ_ap=(a_pv/np.linalg.norm(a_pv)/2).reshape(3,1)
+                # if vector_angle(c_pv,a_pv)>0.5:
+                #     differ_ap*=-1
+                bondCenterPos=(centerPos+aroundPos)/2
+                differ_ups=differ_function(posan_function(centerPos,select_upPos,center_paras,center_ts),posan_function(aroundPos,select_upPos,around_paras,around_ts)).flatten()
+                differ_downs=differ_function(posan_function(centerPos,select_downPos,center_paras,center_ts),posan_function(aroundPos,select_downPos,around_paras,around_ts)).flatten()
+                self.logger.info(f'{differ_ups=},{differ_downs=}')
+                centerBallValues=differ_function(posan_function(centerPos,bondCenterPos+self.centerGridPoints,center_paras,center_ts),posan_function(aroundPos,bondCenterPos+self.centerGridPoints,around_paras,around_ts))
+                self.logger.info(f'min centerBallValues={np.min(np.abs(centerBallValues))}')
+                if np.min(np.abs(centerBallValues))>0.005:
+                    return False
+                if abs(differ_ups[1])<0.001 or abs(differ_downs[1])<0.001:
+                    self.logger.info(f'err-center normal differ is too small')
+                    return False
+                if np.min(differ_ups)*np.max(differ_ups)<0 or np.min(differ_downs)*np.max(differ_downs)<0:
+                    antibonding=True
+                if antibonding:
+                    self.logger.info('antibonding orbital')
+                    self.units[f'{center}-{around}-{orbital}']=-1
+                    return True
+            merged_ups=(posan_function(centerPos,select_upPos,center_paras,center_ts)+posan_function(aroundPos,select_upPos,around_paras,around_ts)).flatten()
+            merged_downs=(posan_function(centerPos,select_downPos,center_paras,center_ts)+posan_function(aroundPos,select_downPos,around_paras,around_ts)).flatten()
+            self.logger.info(f'merge_ups:{merged_ups.tolist()},merge_downs:{merged_downs.tolist()}')
+
+            between_up_before=posan_function(centerPos,between_up,center_paras,center_ts).item() #posan i a
+            between_down_before=posan_function(centerPos,between_down,center_paras,center_ts).item() # posan i b
+            around_between_up_before=posan_function(aroundPos,between_up,around_paras,around_ts).item() # posan j a
+            around_between_down_before=posan_function(aroundPos,between_down,around_paras,around_ts).item() # posan j b
+            between_up_after=around_between_up_before+between_up_before # posan j a + posan i a
+            between_down_after=around_between_down_before+between_down_before # posan j b + posan i b
             between_up_change=between_up_after**2-between_up_before**2
             between_down_change=between_down_after**2-between_down_before**2
             
-            self.logger.info(f'{between_up_before=},{between_down_before=}')
-            self.logger.info(f'{around_between_up_before=},{around_between_down_before=}')
-            self.logger.info(f'{between_up_after=},{between_down_after=}')
-            self.logger.info(f'{between_up_change=},{between_down_change=}')
+            self.logger.info(f'{between_up_before=},{between_down_before=}') # i 上下叠加前
+            self.logger.info(f'{around_between_up_before=},{around_between_down_before=}') # j 上下叠加前
+            self.logger.info(f'{between_up_after=},{between_down_after=}') # i,j 上下叠加后
+            self.logger.info(f'{between_up_change=},{between_down_change=}') # i 叠加前后函数值平方差
             
             # self.logger.info('change ratio',between_up_after**2/between_up_before**2,between_down_after**2/between_down_before**2)
-            if between_up_after*between_down_after>0: #叠加后两个点要不同号
+            if merged_ups[0]*merged_downs[0]>0:
+                return False
+            if abs(merged_ups[0])<0.02 and abs(merged_downs[0])<0.02:
+                return False
+            if between_up_after*between_down_after>0: # 叠加后两个点要不同号
                 self.logger.info(f'err-4')
                 return False
-            if between_up_change>0 and between_down_change>=0:
-                self.units[f'{center}-{around}-{orbital}']=1
-            elif between_up_change<0 and between_down_change<0:
-                self.units[f'{center}-{around}-{orbital}']=-1
-            if not (between_up_before*between_down_before<=0 or around_between_up_before*around_between_down_before<=0):
+
+            if not (between_up_before*between_down_before<=0 or around_between_up_before*around_between_down_before<=0): #叠加前异号
                 self.logger.info('err-1')
                 return False
-            if between_up_change*between_down_change<=0:
+            
+            if between_up_change*between_down_change<=0: # 叠加后要同时增大或减小
                 self.logger.info('err-2')
                 return False
             
@@ -187,7 +243,8 @@ class Caculater:
             around_up_ratio=abs(abs(between_up_after)-abs(around_between_up_before))/abs(around_between_up_before)
             around_down_ratio=abs(abs(between_down_after)-abs(around_between_down_before))/abs(around_between_down_before)
             self.logger.info(f'change-ratio:{center_up_ratio=},{center_down_ratio=},{around_up_ratio=},{around_down_ratio=}')
-            if center_up_ratio<0.05 or center_down_ratio<0.05 or around_up_ratio<0.05 or around_down_ratio<0.05:
+            if center_up_ratio<0.05 or center_down_ratio<0.05 or around_up_ratio<0.05 or around_down_ratio<0.05: # 变化率不能太小
+                self.logger.info('err: ratio error')
                 return False
 
             if min([abs(between_up_change),abs(between_down_change)])<self.program.config['betweenChange']:
@@ -196,6 +253,10 @@ class Caculater:
             
             # if abs(between_up_after/between_down_after)<2:
             #     return False
+            if between_up_change>0 and between_down_change>=0:
+                self.units[f'{center}-{around}-{orbital}']=1
+            elif between_up_change<0 and between_down_change<0:
+                self.units[f'{center}-{around}-{orbital}']=-1
             return True
             if M!=4:
                 # self.logger.info(f'{M=}')

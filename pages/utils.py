@@ -58,7 +58,8 @@ def posan_function(centerPos,aroundPos,paras,ts): # 为了代码可读性，可�
     ps=[s2,px2,py2,pz2,s3,px3,py3,pz3]
     mo=sum([t*p for t,p in zip(ts,ps)])
     return mo
-
+def differ_function(posan1,posan2): #计算电子分布差值图
+    return (posan1+posan2)**2-(posan1**2+posan2**2)/2
 def get_gridPoints(range,step,ball=False): 
     '''获取空间格点'''
     points=[]

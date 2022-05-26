@@ -21,7 +21,6 @@ class Render:
         self.gridPointsBox=get_gridPoints(2,0.1,ball=True)
         self.savedArray=[]
 
-
     def set_data(self):
         Data=self.program.Data
         for each in dir(Data):
@@ -74,13 +73,14 @@ class Render:
                     centerArray=posan_function(centerPos,bondGrid,center_paras,center_ts)
                     aroundArray=posan_function(aroundPos,bondGrid,around_paras,around_ts)
                     if self.orbital_type==0:
-                        self.saveArray(f'{self.program.dataForder}//bondClouds//{center+1}-{around+1}-{orbital+1}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
+                        self.saveArray(f'{self.program.dataForder}//bondClouds//{center+1}-{around+1}-{orbital+1}',np.concatenate([bondGrid,centerArray]).T)
+                        self.saveArray(f'{self.program.dataForder}//bondClouds//{around+1}-{center+1}-{orbital+1}',np.concatenate([bondGrid,aroundArray]).T)
                     elif self.orbital_type==1:
                         orbital_name=f'a,{orbital+1}'
                         if orbital>self.program.Data.orbital_length/2-1:
                             orbital_name=f'b,{int(orbital-self.program.Data.orbital_length/2+1)}'
-                        print(orbital_name)
-                        self.saveArray(f'{self.program.dataForder}//bondClouds//{center+1}-{around+1}-{orbital_name}',np.concatenate([bondGrid,centerArray+aroundArray]).T)
+                        self.saveArray(f'{self.program.dataForder}//bondClouds//{center+1}-{around+1}-{orbital_name}',np.concatenate([bondGrid,centerArray]).T)
+                        self.saveArray(f'{self.program.dataForder}//bondClouds//{around+1}-{center+1}-{orbital_name}',np.concatenate([bondGrid,aroundArray]).T)
     def saveArray(self,file,array):
         if file not in self.savedArray:
             np.save(file=file,arr=array)
