@@ -30,7 +30,7 @@ class Caculater:
         if f'{atom}' not in self.normals.keys(): # 每个原子的法向量应该只计算一次
             atomPos=self.Data.atomPos(atom)
             connections=self.Data.connections(atom)
-            p1,p2,p3=[(self.Data.atomPos(each)-atomPos)*(1 if each==to else 1) for each in connections]
+            p1,p2,p3=[(self.Data.atomPos(each)-atomPos)*(1 if each==to else 0.1) for each in connections]
             n=get_normalVector(p1,p2,p3)
             self.normals[f'{atom}-{to}']=n
             
@@ -194,7 +194,7 @@ class Caculater:
                 self.logger.info(f'min centerBallValues={np.min(np.abs(centerBallValues))}')
                 if np.min(np.abs(centerBallValues))>0.005:
                     return False
-                if abs(differ_ups[1])<0.001 or abs(differ_downs[1])<0.001:
+                if abs(differ_ups[1])<0.0009 or abs(differ_downs[1])<0.0009:
                     self.logger.info(f'err-center normal differ is too small')
                     return False
                 if np.min(differ_ups)*np.max(differ_ups)<0 or np.min(differ_downs)*np.max(differ_downs)<0:
