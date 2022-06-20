@@ -3,12 +3,12 @@ import re
 import numpy as np
 import pandas as pd
 import json
+from pages import utils
 
 from pages.utils import vector_angle
 
 class Reader:
-    def __init__(self, program,logPath):
-        
+    def __init__(self, logPath,program=None):
         with open(logPath,'r',encoding='utf-8') as f:
             self.logLines=f.readlines()
         self.program = program
@@ -37,16 +37,21 @@ class Reader:
             },
         }  # 记录标题行
         
-
+    def windowLog(self,message):
+        if self.program is not None:
+            self.program.log_window_text.insert('end',f'{message}')
+        else:
+            print(f'{message}')
     def get_titles(self):
         logLines = self.logLines
         for i, line in enumerate(logLines):
+            line=line.replace('Input orientation','Standard orientation')
             for title in self.titles.keys():
                 if title in line:
                     self.titles[title]['num']=i
 
     def get_atom_position_Matrix(self,titleNum):  # 提取原子坐标矩阵
-        self.program.log_window_text.insert('end', 'reading Standard orientation...\n')
+        self.windowLog('reading Standard orientation...\n')
         logLines = self.logLines
         line_text_list = []
         atom_index = 1
@@ -76,7 +81,7 @@ class Reader:
         s4=r'\d+ +(\d+) +([A-Za-z]+) +(\d[A-Z]+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
         s51=r'\d+ +(\d+[A-Z]+?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
         s52=r'\d+ +(\d+[A-Z]+? ?\+?-?\d?) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+) *(-?\d+.\d+)'
-        self.program.log_window_text.insert('end', f'reading {title}...\n')
+        self.windowLog(f'reading {title}...\n')
         title_line_num = self.titles[title]['num'] # 标题所在的行号
         logLines = self.logLines
         atoms = []
@@ -123,16 +128,17 @@ class Reader:
                     atoms[i]['orbitals'] = np.array(all_orbitals).flatten().tolist()
                     atom_id = atoms[i]['atom_id']
                     atom_type = atoms[i]['atom_type']
-                    self.program.log_window_text.insert('end', f'{atom_id}{atom_type}'.ljust(6,' '))
+                    self.windowLog(f'{atom_id}{atom_type}'.ljust(6,' '))
                     if (i+1)%10==0:
-                        self.program.log_window_text.insert('end', f'\n')
-                    self.program.update_progress('整合轨道信息...',(i+1)/len(atoms))
-                self.program.log_window_text.insert('end', f'\n')
+                        self.windowLog(f'\n')
+                    if self.program is not None:
+                        self.program.update_progress('整合轨道信息...',(i+1)/len(atoms))
+                self.windowLog(f'\n')
                 self.data[self.titles[title]['title']] = atoms
                 return atoms
 
     def get_standard_basis(self):
-        self.program.log_window_text.insert('end', 'reading Overlap normalization...\n')
+        self.windowLog('reading Overlap normalization...\n')
         logLines = self.logLines
         datas = []
         title_line_num = len(logLines)
@@ -163,13 +169,12 @@ class Reader:
         self.get_atom_position_Matrix(self.titles['Standard orientation']['num'])
         self.get_standard_basis()
         self.data['Eigenvalues']=self.Eigenvalues
-        data=Data(self.data,self.program)
-        print(dir(data))
+        data=Data(self.data,self)
         return data
 
 class Data:
-    def __init__(self,data,program) -> None:
-        self.program=program
+    def __init__(self,data,Reader) -> None:
+        self.Reader=Reader
         self.data=data
         self.atoms_pos=None
         self.atoms=None
@@ -183,7 +188,7 @@ class Data:
         self.get()
         self.bondVectors={}
         self.allConnect={}
-
+    
     def get(self):
         data=self.data
         keys = data.keys()
@@ -194,11 +199,11 @@ class Data:
             self.orbital_type = 0
             self.atoms = data['Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
             orbital_num = data['Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.program.log_window_text.insert('end',f'{orbital_num} orbital are read\n')
+            self.Reader.windowLog(f'{orbital_num} orbital are read\n')
         elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
             self.alpha_num = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
             self.beta_num = data['Beta Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.program.log_window_text.insert('end',f'{self.alpha_num} Alpha orbital and {self.beta_num} Beta orbital are read\n')
+            self.Reader.windowLog(f'{self.alpha_num} Alpha orbital and {self.beta_num} Beta orbital are read\n')
             self.orbital_type = 1
             self.atoms = [{
                 'atom_id': alpha['atom_id'],
@@ -213,11 +218,23 @@ class Data:
         self.orbital_length = self.atoms[0]['datas'].shape[1] # 轨道的数量
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
-        self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
-        self.all_sauare_sum=self.each_square_sum.sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
+        # self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
+        heavyAtoms=[]
+        for atom in self.atoms:
+            if atom['atom_type']!='H':
+                heavyAtoms.append(atom)
+        self.all_sauare_sum=np.concatenate([np.sum(atom['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].to_numpy()**2,axis=0,keepdims=True)\
+            for atom in heavyAtoms]).sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
     
-
+    def squareSum(self,atom,orbitals,ratios,normal):
+        res=self.atoms[atom]['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].iloc[:,orbitals].to_numpy().copy()
+        # for i,orbital in enumerate(orbitals):
+        # p1s=res[[1,2,3],:]
+        # p2s=res[[5,6,7],:]
+        # res[[1,2,3],:]=np.linalg.norm(p1s,axis=0)*ratios*normal.reshape(3,1)
+        # res[[5,6,7],:]=np.linalg.norm(p2s,axis=0)*ratios*normal.reshape(3,1)
+        return np.sum(res**2,axis=0)
     def connections(self,atom):
         '''输入原子序号，获取与指定原子相连的原子序号'''
         atoms_pos = self.atoms_pos
@@ -258,7 +275,7 @@ class Data:
 
     def atomPos(self,atom):
         '''获取指定原子的坐标'''
-        return self.atoms_pos.iloc[atom].loc[['X','Y','Z']].to_numpy(dtype=np.float64)
+        return self.atoms_pos.iloc[atom].loc[['X','Y','Z']].to_numpy(dtype=np.float64).copy()
 
     def bondVector(self,start,end):
         '''获取两原子之间键轴的向量'''
@@ -268,5 +285,50 @@ class Data:
         else:
             res=self.bondVectors[f'{start}-{end}']
         return res.copy()
+    
+    def bondLength(self,a1,a2):
+        '''计算两原子之间的键长'''
+        return np.linalg.norm(self.atomPos(a1)-self.atomPos(a2))
+    def normalVector(self,start,end=None):
+        '''获取两个原子的法向量'''
+        startArounds=self.connections(start)
+        startNormal=utils.get_normalVector(*[self.atomPos(each) for each in startArounds])
+        if end is None:
+            return startNormal
+        else:
+            endArounds=self.connections(end)
+            if len(endArounds)==3:
+                endNormal=utils.get_normalVector(*[self.atomPos(each) for each in endArounds])
+            else:
+                endNormal=startNormal
+            return startNormal,endNormal
+    def samePlane(self,atom):
+        '''获取与指定原子在同一平面的原子'''
+        selects=[]
+        selectArounds=self.connections(atom) #先确定选中原子的法向量
+        # print(f'{selectArounds=}')
+        if len(selectArounds)!=3:
+            return selects
+        selectNormal=utils.get_normalVector(*[self.atomPos(each) for each in selectArounds])
+        
+        def get(atom,selects):
+            # print(f'{atom=}')
+            selects.append(atom)
+            arounds=[] # 满足我们需要的条件的原子
+            connections=self.connections(atom)
+            for each in connections:
+                eachArounds=self.connections(each)
+                if len(eachArounds)!=4 and each not in selects:
+                    startNormal,endNormal=self.normalVector(atom,end=each)
+                    # 没有被选中，法向量相同
+                    if utils.vector_angle(endNormal,startNormal,trans=True)<0.1:
+                        if self.atoms[each]['atom_type']!='H':
+                            arounds.append(each)
+                            selects.append(each)
+            if len(arounds)!=0:
+                for each in arounds:
+                    get(each,selects)
+        get(atom,selects)
+        return list(set(selects))
     
         

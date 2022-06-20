@@ -81,24 +81,7 @@ class Page:
         all_orbitals=self.program.Data.atoms[0]['orbitals']
         res=self.caculater.select(centers) # 获得挑选出的轨道，并将挑选出的轨道按照格式输出
         self.selectedorbitals=res
-        for key in res.keys():
-            center=int(key.split('-')[0])+1
-            around=int(key.split('-')[1])+1
-            orbitalType=key.split('-')[2]
-            if orbitalType=='O':
-                if self.program.Data.orbital_type==0:
-                    self.program.log_window_text.insert('end',f'{center}->{around}:'+','.join(f'{each+1}' for each in res[key])+'\n')
-                elif self.program.Data.orbital_type==1:
-                    #将轨道分为两种类型
-                    Aorbitals=[]
-                    Borbitals=[]
-                    for each in res[key]:
-                        if each<len(all_orbitals)/2:
-                            Aorbitals.append(each)
-                        else:
-                            Borbitals.append(each)
-                    self.program.log_window_text.insert('end',f'{center}->{around}α:'+','.join(f'{each+1}' for each in Aorbitals)+'\n')
-                    self.program.log_window_text.insert('end',f'{center}->{around}β:'+','.join(f'{each+1-len(all_orbitals)//2}' for each in Borbitals)+'\n')
+        
         self.program.log_window_text.insert('end','>'*50+'\n')
     def caculate(self):  # 获取用户输入的参数
         centers = get_nums(self.entry1.get())

@@ -18,7 +18,7 @@ class Render:
                     zs.append(z)
         self.arounds=np.array([xs,ys,zs])
         self.set_data()
-        self.gridPointsBox=get_gridPoints(2,0.1,ball=True)
+        self.gridPointsBox=get_gridPoints(2,0.1,ball=False)
         self.savedArray=[]
 
     def set_data(self):
