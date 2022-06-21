@@ -31,7 +31,7 @@ class Caculater:
 
     def get_Normal(self,atom_i,atom_j,loc='bond'): #对获得标量函数的封装
         if loc=='bond':
-            locNum=0.1
+            locNum=0.001
         elif loc=='plane':
             locNum=1
         if f'{atom_i}-{atom_j}-{loc}' not in self.normals.keys(): # 每个原子的法向量应该只计算一次
@@ -93,11 +93,13 @@ class Caculater:
         pContributeLimit=self.program.config["pContribute"]
         if self.program.Data.orbital_type==1:
             pContributeLimit*=2
+        efficients=get_coefficients('P',self.Data.atoms,center,orbital,raw=True)
+        self.logger.info(f'efficients={efficients.tolist()}')
         center_spContribute=(get_coefficients('SP',self.Data.atoms,center,orbital)/all_square_sum)[0]
         around_spContribute=(get_coefficients('SP',self.Data.atoms,around,orbital)/all_square_sum)[0]
         self.logger.info(f'sp contribution center:{center_spContribute:.4f}, around:{around_spContribute:.4f}')
-        bondOrder=self.orbitalElectron*(center_spContribute*around_spContribute)**0.5
-        self.logger.info(f'initial bond order:{bondOrder}')
+        # bondOrder=self.orbitalElectron*(center_spContribute*around_spContribute)**0.5
+        
         if center_spContribute<0.01 and around_spContribute<0.01:
             return False
         # if bondOrder<0.015:
@@ -146,14 +148,36 @@ class Caculater:
             return False
         centerPVector=centerMaxVector if centerMaxValue+aroundMaxValue>0 else centerMinVector*-1
         aroundPVector=aroundMaxVector if centerMinValue+aroundMinValue>0 else aroundMinVector*-1
-        centerRatio=np.cos(vector_angle(centerMaxVector,(cn+an)/2,trans=True)*np.pi)
-        aroundRatio=np.cos(vector_angle(aroundMaxVector,(cn+an)/2,trans=True)*np.pi)
+        centerAngle=vector_angle(centerMaxVector,cn)
+        aroundAngle=vector_angle(aroundMaxVector,an)
+        if (centerAngle-0.5)*(aroundAngle-0.5)>0:
+            self.units[f'{center}-{around}-{orbital}']=1
+        elif (centerAngle-0.5)*(aroundAngle-0.5)<0:
+            self.units[f'{center}-{around}-{orbital}']=-1
+        else:
+            self.units[f'{center}-{around}-{orbital}']=1
+        centerAngle=0.5-abs(centerAngle-0.5)
+        aroundAngle=0.5-abs(aroundAngle-0.5)
+        centerRatio=np.cos(centerAngle*np.pi)
+        aroundRatio=np.cos(aroundAngle*np.pi)
         
         self.logger.info(f'{centerRatio=},{aroundRatio=}')
         self.ratios[f'{center}-{around}-{orbital}']=centerRatio
         self.ratios[f'{around}-{center}-{orbital}']=aroundRatio
         if centerRatio.round(6)==0 or aroundRatio.round(6)==0:
             return False
+        
+        center_square_sum = self.Data.squareSum(center,orbital)
+        around_square_sum = self.Data.squareSum(around,orbital)
+                        
+        center_res = (center_square_sum / all_square_sum) ** 0.5 *centerRatio
+        around_res = (around_square_sum / all_square_sum) ** 0.5 *aroundRatio
+        bondOrder=(self.Data.orbitalElectron*center_res*around_res).sum()
+        self.logger.info(f'{bondOrder=}')
+        if bondOrder<0.001:
+            return False
+
+
         # if centerMaxValue<0.03 and aroundMaxValue>0.03:
         #         self.units[f'{center}-{around}-{orbital}']=-1
         #         self.logger.info('node point')
@@ -205,28 +229,28 @@ class Caculater:
             centerPlanAngle=0.5-vector_angle(centerPlaneVector,centerPVector,trans=True)
             aroundPlanAngle=0.5-vector_angle(aroundPlaneVector,aroundPVector,trans=True)
             normalAngle=vector_angle(cn,an,trans=True)
-            self.logger.info(f'planVectorAngles:{centerPlanAngle},{aroundPlanAngle}')
+            self.logger.info(f'{centerPlanAngle=},{aroundPlanAngle=}')
             centerNormalValue=posan_function(centerPos,centerPos+center_normal*0.1,center_paras,center_ts).item()
             aroundNormalValue=posan_function(aroundPos,aroundPos+around_normal*0.1,around_paras,around_ts).item()
             self.logger.info(f'{centerNormalValue=},{aroundNormalValue=}')
-            if centerNormalValue*aroundNormalValue>0:
-                self.units[f'{center}-{around}-{orbital}']=1
-            elif centerNormalValue*aroundNormalValue<0:
-                self.units[f'{center}-{around}-{orbital}']=-1
-            else:
-                self.units[f'{center}-{around}-{orbital}']=0
+            # if centerNormalValue*aroundNormalValue>0:
+            #     self.units[f'{center}-{around}-{orbital}']=1
+            # elif centerNormalValue*aroundNormalValue<0:
+            #     self.units[f'{center}-{around}-{orbital}']=-1
+            # else:
+            #     self.units[f'{center}-{around}-{orbital}']=0
 
             # 节点
-            if centerMaxValue<0.01 and aroundMaxValue>0.01 and aroundPlanAngle<0.21 :
-                self.units[f'{center}-{around}-{orbital}']=0
-                return True
-            if aroundMaxValue<0.01 and centerMaxValue>0.01 and centerPlanAngle<0.21 :
-                self.units[f'{center}-{around}-{orbital}']=0
-                return True
+            # if centerMaxValue<0.01 and aroundMaxValue>0.01 and aroundPlanAngle<0.21 :
+            #     self.units[f'{center}-{around}-{orbital}']=0
+            #     return True
+            # if aroundMaxValue<0.01 and centerMaxValue>0.01 and centerPlanAngle<0.21 :
+            #     self.units[f'{center}-{around}-{orbital}']=0
+            #     return True
             
-            if (centerPlanAngle>0.21 or aroundPlanAngle>0.21) and centerPlanAngle+aroundPlanAngle>0.3:
-                self.logger.info('p orbital on plane')
-                return False
+            # if (centerPlanAngle>0.21 or aroundPlanAngle>0.21) and centerPlanAngle+aroundPlanAngle>0.3:
+            #     self.logger.info('p orbital on plane')
+            #     return False
             # if cnp_angle>0.25 or anp_angle>0.25:
             #     # dihedralAngle=get_dihedralAngle(centerMaxPos.flatten(),centerPos.flatten(),aroundPos.flatten(),aroundMaxPos.flatten())
             #     # self.logger.info(f'{dihedralAngle=}')
@@ -259,23 +283,24 @@ class Caculater:
             self.logger.info(f'upLineValues={upLineValues.tolist()}')
             self.logger.info(f'downLineValues={downLineValues.tolist()}')
             self.logger.info(f'verticalLineValues={verticalLineValues.tolist()}')
-            if abs(multiple(verticalLineValues[0],verticalLineValues[-1]))>5:
-                return False
-            if upLineValues[0]*downLineValues[0]>0 or upLineValues[-1]*downLineValues[-1]>0:
-                return False
+            # if abs(multiple(verticalLineValues[0],verticalLineValues[-1]))>5:
+            #     return False
+            # if upLineValues[0]*downLineValues[0]>0 or upLineValues[-1]*downLineValues[-1]>0:
+            #     return False
             
             upNodeNum=nodeNum(upLineValues)
             downNodeNum=nodeNum(downLineValues)
             verticalNodeNum=nodeNum(verticalLineValues)
             self.logger.info(f'{upNodeNum=},{downNodeNum=},{verticalNodeNum=}')
-            if upNodeNum==0 and downNodeNum==0 and verticalNodeNum>0: # 成键轨道
-                # self.units[f'{center}-{around}-{orbital}']=1
-                return True
-            elif upNodeNum>0 and downNodeNum>0:
-                # self.units[f'{center}-{around}-{orbital}']=-1
-                return True
-            else:
-                return False
+            # if upNodeNum==0 and downNodeNum==0 and verticalNodeNum>0: # 成键轨道
+            #     # self.units[f'{center}-{around}-{orbital}']=1
+            #     return True
+            # elif upNodeNum>0 and downNodeNum>0:
+            #     # self.units[f'{center}-{around}-{orbital}']=-1
+            #     return True
+            # else:
+            #     return False
+            return True
         else:
             self.logger.info(f'err-10: center atom connection number not equal to 2 or 3 which is {self.N}')
             return False
@@ -350,21 +375,21 @@ class Caculater:
                 # around_square_sum = self.Data.each_square_sum[around, way_orbital]
                 centerRatios=np.array([self.ratios[f'{center}-{around}-{orbital}'] for orbital in way_orbital])
                 aroundRatios=np.array([self.ratios[f'{around}-{center}-{orbital}'] for orbital in way_orbital])
+                self.logger.info(f'centerRatiosSum:{centerRatios.sum()},{centerRatios.sum()/len(centerRatios)}')
+                self.logger.info(f'aroundRatiosSum:{aroundRatios.sum()},{aroundRatios.sum()/len(aroundRatios)}')
+                self.logger.info(f'RatiosSum:{(centerRatios.sum()+aroundRatios.sum())},{(centerRatios.sum()+aroundRatios.sum())/(len(centerRatios)+len(aroundRatios))}')
                 self.program.log_window_text.insert('end',f'centerRatios:{centerRatios.round(4).flatten().tolist()}\n')
                 self.program.log_window_text.insert('end',f'aroundRatios:{aroundRatios.round(4).flatten().tolist()}\n')
                 self.logger.info(f'centerRatios:{centerRatios.round(4).flatten().tolist()}')
                 self.logger.info(f'aroundRatios:{aroundRatios.round(4).flatten().tolist()}')
-                centerNormal=self.normals[f'{center}-{around}-bond']
-                aroundNormal=self.normals[f'{around}-{center}-bond']
-                center_square_sum = self.Data.squareSum(center,way_orbital,centerRatios,centerNormal)
-                around_square_sum = self.Data.squareSum(around,way_orbital,aroundRatios,aroundNormal)
+                center_square_sum = self.Data.squareSum(center,way_orbital)
+                around_square_sum = self.Data.squareSum(around,way_orbital)
                 
-                center_res = (center_square_sum / all_square_sum) ** 0.5 #*centerRatios
-                around_res = (around_square_sum / all_square_sum) ** 0.5 #*aroundRatios
+                center_res = (center_square_sum / all_square_sum) ** 0.5 *centerRatios
+                around_res = (around_square_sum / all_square_sum) ** 0.5 *aroundRatios
                 self.logger.info(f'orders:{center_res * around_res}')
-                self.program.log_window_text.insert('end',f'centerRes:{center_res.round(4).flatten().tolist()}\n')
-                self.program.log_window_text.insert('end',f'aroundRes:{around_res.round(4).flatten().tolist()}\n')
-                
+                self.program.log_window_text.insert('end',f'orbitalOrders:{(center_res*around_res).round(4).flatten().tolist()}\n')
+                # self.program.log_window_text.insert('end',f'aroundRes:{around_res.round(4).flatten().tolist()}\n')
                 bond_order = np.sum((2 if self.Data.orbital_type == 0 else 1) * center_res * center_units * around_res* around_units)
 
                 bond_orders.append(bond_order)

@@ -226,8 +226,9 @@ class Data:
         self.all_sauare_sum=np.concatenate([np.sum(atom['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].to_numpy()**2,axis=0,keepdims=True)\
             for atom in heavyAtoms]).sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
+        self.orbitalElectron=2 if self.orbital_type==0 else 1
     
-    def squareSum(self,atom,orbitals,ratios,normal):
+    def squareSum(self,atom,orbitals):
         res=self.atoms[atom]['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].iloc[:,orbitals].to_numpy().copy()
         # for i,orbital in enumerate(orbitals):
         # p1s=res[[1,2,3],:]
