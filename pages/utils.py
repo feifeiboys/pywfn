@@ -1,9 +1,17 @@
 # 将需要的每个模块共同需要的计算都放在这里面
 print('good good study, day day up!!!')
+<<<<<<< HEAD
+=======
+from operator import mul
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
 import matplotlib.pyplot as plt
 import re
 import pandas as pd
 import numpy as np
+<<<<<<< HEAD
+=======
+import sympy
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
 import math
 import time
 def get_nums(string):
@@ -19,14 +27,27 @@ def get_nums(string):
 
 def get_vertical(v1,v2):
     '''获得垂直于两向量的单位向量'''
+<<<<<<< HEAD
     v=np.corss(v1,v2)
     return v/np.linalg.norm(v)
+=======
+    x1,y1,z1=v1
+    x2,y2,z2=v2
+    sa='(-y1*z2 + y2*z1)*sqrt(1/(x1**2*y2**2 + x1**2*z2**2 - 2*x1*x2*y1*y2 - 2*x1*x2*z1*z2 + x2**2*y1**2 + x2**2*z1**2 + y1**2*z2**2 - 2*y1*y2*z1*z2 + y2**2*z1**2))'
+    sb='(x1*z2 - x2*z1)*sqrt(1/(x1**2*y2**2 + x1**2*z2**2 - 2*x1*x2*y1*y2 - 2*x1*x2*z1*z2 + x2**2*y1**2 + x2**2*z1**2 + y1**2*z2**2 - 2*y1*y2*z1*z2 + y2**2*z1**2))'
+    sc='-(x1*y2 - x2*y1)*sqrt(1/(x1**2*y2**2 + x1**2*z2**2 - 2*x1*x2*y1*y2 - 2*x1*x2*z1*z2 + x2**2*y1**2 + x2**2*z1**2 + y1**2*z2**2 - 2*y1*y2*z1*z2 + y2**2*z1**2))'
+    a=sympy.sympify(sa).subs([('x1',x1),('y1',y1),('z1',z1),('x2',x2),('y2',y2),('z2',z2)])
+    b=sympy.sympify(sb).subs([('x1',x1),('y1',y1),('z1',z1),('x2',x2),('y2',y2),('z2',z2)])
+    c=sympy.sympify(sc).subs([('x1',x1),('y1',y1),('z1',z1),('x2',x2),('y2',y2),('z2',z2)])
+    return np.array([float(a),float(b),float(c)])
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
 
 def get_points_between_two_pos(pos1,pos2,n):
     '''计算两点之间的点的坐标'''
     dp=pos2-pos1
     all_pos=[pos1+dp/(n-1)*i for i in range(n)]
     return np.array(all_pos)
+<<<<<<< HEAD
 
 def get_projection(ts,x_,z_):
     '''计算原子轨道组合系数在法向量的投影'''
@@ -42,6 +63,8 @@ def get_projection(ts,x_,z_):
     ps__=np.array([np.dot(A_,p[:,np.newaxis]) for p in ps_])
     return ps__
 
+=======
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
 def posan_function(centerPos,aroundPos,paras,ts,onlyP=False): # 为了代码可读性，可以适当写出来罗嗦点的代码
     '''计算中心原子周围点处的函数值'''
     alphas=paras[:,0]
@@ -78,8 +101,12 @@ def multiFunction(orbital:int,atoms:list,selectPos,Data):
     for atom in atoms:
         atomPos=Data.atomPos(atom).reshape(3,1)
         paras = np.array(Data.standard_basis[atom])
+<<<<<<< HEAD
         layers=['2PX','2PY','2PZ','3PX','3PY','3PZ']
         ts=Data.get_ts(atom,orbital,layers)
+=======
+        ts=get_coefficients('2SP',Data.atoms,atom,orbital,raw=True)
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
         values=posan_function(atomPos,selectPos,paras,ts)
         res.append(values)
     return np.array(res).sum(axis=0).flatten()
@@ -251,6 +278,95 @@ def list_remove(l,x):
             new_l.append(each)
     return new_l
 
+<<<<<<< HEAD
+=======
+def get_slope(data,step,n):
+    return np.diff(data,n)/step**n
+
+def get_changeScope(slope):
+    return np.sum((slope-slope.mean())**2)
+
+def get_sCoefficients(stype,atoms,atom,orbitals,raw=False):
+    '''获得1S,2S,3S的归一化后的系数'''
+    if stype=='1S':
+        res=atoms[atom]['datas'].loc[['1S'],:].iloc[:,orbitals]
+    elif stype=='2S':
+        res=atoms[atom]['datas'].loc[['2S','3S'],:].iloc[:,orbitals]
+    if raw: #是否返回原始数据
+        return res
+    else:
+        return np.sum(res.to_numpy()**2,axis=0)
+def get_pCoefficients(atoms,atom,orbitals,raw=False):
+    '''获得2S,3S,2PX,2PY,2PZ,3PX,3PY,3PZ的归一化后的系数'''
+    
+    res=atoms[atom]['datas'].loc[['2PX','2PY','2PZ','3PX','3PY','3PZ'],:].iloc[:,orbitals]
+    
+    if raw: #是否返回原始数据
+        return res
+    else:
+        return np.sum(res.to_numpy()**2,axis=0)
+def get_2spCoefficients(atoms,atom,orbitals,raw=False):
+    res=atoms[atom]['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].iloc[:,orbitals]
+    
+    if raw: #是否返回原始数据
+        return res
+    else:
+        return np.sum(res.to_numpy()**2,axis=0)
+
+def get_dCoefficients(atoms,atom,orbitals,raw=False):
+    
+    hasD=False if sum([1 if each in atoms[atom]['datas'].index else 0 for each in ['4XX','4YY','4ZZ','4XY','4XZ','4YZ']])==0 else True
+    if hasD:
+        res=atoms[atom]['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,orbitals]
+    else:
+        res=np.zeros(shape=(6,len(orbitals) if isinstance(orbitals,list) else 1))
+    if raw:
+        return res
+    else:
+        return np.sum(res.to_numpy()**2,axis=0)
+    
+
+def get_coefficients(type,atoms,atom,orbitals,raw=False):
+    if type=='1S':
+        return get_sCoefficients('1S',atoms,atom,orbitals,raw)
+    elif type=='2S':
+        return get_sCoefficients('2S',atoms,atom,orbitals,raw)
+    elif type=='SP':
+        return get_sCoefficients('2S',atoms,atom,orbitals,raw)+get_pCoefficients(atoms,atom,orbitals,raw)
+    elif type=='2SP':
+        return get_2spCoefficients(atoms,atom,orbitals,raw)
+    elif type=='P':
+        return get_pCoefficients(atoms,atom,orbitals,raw)
+    elif type=='D':
+        return get_dCoefficients(atoms,atom,orbitals,raw)
+    elif type=='SD':
+        return get_sCoefficients('1S',atoms,atom,orbitals,raw)+get_dCoefficients(atoms,atom,orbitals,raw)
+
+def get_allSCoefficients(atoms,orbital,all_square_sum):
+    all_sCoefficients=np.array([])
+    for atom in atoms:
+        hasS=False if sum([1 if each in atom['datas'].index else 0 for each in ['1S']])==0 else True
+        if hasS:
+            eachCofficients=atom['datas'].loc[['1S'],:].iloc[:,orbital]
+            eachCofficients=np.sum(eachCofficients.to_numpy()**2,axis=0)/all_square_sum[:,orbital]
+        else:
+            eachCofficients=0
+        all_sCoefficients=np.append(all_sCoefficients,eachCofficients)
+    return all_sCoefficients.sum()
+
+def get_allDCoefficients(atoms,orbital,all_square_sum):
+    all_sCoefficients=np.array([])
+    for atom in atoms:
+        hasD=False if sum([1 if each in atom['datas'].index else 0 for each in ['4XX','4YY','4ZZ','4XY','4XZ','4YZ']])==0 else True
+        if hasD:
+            eachCofficients=atom['datas'].loc[['4XX','4YY','4ZZ','4XY','4XZ','4YZ'],:].iloc[:,orbital]
+            eachCofficients=np.sum(eachCofficients.to_numpy()**2,axis=0)/all_square_sum[:,orbital]
+        else:
+            eachCofficients=0
+        all_sCoefficients=np.append(all_sCoefficients,eachCofficients)
+    return all_sCoefficients.sum()
+
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
 def connectH(atom,connections):
     '''
     如果连接的有H,就返回C-H键的向量,否则返回None

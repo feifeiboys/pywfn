@@ -1,4 +1,5 @@
 import numpy as np
+<<<<<<< HEAD
 
 def get_projection(ts,x_,z_):
     '''计算原子轨道组合系数在法向量的投影'''
@@ -18,3 +19,11 @@ ts=[1,2,3,4,5,6]
 x_=[1,1,0]
 z_=[1,-1,0]
 print(get_projection(ts,x_,z_))
+=======
+from logReader import Reader
+Data=Reader(r"C:\code\HFV\files\lianben\files\lianbenScan_2.out").get()
+orbitals=list(map(lambda x:x-1,[32,34,35,38,39,40,41]))
+atoms=[1,2]
+bondOrder_i=Data.squareSum(atoms[0],orbitals)/Data.all_sauare_sum[:,orbitals]
+bondOrder_j=Data.squareSum(atoms[1],orbitals)/Data.all_sauare_sum[:,orbitals]
+>>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
