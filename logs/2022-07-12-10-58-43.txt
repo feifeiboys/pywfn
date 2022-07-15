@@ -1,0 +1,3 @@
+C:/Users/root/Documents/BaiduSyncdisk/Articles/HFV/mols/CF3.log
+**********************************************************************
+center:1,around:2,orbital:1
