@@ -1,10 +1,6 @@
 {
     "baseOrder":1.6602,
-<<<<<<< HEAD
     "pageWidth":600,
-=======
-    "pageWidth":500,
->>>>>>> 79f3c83645f5f51a962f18b7d6a880718b754839
     "pageHeight":640,
     "sdContribute":0.01,
     "pContribute":0.005,
