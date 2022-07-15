@@ -34,7 +34,6 @@ class Caculater:
                 normal_vector_j=normal_vector_i
                 self.normals[f'{atom_j}-{atom_i}']=normal_vector_j
             self.normals[f'{atom_i}-{atom_j}']=normal_vector_i
-            print(f'{atom_i+1},{atom_j+1},{normal_vector_i}')
         return self.normals[f'{atom_i}-{atom_j}']
 
 
@@ -62,7 +61,7 @@ class Caculater:
         if utils.vector_angle(centerNormal, aroundNormal)>0.5:
             aroundNormal*=-1
 
-        As = self.Data.As[:, orbital]
+        As = self.Data.As[orbital]
         layers=['2PX','2PY','2PZ','3PX','3PY','3PZ']
         centerTs=self.Data.get_ts(center,orbital,layers)
         aroundTs=self.Data.get_ts(around,orbital,layers)
@@ -79,7 +78,7 @@ class Caculater:
         return orbitalOrder
 
     
-    def calculate(self,centers): #程序先进行自己的判断与选择
+    def calculate(self,centers:list[int]): #程序先进行自己的判断与选择
         orbitalNum = self.Data.orbitalNum
         O_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='O']
         for center in centers:

@@ -15,12 +15,48 @@ class Reader:
         self.program = program
         self.data = {}
         self.Eigenvalues=[]
+        self.allConnect={}
+        self.read()
+
+    def read(self):
+        self.read_summery()
+        self.read_Coords()
+        self.read_orbitalCoefficients(' Molecular Orbital Coefficients')
+        self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
+        self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
+
+        self.read_standardBasis()
+        self.data['Eigenvalues']=self.Eigenvalues
+        self.trans()
         
     def windowLog(self,message):
         if self.program is not None:
             self.program.logWindow.insert('end',f'{message}')
         else:
             print(f'{message}')
+    
+    def read_Coords(self):
+        '''读取原子坐标'''
+        title1='Input orientation'
+        title2='Standard orientation'
+        titleNum=None
+        for i,line in enumerate(self.logLines):
+            if title1 in line or title2 in line:
+                titleNum=i
+        if titleNum is None:
+            print('没有读取到原子坐标')
+            return
+        s1=r' +\d+ +\d+ +\d +(-?\d+.\d{6}) +(-?\d+.\d{6}) +(-?\d+.\d{6})'
+        coords=[]
+        for i in range(titleNum+5,len(self.logLines)):
+            line=self.logLines[i]
+            if re.search(s1, line) is not None:
+                coord=list(re.search(s1, line).groups())
+                coords.append(coord)
+            else:
+                break
+        self.Coords=np.array(coords,dtype=float)
+        
 
     def read_summery(self):
         '''读取log文件的总结信息'''
@@ -119,7 +155,6 @@ class Reader:
         if titleNum is None:
             print('没有系数')
             return
-
         datas = []
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
@@ -137,36 +172,9 @@ class Reader:
                 break
         self.data['Standard basis'] = datas
 
-    def get(self):
-        self.read_summery()
-        self.read_orbitalCoefficients(' Molecular Orbital Coefficients')
-        self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
-        self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
-
-        self.read_standardBasis()
-        self.data['Eigenvalues']=self.Eigenvalues
-        data=Data(self)
-        return data
-
-class Data:
-    def __init__(self,Reader:Reader) -> None:
-        self.Reader=Reader
-        self.data=Reader.data
-        self.summery=Reader.summery
-
-        self.atoms=None
-        self.orbitalType=None
-        self.orbitalNum=None
-        self.orbitals=None
-        self.standard_basis=None
-        self.each_square_sum=None
-        self.all_sauare_sum=None
-        self.Eigenvalues=None
-        self.get()
-        self.bondVectors={}
-        self.allConnect={}
     
-    def get(self):
+    
+    def trans(self):
         data=self.data
         keys = data.keys()
         # 轨道类型有两种情况，正常的和劈裂为α、β的
@@ -174,11 +182,11 @@ class Data:
             self.orbitalType = 0
             self.atoms = data[' Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
             orbital_num = data[' Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.Reader.windowLog(f'{orbital_num} orbital are read\n')
+            self.windowLog(f'{orbital_num} orbital are read\n')
         elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
             self.alphaNum = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
             self.betaNum = data['Beta Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.Reader.windowLog(f'{self.alphaNum} Alpha orbital and {self.betaNum} Beta orbital are read\n')
+            self.windowLog(f'{self.alphaNum} Alpha orbital and {self.betaNum} Beta orbital are read\n')
             self.orbitalType = 1
             self.atoms = [{
                 'atom_id': alpha['atom_id'],
@@ -198,7 +206,7 @@ class Data:
             if atom['atom_type']!='H':
                 heavyAtoms.append(atom)
         layers=['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ']
-        self.As=np.concatenate([np.sum(atom['datas'].loc[layers,:].to_numpy()**2,axis=0,keepdims=True) for atom in heavyAtoms]).sum(axis=0)[np.newaxis,:] # 所有原子所有轨道的平方和
+        self.As=np.concatenate([np.sum(atom['datas'].loc[layers,:].to_numpy()**2,axis=0,keepdims=True) for atom in heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
         self.orbitalElectron=2 if self.orbitalType==0 else 1
     
@@ -213,8 +221,8 @@ class Data:
     def connections(self,atom):
         '''输入原子序号，获取与指定原子相连的原子序号'''
         atomPos=self.atomPos(atom).reshape(1,3)
-        if f'{atom}' not in self.allConnect:
-            distances=np.linalg.norm(self.summery['Coords']-atomPos,axis=1)
+        if f'{atom}' not in self.allConnect.keys():
+            distances=np.linalg.norm(self.Coords-atomPos,axis=1)
             res = np.where(distances < 1.9)[0].tolist()
             res.remove(atom)
             self.allConnect[f'{atom}']=res
@@ -234,7 +242,7 @@ class Data:
 
     def atomPos(self,atom):
         '''获取指定原子的坐标'''
-        return self.summery['Coords'][atom,:]
+        return self.Coords[atom,:]
 
     def bondVector(self,start,end):
         '''获取两原子之间键轴的向量'''

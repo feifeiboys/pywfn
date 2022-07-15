@@ -114,7 +114,7 @@ class App:
 
     def get_data(self):
         self.logWindow.insert('end', 'start search...\n')
-        self.Data = self.reader.get()
+        self.Data = self.reader
         self.logWindow.insert('end', 'search done\n')
         
     def batch_calculate(self):
