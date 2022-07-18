@@ -67,12 +67,27 @@ class Caculater:
         aroundTs=self.Data.get_ts(around,orbital,layers)
         centerTs__=utils.get_projection(centerTs,bondVector,centerNormal)
         aroundTs__=utils.get_projection(aroundTs,bondVector,centerNormal)
-        self.logger.info(f'{centerTs__=}\n{aroundTs__=}')
+        # self.logger.info(f'{centerTs__=}\n{aroundTs__=}')
         centerPZs=[each[-1].item() for each in centerTs__]
         aroundPZs=[each[-1].item() for each in aroundTs__]
         self.logger.info(f'{centerPZs=}\n{aroundPZs=}')
-        orbitalOrder=sum([cpz*apz/As for cpz,apz in zip(centerPZs,aroundPZs)])*self.orbitalElectron
-        self.logger.info(f'{center+1}-{around+1},{orbital+1},{orbitalOrder=}')
+        
+        pOrder=sum([cpz*apz/As for cpz,apz in zip(centerPZs,aroundPZs)])*self.orbitalElectron
+        sLayers=['2S','3S']
+        sOrder=0
+        if pOrder!=0:
+            division=lambda a,b:a/b if b!=0 else 0
+            centerRatio=np.array([division(np.sum(centerTs__[idx:idx+3]**2),np.sum(centerTs[idx:idx+3]**2)) for idx in range(0,len(centerTs),3)])
+            aroundRatio=np.array([division(np.sum(aroundTs__[idx:idx+3]**2),np.sum(aroundTs[idx:idx+3]**2)) for idx in range(0,len(aroundTs),3)])
+            self.logger.info(f'{centerRatio=},{aroundRatio=}')
+            centerRatio=np.sum(centerTs__**2)/np.sum(centerTs**2)
+            aroundRatio=np.sum(aroundTs__**2)/np.sum(aroundTs**2)
+            self.logger.info(f'{centerRatio=},{aroundRatio=}')
+            centerSTs=self.Data.get_ts(center, orbital, sLayers)*centerRatio
+            aroundSTs=self.Data.get_ts(around, orbital, sLayers)*aroundRatio
+            sOrder=sum([c*a/As for c,a in zip(centerSTs,aroundSTs)])*self.orbitalElectron
+        orbitalOrder=pOrder#+sOrder
+        self.logger.info(f'{center+1}-{around+1},{orbital+1},{pOrder=},{sOrder=}')
         self.orders[f'{center}-{around}-{orbital}']=orbitalOrder
         self.logger.info(f'centerNormal={centerNormal.tolist()}\naroundNormal={aroundNormal.tolist()}')
         return orbitalOrder

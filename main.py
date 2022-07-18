@@ -138,7 +138,7 @@ class App:
             self.get_data()
             caculater=Caculater(program=self)
             centers=[int(each)-1 for each in atoms.split(',')]
-            caculater.caculate(centers)
+            caculater.calculate(centers)
 
     def show_page(self,name):
         page = pages[name].Page(program=self)

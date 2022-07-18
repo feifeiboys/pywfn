@@ -5,10 +5,9 @@ import pandas as pd
 import json
 from pages import utils
 
-from pages.utils import vector_angle
 
 class Reader:
-    def __init__(self, logPath,program=None):
+    def __init__(self, logPath:str,program=None):
         with open(logPath,'r',encoding='utf-8') as f:
             self.content=f.read()
             self.logLines=self.content.splitlines(keepends=False)
@@ -21,7 +20,7 @@ class Reader:
     def read(self):
         self.read_summery()
         self.read_Coords()
-        self.read_orbitalCoefficients(' Molecular Orbital Coefficients')
+        self.read_orbitalCoefficients('  Molecular Orbital Coefficients')
         self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
         self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
 
@@ -101,6 +100,7 @@ class Reader:
             if re.search(s1, line) is not None: #情况1
                 pass
             elif re.search(s2, line) is not None: # 情况2，获得column
+                # print(line)
                 orbitals = re.split(r' +', line.replace('\n',''))[1:] # 获取占据轨道还是非占据轨道
                 all_orbitals.append(orbitals)
             elif re.search(s3, line) is not None: # 情况3
@@ -178,10 +178,10 @@ class Reader:
         data=self.data
         keys = data.keys()
         # 轨道类型有两种情况，正常的和劈裂为α、β的
-        if ' Molecular Orbital Coefficients' in keys:
+        if '  Molecular Orbital Coefficients' in keys:
             self.orbitalType = 0
-            self.atoms = data[' Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
-            orbital_num = data[' Molecular Orbital Coefficients'][0]['datas'].shape[1]
+            self.atoms = data['  Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
+            orbital_num = data['  Molecular Orbital Coefficients'][0]['datas'].shape[1]
             self.windowLog(f'{orbital_num} orbital are read\n')
         elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
             self.alphaNum = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
@@ -196,27 +196,29 @@ class Reader:
             } for alpha, beta in
                 zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
 
-        self.orbitals=self.atoms[0]['datas'].columns # 所有的轨道类型(占据或非占据，可能会有复杂的表示)
+        self.orbitals=list(self.atoms[0]['datas'].columns) # 所有的轨道类型(占据或非占据，可能会有复杂的表示)
         self.orbitalNum = self.atoms[0]['datas'].shape[1] # 轨道的数量
         if 'Standard basis' in data.keys():
             self.standard_basis = data['Standard basis']
-        # self.each_square_sum=np.concatenate([np.sum(atom['datas'].to_numpy()**2,axis=0,keepdims=True) for atom in self.atoms])
-        heavyAtoms=[]
-        for atom in self.atoms:
-            if atom['atom_type']!='H':
-                heavyAtoms.append(atom)
+
+
+        self.heavyAtoms=[i for i,atom in enumerate(self.atoms) if atom['atom_type']!='H']
         layers=['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ']
-        self.As=np.concatenate([np.sum(atom['datas'].loc[layers,:].to_numpy()**2,axis=0,keepdims=True) for atom in heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
+        # layers=['2PX','2PY','2PZ','3PX','3PY','3PZ']
+
+        self.As=np.array([np.sum(self.atoms[i]['datas'].loc[layers,:].to_numpy()**2,axis=0) for i in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
         self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
         self.orbitalElectron=2 if self.orbitalType==0 else 1
+        self.squareSums=np.array([np.sum(atom['datas'].to_numpy()**2,axis=0) for atom in self.atoms])
+        self.cs=(self.squareSums/self.squareSums.sum(axis=0))**0.5
     
     def get_ts(self,atom:int,orbital:int,layers:int):
         '''获得指定原子指定轨道指定价层的组合系数'''
         return self.atoms[atom]['datas'].loc[layers,:].iloc[:,orbital].to_numpy().copy()
 
-    def squareSum(self,atom,orbitals):
-        res=self.atoms[atom]['datas'].loc[['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ'],:].iloc[:,orbitals].to_numpy().copy()
-        return np.sum(res**2,axis=0)
+    def calculate_bondOrder(self,atom1:int,atom2:int,orbitals:list[int],units:list[int]):
+        '''用传统的方法计算键级'''
+        return self.cs[atom1,orbitals]*self.cs[atom2,orbitals]*np.array(units)*self.orbitalElectron
 
     def connections(self,atom):
         '''输入原子序号，获取与指定原子相连的原子序号'''
