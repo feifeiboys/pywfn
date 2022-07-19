@@ -45,9 +45,15 @@ class Caculater:
             self.planVectors[key]=normal
         return self.planVectors[key]
     
+    def get_piOrbitals(self,center,around,orbitals):
+        '''挑选出两个原子之间的Π轨道'''
+        for orbital in orbitals:
+            ...
+
+
     def get_orbitalOrder(self, center, around, orbital): 
         '''计算两个原子间每个轨道的键级'''
-        if self.Data.atoms[around]['atom_type']=='H':
+        if self.Data.atoms[around].symbol=='H':
             return False
 
         self.logger.info(f'*'*70)
@@ -99,18 +105,21 @@ class Caculater:
         for center in centers:
             arounds=self.Data.connections(center)
             self.N=len(arounds)
-            orderSum=0
+            orderSum=0 # 原子周围键级之和
             for around in arounds:
-                orders=[self.get_orbitalOrder(center,around,orbital) for orbital in O_orbitals]
-                sortRes=sorted(zip(O_orbitals,orders),key=lambda s:abs(s[1]),reverse=True)
+                orders=[self.get_orbitalOrder(center,around,orbital) for orbital in O_orbitals] # 所有的占据轨道都计算键级
+                sortRes=sorted(zip(O_orbitals,orders),key=lambda s:abs(s[1]),reverse=True) # 将计算出的键级与轨道根据键级绝对值大小进行排序
                 orbitals=[each[0] for each in sortRes if abs(each[1])>9e-5]
                 orders=[each[1].item() for each in sortRes if abs(each[1])>9e-5]
+
+                # 打印轨道与键级
                 orbitalStrs=[f'{orbital+1}' for orbital in orbitals]
                 if self.Data.orbitalType==1:
                     orbitalStrs=[(f'α{orbital+1}' if orbital<orbitalNum/2 else f'β{orbital+1-orbitalNum//2}') for orbital in orbitals]
                 orderStrs=[f'{each:.4f}' for each in orders]
                 self.formatPrint(orbitalStrs,10,8)
                 self.formatPrint(orderStrs,10,8)
+
                 bondOrder=np.sum(orders)
                 orderSum+=bondOrder
                 bondLength=self.Data.bondLength(center,around)

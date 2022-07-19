@@ -5,6 +5,12 @@ import pandas as pd
 import json
 from pages import utils
 
+atomSymbols=[
+    'H','He','li','Be','B',
+    'C','N','O','F','Ne',
+    'Na','Mg','Al','Si','P',
+    'S','Cl','Ar','K','Ca'
+]
 
 class Reader:
     def __init__(self, logPath:str,program=None):
@@ -12,9 +18,12 @@ class Reader:
             self.content=f.read()
             self.logLines=self.content.splitlines(keepends=False)
         self.program = program
-        self.data = {}
+        self.atoms:list[Atom]=[]
+        self.coefficients = {}
         self.Eigenvalues=[]
         self.allConnect={}
+        self.orbitals=[]
+        self.orbitalType:int # 有α，β为1
         self.read()
 
     def read(self):
@@ -25,7 +34,6 @@ class Reader:
         self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
 
         self.read_standardBasis()
-        self.data['Eigenvalues']=self.Eigenvalues
         self.trans()
         
     def windowLog(self,message):
@@ -45,17 +53,20 @@ class Reader:
         if titleNum is None:
             print('没有读取到原子坐标')
             return
-        s1=r' +\d+ +\d+ +\d +(-?\d+.\d{6}) +(-?\d+.\d{6}) +(-?\d+.\d{6})'
-        coords=[]
+        s1=r' +\d+ +(\d+) +\d +(-?\d+.\d{6}) +(-?\d+.\d{6}) +(-?\d+.\d{6})'
         for i in range(titleNum+5,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None:
-                coord=list(re.search(s1, line).groups())
-                coords.append(coord)
+                res=list(re.search(s1, line).groups())
+                atomID=res[0]
+                symbol=atomSymbols[int(atomID)-1]
+                coord=[float(each) for each in res[1:]]
+                atom=Atom(symbol, coord)
+                atom.ID=atomID
+                self.atoms.append(atom)
             else:
                 break
-        self.Coords=np.array(coords,dtype=float)
-        
+    
 
     def read_summery(self):
         '''读取log文件的总结信息'''
@@ -92,9 +103,7 @@ class Reader:
         if titleNum is None:
             print(f'不存在{title}')
             return
-        atoms = []
-        all_orbitals = []
-        atom_id = 0
+        self.orbitalType=0 if title=='     Molecular Orbital Coefficients:' else 1
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None: #情况1
@@ -102,51 +111,45 @@ class Reader:
             elif re.search(s2, line) is not None: # 情况2，获得column
                 # print(line)
                 orbitals = re.split(r' +', line.replace('\n',''))[1:] # 获取占据轨道还是非占据轨道
-                all_orbitals.append(orbitals)
+                self.orbitals+=orbitals
             elif re.search(s3, line) is not None: # 情况3
                 line_data=list(re.search(s3,line).groups())
                 self.Eigenvalues+=line_data
             elif re.search(s4,line) is not None:
-                # 第一词遇到这种情况要添加一个原子对象,每个原子拥有一个三维数据列表
-                # 第二次遇到这种情况在之前添加的原子的三维数据添加一个二维列表
                 line_data=list(re.search(s4,line).groups())
-                atom_id = int(line_data[0])
-                atom_type = line_data[1]
-                data = line_data[2:]  # 这是一个一维数据
-                if len(all_orbitals) == 1:
-                    atoms.append({'atom_id': atom_id, 'atom_type': atom_type, 'datas': [[data]]})
-                else:
-                    # 在三维列表中添加一个二维列表
-                    atoms[atom_id - 1]['datas'].append([data])
+                atomIDx = int(line_data[0])-1
+                atom=self.atoms[atomIDx]
+                layer=line_data[2]
+                nums=[float(each) for each in line_data[3:]]
+                atom.set_layers(layer, nums)
             elif re.search(s51,line) is not None:
                 line_data=list(re.search(s51,line).groups())
-                data = line_data
-                atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
+                layer=line_data[0]
+                nums=[float(each) for each in line_data[1:]]
+                atom.set_layers(layer,nums)
             elif re.search(s52,line) is not None:
                 line_data=list(re.search(s52,line).groups())
-                data = line_data
-                atoms[atom_id - 1]['datas'][-1].append(data)  # 在最后一个二维列表中添加一行数据
+                layer=line_data[0]
+                nums=[float(each) for each in line_data[1:]]
+                atom.set_layers(layer,nums)
             else: # 若不满足以上任意一种情况，说明已经查找完毕，则对收集到的数据进行处理
                 print('end_line',line)
                 break
-        for i, atom in enumerate(atoms):
-            index = np.array(atom['datas'],dtype=np.unicode_)[0, :, 0].tolist() # 轨道类型，s,p等
-            array = np.concatenate(np.array(atom['datas'])[:, :, 1:], axis=1) # 一个原子的数据块[index行,columns列]
-            columns=np.array(all_orbitals).flatten().tolist()
-            atoms[i]['datas'] = pd.DataFrame(array, index=index,columns=columns).astype(dtype='float')
-            atoms[i]['orbitals'] = np.array(all_orbitals).flatten().tolist()
-            atom_id = atoms[i]['atom_id']
-            atom_type = atoms[i]['atom_type']
-            self.windowLog(f'{atom_id}{atom_type}'.ljust(6,' '))
-            if (i+1)%10==0:
-                self.windowLog(f'\n')
-            if self.program is not None:
-                self.program.update_progress('整合轨道信息...',(i+1)/len(atoms))
-        self.windowLog(f'\n')
-        self.data[title]=atoms
 
+    def trans(self):
+        self.orbitalNum = len(self.orbitals) # 轨道的数量
+        self.heavyAtoms=[i for i,atom in enumerate(self.atoms) if atom.symbol!='H']
+        layers=['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ']
+        self.As=np.array([np.sum(self.atoms[i].OC.loc[layers,:].to_numpy()**2,axis=0) for i in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
+        self.Eigenvalues=np.array([float(each) for each in self.Eigenvalues])
+        self.orbitalElectron=2 if self.orbitalType==0 else 1
+        self.squareSums=np.array([atom.squareSum for atom in self.atoms])
+        self.cs=(self.squareSums/self.squareSums.sum(axis=0))**0.5
+        self.Coords=np.array([each.coord for each in self.atoms])
+    
 
     def read_standardBasis(self):
+        '''读取GTO函数的拟合系数'''
         self.windowLog('reading Overlap normalization...\n')
         titleNum=None
         for i,line in enumerate(self.logLines):
@@ -170,57 +173,22 @@ class Reader:
                 pass
             else:
                 break
-        self.data['Standard basis'] = datas
+        self.standard_basis = datas
 
     
-    
-    def trans(self):
-        data=self.data
-        keys = data.keys()
-        # 轨道类型有两种情况，正常的和劈裂为α、β的
-        if '  Molecular Orbital Coefficients' in keys:
-            self.orbitalType = 0
-            self.atoms = data['  Molecular Orbital Coefficients'] # [O,O,O,V,V,V]
-            orbital_num = data['  Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.windowLog(f'{orbital_num} orbital are read\n')
-        elif ('Alpha Molecular Orbital Coefficients' in keys) and ('Beta Molecular Orbital Coefficients' in keys):
-            self.alphaNum = data['Alpha Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.betaNum = data['Beta Molecular Orbital Coefficients'][0]['datas'].shape[1]
-            self.windowLog(f'{self.alphaNum} Alpha orbital and {self.betaNum} Beta orbital are read\n')
-            self.orbitalType = 1
-            self.atoms = [{
-                'atom_id': alpha['atom_id'],
-                'atom_type': alpha['atom_type'],
-                'datas': pd.concat([alpha['datas'], beta['datas']], axis=1), # 将α和β的轨道数据横向拼接在一起[O,O,O,V,V,V,O,O,O,V,V,V]
-                'orbitals': alpha['orbitals'] + beta['orbitals']
-            } for alpha, beta in
-                zip(data['Alpha Molecular Orbital Coefficients'], data['Beta Molecular Orbital Coefficients'])]
+    def atomPos(self,atom:int):
+        '''获取指定原子的坐标'''
+        return self.atoms[atom].coord
 
-        self.orbitals=list(self.atoms[0]['datas'].columns) # 所有的轨道类型(占据或非占据，可能会有复杂的表示)
-        self.orbitalNum = self.atoms[0]['datas'].shape[1] # 轨道的数量
-        if 'Standard basis' in data.keys():
-            self.standard_basis = data['Standard basis']
-
-
-        self.heavyAtoms=[i for i,atom in enumerate(self.atoms) if atom['atom_type']!='H']
-        layers=['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ']
-        # layers=['2PX','2PY','2PZ','3PX','3PY','3PZ']
-
-        self.As=np.array([np.sum(self.atoms[i]['datas'].loc[layers,:].to_numpy()**2,axis=0) for i in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
-        self.Eigenvalues=np.array([float(each) for each in data['Eigenvalues']])
-        self.orbitalElectron=2 if self.orbitalType==0 else 1
-        self.squareSums=np.array([np.sum(atom['datas'].to_numpy()**2,axis=0) for atom in self.atoms])
-        self.cs=(self.squareSums/self.squareSums.sum(axis=0))**0.5
-    
     def get_ts(self,atom:int,orbital:int,layers:int):
         '''获得指定原子指定轨道指定价层的组合系数'''
-        return self.atoms[atom]['datas'].loc[layers,:].iloc[:,orbital].to_numpy().copy()
+        return self.atoms[atom].layersData(layers).iloc[:,orbital].to_numpy().copy()
 
     def calculate_bondOrder(self,atom1:int,atom2:int,orbitals:list[int],units:list[int]):
         '''用传统的方法计算键级'''
         return self.cs[atom1,orbitals]*self.cs[atom2,orbitals]*np.array(units)*self.orbitalElectron
 
-    def connections(self,atom):
+    def connections(self,atom:int):
         '''输入原子序号，获取与指定原子相连的原子序号'''
         atomPos=self.atomPos(atom).reshape(1,3)
         if f'{atom}' not in self.allConnect.keys():
@@ -232,7 +200,7 @@ class Reader:
             res=self.allConnect[f'{atom}']
         return res.copy()
 
-    def connectH(self,atom):
+    def connectH(self,atom:int):
         '''返回与原子连接的H原子的序号'''
         res=[]
         connection=self.connections(atom)
@@ -241,12 +209,7 @@ class Reader:
                 res.append(each)
         return res
     
-
-    def atomPos(self,atom):
-        '''获取指定原子的坐标'''
-        return self.Coords[atom,:]
-
-    def bondVector(self,start,end):
+    def bondVector(self,start:int,end:int):
         '''获取两原子之间键轴的向量'''
         if f'{start}-{end}' not in self.bondVectors:
             res=self.atomPos(start)-self.atomPos(end)
@@ -255,10 +218,11 @@ class Reader:
             res=self.bondVectors[f'{start}-{end}']
         return res.copy()
     
-    def bondLength(self,a1,a2):
+    def bondLength(self,a1:int,a2:int):
         '''计算两原子之间的键长'''
         return np.linalg.norm(self.atomPos(a1)-self.atomPos(a2))
-    def normalVector(self,start,end=None):
+
+    def normalVector(self,start:int,end=None):
         '''获取两个原子的法向量'''
         startArounds=self.connections(start)
         startNormal=utils.get_normalVector(*[self.atomPos(each) for each in startArounds])
@@ -299,3 +263,39 @@ class Reader:
                     get(each,selects)
         get(atom,selects)
         return list(set(selects))
+
+class Atom:
+    def __init__(self,symbol:str,coord:list[float]):
+        self.symbol=symbol
+        self.coord=np.array(coord)
+        self._coefficients=None
+        self._layersData={}
+        self._squareSum=None
+
+    def set_layers(self,layer:str,nums:list[float]):
+        if layer not in self._layersData.keys():
+            self._layersData[layer]=[]
+        self._layersData[layer]+=nums
+    
+    @property
+    def layers(self):
+        '''获取该原子有哪些层'''
+        return list(self._layersData.keys())
+
+    def layerData(self,layer):
+        '''获取原子某一层的数据'''
+        return self._layersData[layer] 
+
+    @property
+    def OC(self):
+        '''原子轨道组合系数'''
+        if self._coefficients is None:
+            self._coefficients=pd.DataFrame([self.layerData(layer) for layer in self.layers],index=self.layers)
+        return self._coefficients
+    
+    def layersData(self,layers):
+        return self.OC.loc[layers,:]
+
+    @property
+    def squareSum(self):
+        return np.sum(self.OC.to_numpy()**2,axis=0)
