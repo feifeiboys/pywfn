@@ -6,6 +6,7 @@ class Caculater:
     def __init__(self, program):
         self.program = program
         self.Data=self.program.Data
+        self.Data.read() # 需要读取别的新的的时候再读取
         self.logger=program.logger
         self.normals={} # 计算每个原子的法向量
         self.pvectors={}
@@ -16,7 +17,7 @@ class Caculater:
         self.samePlanes={}
         self.orders={}
         self.Batch:bool=False
-        self.orbitalElectron=2 if self.Data.orbitalType==0 else 1
+        self.orbitalElectron=self.Data.orbitalElectron
 
     def get_Normal(self,atom_i,atom_j): #对获得标量函数的封装
         locNum=0.001
@@ -51,10 +52,12 @@ class Caculater:
             ...
 
 
-    def get_orbitalOrder(self, center, around, orbital): 
-        '''计算两个原子间每个轨道的键级'''
+    def get_orbitalOrder(self, center, around, orbital, direction): 
+        '''计算两个原子间每个轨道的键级,中心原子，相邻原子，轨道，方向'''
         if self.Data.atoms[around].symbol=='H':
-            return False
+            return 0
+        if np.linalg.norm(direction)==0:
+            return 0
 
         self.logger.info(f'*'*70)
         self.logger.info(f'center:{center+1},around:{around+1},orbital:{orbital+1}')
@@ -62,71 +65,85 @@ class Caculater:
         centerPos=self.Data.atomPos(center)
         aroundPos=self.Data.atomPos(around)
         bondVector=aroundPos-centerPos
-        centerNormal=self.get_Normal(center,around)
-        aroundNormal=self.get_Normal(around,center)
-        if utils.vector_angle(centerNormal, aroundNormal)>0.5:
-            aroundNormal*=-1
 
         As = self.Data.As[orbital]
-        layers=['2PX','2PY','2PZ','3PX','3PY','3PZ']
-        centerTs=self.Data.get_ts(center,orbital,layers)
-        aroundTs=self.Data.get_ts(around,orbital,layers)
-        centerTs__=utils.get_projection(centerTs,bondVector,centerNormal)
-        aroundTs__=utils.get_projection(aroundTs,bondVector,centerNormal)
+        centerTs=self.Data.atoms[center].pLayersTs(orbital)
+        aroundTs=self.Data.atoms[around].pLayersTs(orbital)
+        if np.linalg.norm(centerTs)==0 or np.linalg.norm(aroundTs)==0:
+            return 0
+        self.logger.info(f'{centerTs=},{aroundTs=}')
+        centerTs__=utils.get_projection(centerTs,bondVector,direction)
+        aroundTs__=utils.get_projection(aroundTs,bondVector,direction)
         # self.logger.info(f'{centerTs__=}\n{aroundTs__=}')
         centerPZs=[each[-1].item() for each in centerTs__]
         aroundPZs=[each[-1].item() for each in aroundTs__]
         self.logger.info(f'{centerPZs=}\n{aroundPZs=}')
         
         pOrder=sum([cpz*apz/As for cpz,apz in zip(centerPZs,aroundPZs)])*self.orbitalElectron
-        sLayers=['2S','3S']
-        sOrder=0
-        if pOrder!=0:
-            division=lambda a,b:a/b if b!=0 else 0
-            centerRatio=np.array([division(np.sum(centerTs__[idx:idx+3]**2),np.sum(centerTs[idx:idx+3]**2)) for idx in range(0,len(centerTs),3)])
-            aroundRatio=np.array([division(np.sum(aroundTs__[idx:idx+3]**2),np.sum(aroundTs[idx:idx+3]**2)) for idx in range(0,len(aroundTs),3)])
-            self.logger.info(f'{centerRatio=},{aroundRatio=}')
-            centerRatio=np.sum(centerTs__**2)/np.sum(centerTs**2)
-            aroundRatio=np.sum(aroundTs__**2)/np.sum(aroundTs**2)
-            self.logger.info(f'{centerRatio=},{aroundRatio=}')
-            centerSTs=self.Data.get_ts(center, orbital, sLayers)*centerRatio
-            aroundSTs=self.Data.get_ts(around, orbital, sLayers)*aroundRatio
-            sOrder=sum([c*a/As for c,a in zip(centerSTs,aroundSTs)])*self.orbitalElectron
-        orbitalOrder=pOrder#+sOrder
-        self.logger.info(f'{center+1}-{around+1},{orbital+1},{pOrder=},{sOrder=}')
+        orbitalOrder=pOrder
+        self.logger.info(f'{As=},{center+1}-{around+1},{orbital+1},{pOrder=},electron={self.orbitalElectron}')
         self.orders[f'{center}-{around}-{orbital}']=orbitalOrder
-        self.logger.info(f'centerNormal={centerNormal.tolist()}\naroundNormal={aroundNormal.tolist()}')
         return orbitalOrder
 
+    def get_order(self,center,around,orbitals,direction,fontTag):
+        """计算每两个原子之间的键级"""
+        orbitalNum = self.Data.orbitalNum
+        orders=[self.get_orbitalOrder(center,around,orbital,direction) for orbital in orbitals] # 所有的占据轨道都计算键级
+
+        sortRes=sorted(zip(orbitals,orders),key=lambda s:abs(s[1]),reverse=True) # 将计算出的键级与轨道根据键级绝对值大小进行排序
+        orbitals=[each[0] for each in sortRes if abs(each[1])>9e-5]
+        orders=[each[1].item() for each in sortRes if abs(each[1])>9e-5]
+        # 打印轨道与键级
+        orbitalStrs=[f'{orbital+1}' for orbital in orbitals]
+        if self.Data.orbitalType==1:
+            orbitalStrs=[(f'α{orbital+1}' if orbital<orbitalNum/2 else f'β{orbital+1-orbitalNum//2}') for orbital in orbitals]
+        orderStrs=[f'{each:.4f}' for each in orders]
+        self.formatPrint(orbitalStrs,10,8)
+        self.formatPrint(orderStrs,10,8)
+
+        bondOrder=np.sum(orders)
+        bondLength=self.Data.bondLength(center,around)
+        if bondOrder!=0:
+            self.program.logWindow.insert('end',f'{center+1}-{around+1},BO:{bondOrder:.4f},BL:{bondLength:.4f}\n',fontTag)
+        return bondOrder
     
     def calculate(self,centers:list[int]): #程序先进行自己的判断与选择
         orbitalNum = self.Data.orbitalNum
         O_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='O']
+        V_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='V']
+        # O_orbitals=V_orbitals
         for center in centers:
             arounds=self.Data.connections(center)
-            self.N=len(arounds)
+            self.N=len(arounds) # 如果是sp2碳，则需要计算法向量方向的键级，如果是sp碳，则需要计算HOMO方向的键级和与HOMO垂直方向的键级
             orderSum=0 # 原子周围键级之和
+            orderSum2=0
             for around in arounds:
-                orders=[self.get_orbitalOrder(center,around,orbital) for orbital in O_orbitals] # 所有的占据轨道都计算键级
-                sortRes=sorted(zip(O_orbitals,orders),key=lambda s:abs(s[1]),reverse=True) # 将计算出的键级与轨道根据键级绝对值大小进行排序
-                orbitals=[each[0] for each in sortRes if abs(each[1])>9e-5]
-                orders=[each[1].item() for each in sortRes if abs(each[1])>9e-5]
-
-                # 打印轨道与键级
-                orbitalStrs=[f'{orbital+1}' for orbital in orbitals]
-                if self.Data.orbitalType==1:
-                    orbitalStrs=[(f'α{orbital+1}' if orbital<orbitalNum/2 else f'β{orbital+1-orbitalNum//2}') for orbital in orbitals]
-                orderStrs=[f'{each:.4f}' for each in orders]
-                self.formatPrint(orbitalStrs,10,8)
-                self.formatPrint(orderStrs,10,8)
-
-                bondOrder=np.sum(orders)
-                orderSum+=bondOrder
-                bondLength=self.Data.bondLength(center,around)
-                if bondOrder!=0:
-                    self.program.logWindow.insert('end',f'{center+1}-{around+1},BO:{bondOrder:.4f},BL:{bondLength:.4f}\n','BO')
-            FV=1.6002-orderSum
+                if self.N==3:
+                    normal=self.get_Normal(center, around)
+                    bondOrder=self.get_order(center, around, O_orbitals, normal,fontTag='BO')
+                    orderSum+=bondOrder
+                if self.N==2 or self.N==4:
+                    atomPos=self.Data.atomPos(center).reshape(3,1)
+                    aroundPos=self.Data.atomPos(around)
+                    paras=self.Data.atoms[center].basis
+                    ts=self.Data.atoms[center].pLayersTs(O_orbitals[-1])
+                    maxPos,maxValue=utils.get_extraValue(atomPos, paras, ts, 'max')
+                    print(maxPos,maxValue)
+                    homoDirection=(maxPos-atomPos).flatten()
+                    print(f'{homoDirection=}')
+                    homoOrder=self.get_order(center, around, O_orbitals, homoDirection,fontTag='BO1')
+                    cDirection=np.cross(homoDirection, atomPos.flatten()-aroundPos)
+                    print(f'{cDirection=}')
+                    cOrder=self.get_order(center, around, O_orbitals, cDirection,fontTag='BO2')
+                    orderSum+=homoOrder
+                    orderSum2+=cOrder
+                # if self.N==4:
+                #     orderSum=0
+                    
+            FV=2-orderSum
             self.program.logWindow.insert('end',f'{center+1},FV:{FV:.4f}\n','FV')
+            if self.N==2:
+                self.program.logWindow.insert('end',f'{center+1},FV:{2-orderSum2:.4f}\n','FV')
 
     def formatPrint(self,contents:list[str],number:int,length:int):
         '''

@@ -24,11 +24,11 @@ class Reader:
         self.allConnect={}
         self.orbitals=[]
         self.orbitalType:int # 有α，β为1
-        self.read()
+        # self.read_summery()
+        self.read_Coords()
 
     def read(self):
-        self.read_summery()
-        self.read_Coords()
+        
         self.read_orbitalCoefficients('  Molecular Orbital Coefficients')
         self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
         self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
@@ -103,7 +103,8 @@ class Reader:
         if titleNum is None:
             print(f'不存在{title}')
             return
-        self.orbitalType=0 if title=='     Molecular Orbital Coefficients:' else 1
+        self.orbitalType=0 if '  Molecular Orbital Coefficients' in title else 1
+        print(title,self.orbitalType,'  Molecular Orbital Coefficients' in title)
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None: #情况1
@@ -139,8 +140,8 @@ class Reader:
     def trans(self):
         self.orbitalNum = len(self.orbitals) # 轨道的数量
         self.heavyAtoms=[i for i,atom in enumerate(self.atoms) if atom.symbol!='H']
-        layers=['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ']
-        self.As=np.array([np.sum(self.atoms[i].OC.loc[layers,:].to_numpy()**2,axis=0) for i in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
+        # layers=['2S','2PX','2PY','2PZ','3S','3PX','3PY','3PZ']
+        self.As=np.array([np.sum(self.atoms[i].spLayersData**2,axis=0) for i in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
         self.Eigenvalues=np.array([float(each) for each in self.Eigenvalues])
         self.orbitalElectron=2 if self.orbitalType==0 else 1
         self.squareSums=np.array([atom.squareSum for atom in self.atoms])
@@ -173,7 +174,9 @@ class Reader:
                 pass
             else:
                 break
-        self.standard_basis = datas
+        print(datas)
+        for i,each in enumerate(datas):
+            self.atoms[i].basis=np.array(each)
 
     
     def atomPos(self,atom:int):
@@ -208,6 +211,9 @@ class Reader:
             if self.atoms[each]['atom_type']=='H':
                 res.append(each)
         return res
+    
+    def get_atomsBySymbol(self,symbol):
+        '''获取某一原子符号的所有原子'''
     
     def bondVector(self,start:int,end:int):
         '''获取两原子之间键轴的向量'''
@@ -281,10 +287,16 @@ class Atom:
     def layers(self):
         '''获取该原子有哪些层'''
         return list(self._layersData.keys())
+    
+    
 
-    def layerData(self,layer):
+    def layerData(self,layer:int):
         '''获取原子某一层的数据'''
-        return self._layersData[layer] 
+        return self._layersData[layer]
+
+    def layersData(self,layers:list[int]):
+        '''获取原子某些层的数据'''
+        return self.OC.loc[layers,:].to_numpy()
 
     @property
     def OC(self):
@@ -292,10 +304,33 @@ class Atom:
         if self._coefficients is None:
             self._coefficients=pd.DataFrame([self.layerData(layer) for layer in self.layers],index=self.layers)
         return self._coefficients
-    
-    def layersData(self,layers):
-        return self.OC.loc[layers,:]
 
     @property
     def squareSum(self):
         return np.sum(self.OC.to_numpy()**2,axis=0)
+
+    @property
+    def pLayers(self):
+        '''返回原子p价层符号'''
+        return [layer for layer in self.layers if 'P' in layer]
+    
+    @property
+    def spLayers(self) -> list[str]:
+        '''返回原子s和p价层符号'''
+        return [layer for layer in self.layers if ('P' in layer or 'S' in layer)]
+
+    @property
+    def pLayersData(self):
+        return self.layersData(self.pLayers)
+
+    @property
+    def spLayersData(self):
+        return self.layersData(self.spLayers)
+
+    def pLayersTs(self,orbital):
+        '''获取原子某一轨道的p层数据'''
+        return self.pLayersData[:,orbital]
+    
+    def spLayersTs(self,orbital):
+        '''获取原子某一轨道的p层数据'''
+        return self.spLayersData[:,orbital]

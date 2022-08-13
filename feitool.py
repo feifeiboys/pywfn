@@ -2,10 +2,10 @@
 import numpy as np
 from numpy import sin,cos
 import pandas as pd
-import pyautogui
 import os
 import time
 import re
+from logReader import Reader
 def rotateX(vectors,angle):
     line,colum=vectors.shape
     vectors=np.concatenate([vectors,np.ones(shape=(1,colum))],axis=0)
@@ -94,29 +94,40 @@ def auto_gjf():
     '''根据模板生成gif'''
     pass
 
-def splitScan():
-    '''将扫描的文件中每一个结构拆分'''
-    with open(r"C:\code\HFV\files\lianbenR\lianbenScan.out",'r',encoding='utf-8') as f:
+def splitScan(logPath:str,templatePath:str,method='b3lyp',basis='6-31g(d)'):
+    '''将扫描的文件中每一个结构拆分,并根据每一步的坐标信息和模板文件生成新的文件'''
+    fileName=os.path.basename(logPath).split('.')[0]
+    dirName=os.path.dirname(logPath)
+    path=os.path.join(dirName,fileName)
+    # 在当前文件夹下创建新文件夹
+    if not os.path.exists(path):
+        os.mkdir(path)
+    with open(logPath,'r',encoding='utf-8') as f:
         data=f.read()
-    with open(r"C:\code\HFV\files\lianbenR\template.txt",'r',encoding='utf-8') as f:
+    with open(templatePath,'r',encoding='utf-8') as f:
         template=f.read()
     contents=data.split(' Optimization completed.')
-    atoms='C'*12+'H'*10
+
+    File=Reader(logPath)
+    atoms=[each.symbol for each in File.atoms]
+
     for idx,content in enumerate(contents):
+        print(idx,len(contents))
         lines=content.split('\n')
         lineNum=0
         for i,line in enumerate(lines):
-            if 'Input orientation:' in line:
+            if 'Input orientation:' in line or 'Standard orientation:' in line:
                 lineNum=i
         print(lineNum)
-        posStr='\n'.join(lines[lineNum+4:lineNum+28])
+        posStr='\n'.join(lines[lineNum+5:lineNum+5+len(atoms)])
         # print(posStr)
         res=re.findall(r'-?\d.\d{6} +-?\d.\d{6} +-?\d.\d{6}',posStr)
         res='\n'.join([f'{atoms[j]} {each}' for j,each in enumerate(res)])
         # print(res)
-        writeContent=template.replace('IDX',f'{idx}').replace('COORDINATE',res)
-        with open(r"C:\code\HFV\files\lianbenR\files\lianBenScanRHF_"+f'{idx}.gjf','w',encoding='utf-8') as f:
+        writeContent=template.replace('FILENAME', fileName).replace('IDX',f'{idx}').replace('METHOD', method).replace('BASIS', basis).replace('COORDS',res)
+        
+        with open(os.path.join(path,f'{fileName}_{idx}.gjf'),'w',encoding='utf-8') as f:
             f.write(writeContent)
 
 if __name__=='__main__':
-    gaussianRun()
+    splitScan("E:\BaiduSyncdisk\gFile\scans\dingerxi\dingerxiScan_6-31G.log",'template.txt',basis='6-31g(d)')

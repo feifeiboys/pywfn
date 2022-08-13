@@ -49,7 +49,7 @@ def posan_function(centerPos,aroundPos,paras,ts,onlyP=False): # 为了代码可�
     c_p=paras[:,2]
     x,y,z=aroundPos.reshape(3,-1)
     x0,y0,z0=centerPos.reshape(3,-1)
-    R=np.sum((centerPos-aroundPos)**2,axis=0,keepdims=True)
+    R=np.sum((aroundPos-centerPos)**2,axis=0,keepdims=True)
     psx=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(x-x0)*math.e**(-1*a*R)
     psy=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(y-y0)*math.e**(-1*a*R)
     psz=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(z-z0)*math.e**(-1*a*R)
@@ -65,7 +65,7 @@ def posan_function(centerPos,aroundPos,paras,ts,onlyP=False): # 为了代码可�
     if onlyP:
         s2=s3=0
     s2=s3=0
-    ps=[s2,px2,py2,pz2,s3,px3,py3,pz3]
+    ps=[px2,py2,pz2,px3,py3,pz3]
     mo=sum([t*p for t,p in zip(ts,ps)])
     return mo
 def multiFunction(orbital:int,atoms:list,selectPos,Data):
@@ -126,7 +126,7 @@ def get_extraValue(atomPos,paras,ts,valueType):
     step=0.1
     while True:
         aroundPos=get_aroundPoints(startPos,step) # aroundPos:(3,n)
-        aroundValues=posan_function(atomPos,aroundPos,paras,ts)
+        aroundValues=posan_function(atomPos,aroundPos,paras,ts,onlyP=True)
         if valueType=='max' and np.max(aroundValues)>startValue:
             startValue=np.max(aroundValues)
             maxID=np.argmax(aroundValues)
