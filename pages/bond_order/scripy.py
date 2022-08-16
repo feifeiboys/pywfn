@@ -112,33 +112,45 @@ class Caculater:
         O_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='O']
         V_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='V']
         # O_orbitals=V_orbitals
+        orbitals=O_orbitals
         for center in centers:
             arounds=self.Data.connections(center)
             self.N=len(arounds) # 如果是sp2碳，则需要计算法向量方向的键级，如果是sp碳，则需要计算HOMO方向的键级和与HOMO垂直方向的键级
             orderSum=0 # 原子周围键级之和
             orderSum2=0
             for around in arounds:
+                bondVector=self.Data.atomPos(around)-self.Data.atomPos(center)
                 if self.N==3:
                     normal=self.get_Normal(center, around)
                     bondOrder=self.get_order(center, around, O_orbitals, normal,fontTag='BO')
                     orderSum+=bondOrder
                 if self.N==2 or self.N==4:
+                    # 从上到下找到与键轴垂直的方向的轨道作为投影方向
                     atomPos=self.Data.atomPos(center).reshape(3,1)
                     aroundPos=self.Data.atomPos(around)
                     paras=self.Data.atoms[center].basis
-                    ts=self.Data.atoms[center].pLayersTs(O_orbitals[-1])
-                    maxPos,maxValue=utils.get_extraValue(atomPos, paras, ts, 'max')
-                    print(maxPos,maxValue)
-                    homoDirection=(maxPos-atomPos).flatten()
-                    print(f'{homoDirection=}')
-                    homoOrder=self.get_order(center, around, O_orbitals, homoDirection,fontTag='BO1')
-                    cDirection=np.cross(homoDirection, atomPos.flatten()-aroundPos)
-                    print(f'{cDirection=}')
-                    cOrder=self.get_order(center, around, O_orbitals, cDirection,fontTag='BO2')
+                    for orbital in O_orbitals[::-1]:
+                        ts=self.Data.atoms[center].pLayersTs(orbital)
+                        maxPos,maxValue=utils.get_extraValue(atomPos, paras, ts, 'max')
+                        # print(maxPos,maxValue)
+                        homoDirection=(maxPos-atomPos).flatten()
+                        if np.linalg.norm(homoDirection)==0:
+                            continue
+                        # print(f'{homoDirection=}')
+                        angle=utils.vector_angle(homoDirection, bondVector)
+                        # print(f'{orbital=},{angle=}')
+                        if angle==0.5:
+                            break
+                    if angle==0.5:
+                        print(f'{homoDirection=}')
+                        homoOrder=self.get_order(center, around, O_orbitals, homoDirection,fontTag='BO1')
+                        cDirection=np.cross(homoDirection, bondVector)
+                        # print(f'{cDirection=}')
+                        cOrder=self.get_order(center, around, O_orbitals, cDirection,fontTag='BO2')
+                    else:
+                        homoOrder=cOrder=0
                     orderSum+=homoOrder
                     orderSum2+=cOrder
-                # if self.N==4:
-                #     orderSum=0
                     
             FV=2-orderSum
             self.program.logWindow.insert('end',f'{center+1},FV:{FV:.4f}\n','FV')
