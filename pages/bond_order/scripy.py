@@ -1,7 +1,7 @@
 import numpy as np
 import math
-from pages.utils import get_normalVector
 from .. import utils
+from typing import *
 class Caculater:
     def __init__(self, program):
         self.program = program
@@ -42,13 +42,14 @@ class Caculater:
         '''计算两原子与法向量链接中点的三个点确定的平面的法向量'''
         key=f'{center}-{around}'
         if key not in self.planVectors.keys():
-            normal=get_normalVector(centerPos,aroundPos,point)
+            normal=utils.get_normalVector(centerPos,aroundPos,point)
             self.planVectors[key]=normal
         return self.planVectors[key]
     
     def get_piOrbitals(self,center,around,orbitals):
         '''挑选出两个原子之间的Π轨道'''
         for orbital in orbitals:
+            # 计算中心原子的贡献与相邻原子的贡献
             ...
 
 
@@ -107,7 +108,7 @@ class Caculater:
             self.program.logWindow.insert('end',f'{center+1}-{around+1},BO:{bondOrder:.4f},BL:{bondLength:.4f}\n',fontTag)
         return bondOrder
     
-    def calculate(self,centers:list[int]): #程序先进行自己的判断与选择
+    def calculate(self,centers:List[int]): #程序先进行自己的判断与选择
         orbitalNum = self.Data.orbitalNum
         O_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='O']
         V_orbitals=[orbital for orbital in range(orbitalNum) if self.Data.orbitals[orbital][-1]=='V']
@@ -157,7 +158,7 @@ class Caculater:
             if self.N==2:
                 self.program.logWindow.insert('end',f'{center+1},FV:{2-orderSum2:.4f}\n','FV')
 
-    def formatPrint(self,contents:list[str],number:int,length:int):
+    def formatPrint(self,contents:List[str],number:int,length:int):
         '''
         将列表内容格式化打印
         contents:要打印的内容

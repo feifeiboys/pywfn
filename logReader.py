@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import json
 from pages import utils
+from typing import *
 
 atomSymbols=[
     'H','He','li','Be','B',
@@ -104,7 +105,7 @@ class Reader:
             print(f'不存在{title}')
             return
         self.orbitalType=0 if '  Molecular Orbital Coefficients' in title else 1
-        print(title,self.orbitalType,'  Molecular Orbital Coefficients' in title)
+        # print(title,self.orbitalType,'  Molecular Orbital Coefficients' in title)
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None: #情况1
@@ -174,7 +175,7 @@ class Reader:
                 pass
             else:
                 break
-        print(datas)
+        # print(datas)
         for i,each in enumerate(datas):
             self.atoms[i].basis=np.array(each)
 
@@ -187,7 +188,7 @@ class Reader:
         '''获得指定原子指定轨道指定价层的组合系数'''
         return self.atoms[atom].layersData(layers).iloc[:,orbital].to_numpy().copy()
 
-    def calculate_bondOrder(self,atom1:int,atom2:int,orbitals:list[int],units:list[int]):
+    def calculate_bondOrder(self,atom1:int,atom2:int,orbitals:List[int],units:List[int]):
         '''用传统的方法计算键级'''
         return self.cs[atom1,orbitals]*self.cs[atom2,orbitals]*np.array(units)*self.orbitalElectron
 
@@ -271,14 +272,15 @@ class Reader:
         return list(set(selects))
 
 class Atom:
-    def __init__(self,symbol:str,coord:list[float]):
+    def __init__(self,symbol:str,coord:List[float]):
         self.symbol=symbol
         self.coord=np.array(coord)
         self._coefficients=None
         self._layersData={}
         self._squareSum=None
+        self.normals={} #存储原子的法向量
 
-    def set_layers(self,layer:str,nums:list[float]):
+    def set_layers(self,layer:str,nums:List[float]):
         if layer not in self._layersData.keys():
             self._layersData[layer]=[]
         self._layersData[layer]+=nums
@@ -294,7 +296,7 @@ class Atom:
         '''获取原子某一层的数据'''
         return self._layersData[layer]
 
-    def layersData(self,layers:list[int]):
+    def layersData(self,layers:List[int]):
         '''获取原子某些层的数据'''
         return self.OC.loc[layers,:].to_numpy()
 
@@ -315,7 +317,7 @@ class Atom:
         return [layer for layer in self.layers if 'P' in layer]
     
     @property
-    def spLayers(self) -> list[str]:
+    def spLayers(self) -> List[str]:
         '''返回原子s和p价层符号'''
         return [layer for layer in self.layers if ('P' in layer or 'S' in layer)]
 
