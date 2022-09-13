@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="tabs">
+    <file>files.svg</file>
+  </qresource>
+  <qresource prefix="title">
+    <file>mol.svg</file>
+  </qresource>
+</RCC>

@@ -1,0 +1,7 @@
+%chk=PATH.chk
+# opt freq b3lyp/6-31g(d)
+
+Title Card Required
+
+0 1
+COORD

@@ -8,6 +8,8 @@ class File:
         self.mol=Mol()
         self.read_coords()
         self.read_standardBasis()
+        self.read_orbitalCoefficients()
+        self.mol.trans()
 
     def read_coords(self):
         coords=self.reader.read_Coords()
@@ -20,5 +22,7 @@ class File:
         for i,each in enumerate(basis):
             self.mol.atoms[i+1].standardBasis=np.array(each)
 
-
-    
+    def read_orbitalCoefficients(self):
+        self.reader.read_orbitalCoefficients('  Molecular Orbital Coefficients',self.mol)
+        self.reader.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients',self.mol)
+        self.reader.read_orbitalCoefficients('Beta Molecular Orbital Coefficients',self.mol)   

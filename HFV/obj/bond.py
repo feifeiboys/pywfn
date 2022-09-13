@@ -7,8 +7,13 @@ class Bond:
     def __init__(self,a1:Atom,a2:Atom) -> None:
         self.a1=a1
         self.a2=a2
+        self.length:float=None
+        self.idx=f'{a1.idx}-{a2.idx}'
 
     def bondVector(self):
         '''获取两原子之间键轴的向量'''
         res=self.a1.coord-self.a2.coord
         return res.copy()
+
+    def __repr__(self) -> str:
+        return f'length={self.length}'
