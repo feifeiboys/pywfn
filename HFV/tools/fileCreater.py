@@ -11,7 +11,7 @@ class Tool:
         self.path=path
         self.coordStr=None
         self.pwd=Path(__file__).parent
-        print(f'pwd={self.pwd}')
+        # print(f'pwd={self.pwd}')
         with open(os.path.join(self.pwd.parent,'data\\gifTemplate.txt'),'r',encoding='utf-8') as f:
             self.template=f.read()
 
