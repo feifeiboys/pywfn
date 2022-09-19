@@ -7,6 +7,7 @@
 - Mol 根据读取的文件生成分子对象
     - 其中atoms的索引是从1开始
     - 进行计算时主要使用的时Mol和Atom的方法和属性
+    - 所有的计算都是基于分子类的，所以分子类应可以自定义
 - Atom 根据读取的文件生成原子对象  
 # 计算器
 实例化计算器，传入分子，计算的结果将保存到基础类的属性中  
@@ -30,15 +31,19 @@
 一个分子的所有原子的坐标为`coords`  
 多个分子的原子坐标为`allCoords`
 # API
-- obj 提供基础类
-    - Reader
-    - File
-    - Mol
-    - Atom
-- calculaters 提供计算器
-    - piBondOrder
-    - piSelectOrder
-    - overlapIntegrate
-- tools 提供对文件的额外处理
-    - ScanSpliter 将扫描文件分割成一份份单独的文件
-    - FileCreator 根据模板生成gjf文件
+- `obj` 提供基础类
+    - `Reader` 用来读取高斯输出文件
+    - `File` 存储高斯读取文件的信息，可以包含对个分子对象
+    - `Mol` 分子(结构)对象
+    - `Atom` 原子对象
+    - `Bond` 键对象
+- `calculaters` 提供各种计算器
+    - `piBondOrder` 新方法计算π键级
+    - `piSelectOrder` 旧方法计算π键级
+    - `overlapIntegrate` 计算重叠积分
+- `tools` 提供对文件的额外处理
+    - `ScanSpliter` 将扫描文件分割成一份份单独的文件
+    - `FileCreator` 根据模板生成gjf文件
+- `data` 存储需要的数据文件
+    - `elements.json` 存储元素信息
+    - `gjfTemplate.txt` 默认的生成`gjf`文件的模板文件

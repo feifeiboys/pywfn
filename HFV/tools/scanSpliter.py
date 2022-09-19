@@ -7,17 +7,21 @@ import re
 import os
 import numpy as np
 from .fileCreater import Tool as FileCreater
+from pathlib import Path
+from ..elements import Elements
 
 class Tool:
     def __init__(self,path:str) -> None:
-        self.path=path
-        self.dirName=os.path.dirname(self.path)
-        self.baseName=os.path.basename(self.path)
-        self.fileName=self.baseName.split('.')[0]
-        if not os.path.exists(os.path.join(self.dirName,self.fileName)): #判断文件夹是否存在
-            os.mkdir(os.path.join(self.dirName,self.fileName))
+        self.path=Path(path)
+        self.dirName=self.path.parent
+        self.baseName=self.path.name # 包含后缀的文件名
+        self.fileName=self.path.stem # 不包含后缀的文件名
+        folder=self.dirName / self.fileName
+        if not Path(folder).exists(): #判断文件夹是否存在
+            os.mkdir(folder)
         with open(path,'r',encoding='utf-8') as f:
             self.content=f.read()
+        self.elements=Elements()
 
     def split_raw(self)->List[str]:
         """将原始的一大段文本分割"""
@@ -40,7 +44,8 @@ class Tool:
             line=lines[i]
             if re.search(s,line) is not None:
                 idx,x,y,z=re.search(s,line).groups()
-                coords.append([idx,x,y,z])
+                symbol=self.elements.get_element_by_idx(int(idx)).symbol
+                coords.append([symbol,x,y,z])
             else:
                 return coords
             
@@ -50,7 +55,7 @@ class Tool:
         contents=self.split_raw()
         for i,content in enumerate(contents):
             coords=self.get_coord(content)
-            path=os.path.join(self.dirName,self.fileName,f'{i+1}.gjf')
+            path=os.path.join(self.dirName,self.fileName,f'F{i+1}.gjf')
             fileCreater=FileCreater(path=path)
             fileCreater.set_coord(coords)
             fileCreater.save()

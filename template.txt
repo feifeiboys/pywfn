@@ -1,8 +1,0 @@
-%chk=FILENAME_IDX.chk
-# opt freq METHOD/BASIS
-
-Title Card Required
-
-0 1
-COORDS
-

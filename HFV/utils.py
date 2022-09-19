@@ -28,10 +28,14 @@ def get_points_between_two_pos(pos1,pos2,n):
     return np.array(all_pos)
 
 def get_projection(ts,x_,z_):
-    '''计算原子轨道组合系数在法向量的投影'''
+    '''计算原子轨道组合系数在法向量的投影,x_是键轴方向,z_是法向量或者轨道方向'''
+    if np.linalg.norm(x_)==0 or np.linalg.norm(z_)==0:
+        raise
     x_=x_/np.linalg.norm(x_)
     z_=z_/np.linalg.norm(z_)
     y_=np.cross(x_,z_)
+    if np.linalg.norm(y_)==0:
+        raise
     y_=y_/np.linalg.norm(y_)
     ps=[np.array(ts[i:i+3]) for i in range(0,len(ts),3)] #每一项都是长度为3的数组
     ps_=[np.dot(p, z_)/np.linalg.norm(z_)*z_ for p in ps] # 轨道向量在法向量方向上的投影

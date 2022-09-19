@@ -1,4 +1,4 @@
-"""处理用户在文本框输入的文本"""
+"""处理用户在命令行文本框输入的命令"""
 
 class Command:
     def __init__(self,app:"Window") -> None:
@@ -12,11 +12,12 @@ class Command:
 
     def run(self,opt:str):
         self.currentFile=self.app.currentFile
+        printf=self.printf
         try:
-            res=eval(f'self.{opt}')
+            res=eval(f'{opt}')
             return res
         except:
             return 'command error'
 
 
-from App import Window,FileItem
+# from .window import Window,FileItem

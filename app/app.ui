@@ -17,8 +17,14 @@
    <string>HFV</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="images/icons.qrc">
+   <iconset>
     <normaloff>:/title/mol.svg</normaloff>:/title/mol.svg</iconset>
+  </property>
+  <property name="documentMode">
+   <bool>false</bool>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -48,7 +54,7 @@
        </property>
        <widget class="QWidget" name="tab_files">
         <attribute name="icon">
-         <iconset resource="images/icons.qrc">
+         <iconset>
           <normaloff>:/tabs/files.svg</normaloff>:/tabs/files.svg</iconset>
         </attribute>
         <attribute name="title">

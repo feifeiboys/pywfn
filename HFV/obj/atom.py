@@ -3,15 +3,16 @@ import numpy as np
 import pandas as pd
 from numpy import ndarray
 from .. import utils
+from .. import setting
 class  Atom:
-    def __init__(self,symbol:str,coord:List[float],idx:int,mol): # 每个原子应该知道自己属于哪个分子
+    def __init__(self,symbol:str,coord:List[float],idx:int,mol:"Mol"): # 每个原子应该知道自己属于哪个分子
         self.symbol=symbol
         self.coord=np.array(coord)
         self._coefficients=None 
         self._layersData={}
         self._squareSum=None
         self.normals={} #存储原子的法向量
-        self.mol=mol
+        self.mol:"Mol"=mol
         self.idx=idx
         self.orbitalDirections={} #存储所有分子轨道里原子轨道的方向
         self.standardBasis:ndarray=None
@@ -23,12 +24,19 @@ class  Atom:
 
     @property
     def neighbors(self)->List["Atom"]:
-        """每个原子相邻的原子有哪些"""
+        """每个原子相邻的原子有哪些，根据分子的键来判断"""
         res=[]
+        idxs=[]
+        bonds=self.mol.bonds.values()
+        for bond in bonds:
+            idx1,idx2=bond.idx.split('-')
+            idx1,idx2=int(idx1),int(idx2)
+            if idx1==self.idx:idxs.append(idx2)
+            if idx2==self.idx:idxs.append(idx1)
+
         for idx,atom in self.mol.atoms.items():
-            if idx!=self.idx:
-                if np.linalg.norm(self.coord-atom.coord)<=1.7:
-                    res.append(atom)
+            if idx in idxs:
+                res.append(atom)
         return res
     
     @property
@@ -97,6 +105,8 @@ class  Atom:
                 normal_vector_j=utils.get_normalVector(p1,p2,p3)
                 if len(neighbors_i)!=3:
                     normal_vector_i=normal_vector_j
+            if len(neighbors_i)!=3 and len(neighbors_j)!=3:
+                return None # 如果两个原子连接的原子数量都不是三个的话，就没有法向量
             self.normals[f'{around.idx}-{self.idx}']=normal_vector_j
             self.normals[f'{self.idx}-{around.idx}']=normal_vector_i
         return self.normals[f'{self.idx}-{around.idx}']
@@ -120,3 +130,5 @@ class  Atom:
         """计算原子在指定位置的函数值"""
         values=utils.posan_function(centerPos=self.coord.reshape(3,1),aroundPos=points,paras=self.standardBasis,ts=self.pLayersTs(orbital))
         return values
+
+from .mol import Mol

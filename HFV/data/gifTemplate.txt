@@ -1,7 +1,8 @@
-%chk=PATH.chk
-# opt freq b3lyp/6-31g(d)
+%chk=F_FILE.chk
+# b3lyp/6-31g(d) pop=full gfinput
 
 Title Card Required
 
 0 1
 COORD
+

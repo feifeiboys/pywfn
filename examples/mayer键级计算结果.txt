@@ -1,0 +1,3329 @@
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:09:41 )
+
+ Input file path, for example E:\MADLAX\MADLAX.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F1.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.992139554606 Hartree,   Virial ratio:  2.01028604
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F1.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.93031679
+ #    2:         1(C )    3(C )    1.13752798
+ #    3:         1(C )    5(C )    1.87205853
+ #    4:         3(C )    4(H )    0.93031679
+ #    5:         3(C )    8(C )    1.87205853
+ #    6:         5(C )    6(H )    0.93627913
+ #    7:         5(C )    7(H )    0.93692582
+ #    8:         5(C )    8(C )    0.13513327
+ #    9:         8(C )    9(H )    0.93692582
+ #   10:         8(C )   10(H )    0.93627913
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.94738098    0.00000000
+ Atom     2(H ) :    0.93636470    0.00000000
+ Atom     3(C ) :    3.94738098    0.00000000
+ Atom     4(H ) :    0.93636470    0.00000000
+ Atom     5(C ) :    3.88786687    0.00000000
+ Atom     6(H ) :    0.93927608    0.00000000
+ Atom     7(H ) :    0.93917178    0.00000000
+ Atom     8(C ) :    3.88786687    0.00000000
+ Atom     9(H ) :    0.93917178    0.00000000
+ Atom    10(H ) :    0.93927608    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:03 )
+
+ Input file path, for example E:\Kan_Colle\Shimakaze.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F2.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.987180711790 Hartree,   Virial ratio:  2.01117604
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F2.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.92905579
+ #    2:         1(C )    3(C )    1.07955356
+ #    3:         1(C )    5(C )    1.91406286
+ #    4:         3(C )    4(H )    0.92905579
+ #    5:         3(C )    8(C )    1.91406286
+ #    6:         5(C )    6(H )    0.93548600
+ #    7:         5(C )    7(H )    0.93660152
+ #    8:         5(C )    8(C )    0.09817759
+ #    9:         8(C )    9(H )    0.93660152
+ #   10:         8(C )   10(H )    0.93548600
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.93319035    0.00000000
+ Atom     2(H ) :    0.93624814    0.00000000
+ Atom     3(C ) :    3.93319035    0.00000000
+ Atom     4(H ) :    0.93624814    0.00000000
+ Atom     5(C ) :    3.88864543    0.00000000
+ Atom     6(H ) :    0.93875973    0.00000000
+ Atom     7(H ) :    0.93891279    0.00000000
+ Atom     8(C ) :    3.88864543    0.00000000
+ Atom     9(H ) :    0.93891279    0.00000000
+ Atom    10(H ) :    0.93875973    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:07 )
+
+ Input file path, for example E:\Amagami\Miya_Tachibana.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F3.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.975409928736 Hartree,   Virial ratio:  2.01174582
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F3.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.92687849
+ #    2:         1(C )    3(C )    1.03164811
+ #    3:         1(C )    5(C )    1.94523581
+ #    4:         3(C )    4(H )    0.92687849
+ #    5:         3(C )    8(C )    1.94523581
+ #    6:         5(C )    6(H )    0.93404795
+ #    7:         5(C )    7(H )    0.93599417
+ #    8:         5(C )    8(C )    0.07074417
+ #    9:         8(C )    9(H )    0.93599417
+ #   10:         8(C )   10(H )    0.93404795
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.91984165    0.00000000
+ Atom     2(H ) :    0.93577755    0.00000000
+ Atom     3(C ) :    3.91984165    0.00000000
+ Atom     4(H ) :    0.93577755    0.00000000
+ Atom     5(C ) :    3.88968381    0.00000000
+ Atom     6(H ) :    0.93810054    0.00000000
+ Atom     7(H ) :    0.93863197    0.00000000
+ Atom     8(C ) :    3.88968381    0.00000000
+ Atom     9(H ) :    0.93863197    0.00000000
+ Atom    10(H ) :    0.93810054    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:11 )
+
+ Input file path, for example E:\Baka_to_Test_to_Shoukanjuu\Hideyoshi_Kinoshita.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F4.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.960089551926 Hartree,   Virial ratio:  2.01209022
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F4.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.92423077
+ #    2:         1(C )    3(C )    0.99155289
+ #    3:         1(C )    5(C )    1.96879407
+ #    4:         3(C )    4(H )    0.92423077
+ #    5:         3(C )    8(C )    1.96879407
+ #    6:         5(C )    6(H )    0.93204283
+ #    7:         5(C )    7(H )    0.93512249
+ #    8:         5(C )    8(C )    0.05067075
+ #    9:         8(C )    9(H )    0.93512249
+ #   10:         8(C )   10(H )    0.93204283
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.90750791    0.00000000
+ Atom     2(H ) :    0.93494347    0.00000000
+ Atom     3(C ) :    3.90750791    0.00000000
+ Atom     4(H ) :    0.93494347    0.00000000
+ Atom     5(C ) :    3.89107081    0.00000000
+ Atom     6(H ) :    0.93738457    0.00000000
+ Atom     7(H ) :    0.93827564    0.00000000
+ Atom     8(C ) :    3.89107081    0.00000000
+ Atom     9(H ) :    0.93827564    0.00000000
+ Atom    10(H ) :    0.93738457    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:15 )
+
+ Input file path, for example E:\Strawberry_Panic\Chikaru_Minamoto.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F5.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.943220588922 Hartree,   Virial ratio:  2.01228638
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F5.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.92137993
+ #    2:         1(C )    3(C )    0.95703730
+ #    3:         1(C )    5(C )    1.98702719
+ #    4:         3(C )    4(H )    0.92137993
+ #    5:         3(C )    8(C )    1.98702719
+ #    6:         5(C )    6(H )    0.92952652
+ #    7:         5(C )    7(H )    0.93404745
+ #    8:         8(C )    9(H )    0.93404745
+ #    9:         8(C )   10(H )    0.92952652
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.89593084    0.00000000
+ Atom     2(H ) :    0.93388156    0.00000000
+ Atom     3(C ) :    3.89593084    0.00000000
+ Atom     4(H ) :    0.93388156    0.00000000
+ Atom     5(C ) :    3.89290095    0.00000000
+ Atom     6(H ) :    0.93659243    0.00000000
+ Atom     7(H ) :    0.93785646    0.00000000
+ Atom     8(C ) :    3.89290095    0.00000000
+ Atom     9(H ) :    0.93785646    0.00000000
+ Atom    10(H ) :    0.93659243    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:19 )
+
+ Input file path, for example E:\Hibike!_Euphonium\Reina_Kousaka.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F6.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.926018537179 Hartree,   Virial ratio:  2.01237909
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F6.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.91856451
+ #    2:         1(C )    3(C )    0.92673975
+ #    3:         1(C )    5(C )    2.00185919
+ #    4:         3(C )    4(H )    0.91856451
+ #    5:         3(C )    8(C )    2.00185919
+ #    6:         5(C )    6(H )    0.92659800
+ #    7:         5(C )    7(H )    0.93278447
+ #    8:         8(C )    9(H )    0.93278447
+ #    9:         8(C )   10(H )    0.92659800
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.88546495    0.00000000
+ Atom     2(H ) :    0.93267735    0.00000000
+ Atom     3(C ) :    3.88546495    0.00000000
+ Atom     4(H ) :    0.93267735    0.00000000
+ Atom     5(C ) :    3.89532816    0.00000000
+ Atom     6(H ) :    0.93577835    0.00000000
+ Atom     7(H ) :    0.93737161    0.00000000
+ Atom     8(C ) :    3.89532816    0.00000000
+ Atom     9(H ) :    0.93737161    0.00000000
+ Atom    10(H ) :    0.93577835    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:23 )
+
+ Input file path, for example E:\Kawaii_Dake_ja_Nai_Shikimori-san\Shikimori.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F7.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.909200858067 Hartree,   Virial ratio:  2.01240346
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F7.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.91593366
+ #    2:         1(C )    3(C )    0.89958077
+ #    3:         1(C )    5(C )    2.01451109
+ #    4:         3(C )    4(H )    0.91593366
+ #    5:         3(C )    8(C )    2.01451109
+ #    6:         5(C )    6(H )    0.92338862
+ #    7:         5(C )    7(H )    0.93138719
+ #    8:         8(C )    9(H )    0.93138719
+ #    9:         8(C )   10(H )    0.92338862
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.87619099    0.00000000
+ Atom     2(H ) :    0.93147625    0.00000000
+ Atom     3(C ) :    3.87619099    0.00000000
+ Atom     4(H ) :    0.93147625    0.00000000
+ Atom     5(C ) :    3.89840273    0.00000000
+ Atom     6(H ) :    0.93497207    0.00000000
+ Atom     7(H ) :    0.93681156    0.00000000
+ Atom     8(C ) :    3.89840273    0.00000000
+ Atom     9(H ) :    0.93681156    0.00000000
+ Atom    10(H ) :    0.93497207    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:27 )
+
+ Input file path, for example E:\Kan_Colle\Shimakaze.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F8.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.893165910391 Hartree,   Virial ratio:  2.01238347
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F8.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.91360907
+ #    2:         1(C )    3(C )    0.87511745
+ #    3:         1(C )    5(C )    2.02578142
+ #    4:         3(C )    4(H )    0.91360907
+ #    5:         3(C )    8(C )    2.02578142
+ #    6:         5(C )    6(H )    0.91999933
+ #    7:         5(C )    7(H )    0.92984682
+ #    8:         8(C )    9(H )    0.92984682
+ #    9:         8(C )   10(H )    0.91999933
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.86833324    0.00000000
+ Atom     2(H ) :    0.93032689    0.00000000
+ Atom     3(C ) :    3.86833324    0.00000000
+ Atom     4(H ) :    0.93032689    0.00000000
+ Atom     5(C ) :    3.90200071    0.00000000
+ Atom     6(H ) :    0.93418200    0.00000000
+ Atom     7(H ) :    0.93620738    0.00000000
+ Atom     8(C ) :    3.90200071    0.00000000
+ Atom     9(H ) :    0.93620738    0.00000000
+ Atom    10(H ) :    0.93418200    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:31 )
+
+ Input file path, for example E:\Bodacious_Space_Pirates\Kurihara_Chiaki.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F9.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.878113173629 Hartree,   Virial ratio:  2.01233081
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F9.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.91162296
+ #    2:         1(C )    3(C )    0.85303653
+ #    3:         1(C )    5(C )    2.03593539
+ #    4:         3(C )    4(H )    0.91162296
+ #    5:         3(C )    8(C )    2.03593539
+ #    6:         5(C )    6(H )    0.91657003
+ #    7:         5(C )    7(H )    0.92825471
+ #    8:         8(C )    9(H )    0.92825471
+ #    9:         8(C )   10(H )    0.91657003
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.86172566    0.00000000
+ Atom     2(H ) :    0.92935327    0.00000000
+ Atom     3(C ) :    3.86172566    0.00000000
+ Atom     4(H ) :    0.92935327    0.00000000
+ Atom     5(C ) :    3.90582241    0.00000000
+ Atom     6(H ) :    0.93343895    0.00000000
+ Atom     7(H ) :    0.93556755    0.00000000
+ Atom     8(C ) :    3.90582241    0.00000000
+ Atom     9(H ) :    0.93556755    0.00000000
+ Atom    10(H ) :    0.93343895    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:35 )
+
+ Input file path, for example E:\Fate_Zero\Saber.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F10.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.864125816724 Hartree,   Virial ratio:  2.01225606
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F10.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.91000406
+ #    2:         1(C )    3(C )    0.83335190
+ #    3:         1(C )    5(C )    2.04508863
+ #    4:         3(C )    4(H )    0.91000406
+ #    5:         3(C )    8(C )    2.04508863
+ #    6:         5(C )    6(H )    0.91318180
+ #    7:         5(C )    7(H )    0.92661314
+ #    8:         8(C )    9(H )    0.92661314
+ #    9:         8(C )   10(H )    0.91318180
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.85634126    0.00000000
+ Atom     2(H ) :    0.92855115    0.00000000
+ Atom     3(C ) :    3.85634126    0.00000000
+ Atom     4(H ) :    0.92855115    0.00000000
+ Atom     5(C ) :    3.90949174    0.00000000
+ Atom     6(H ) :    0.93273710    0.00000000
+ Atom     7(H ) :    0.93492688    0.00000000
+ Atom     8(C ) :    3.90949174    0.00000000
+ Atom     9(H ) :    0.93492688    0.00000000
+ Atom    10(H ) :    0.93273710    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:39 )
+
+ Input file path, for example E:\Amagami\Miya_Tachibana.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F11.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.851220222336 Hartree,   Virial ratio:  2.01216627
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F11.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90868148
+ #    2:         1(C )    3(C )    0.81593517
+ #    3:         1(C )    5(C )    2.05313828
+ #    4:         3(C )    4(H )    0.90868148
+ #    5:         3(C )    8(C )    2.05313828
+ #    6:         5(C )    6(H )    0.90995734
+ #    7:         5(C )    7(H )    0.92502691
+ #    8:         8(C )    9(H )    0.92502691
+ #    9:         8(C )   10(H )    0.90995734
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.85178862    0.00000000
+ Atom     2(H ) :    0.92798934    0.00000000
+ Atom     3(C ) :    3.85178862    0.00000000
+ Atom     4(H ) :    0.92798934    0.00000000
+ Atom     5(C ) :    3.91272974    0.00000000
+ Atom     6(H ) :    0.93210032    0.00000000
+ Atom     7(H ) :    0.93431746    0.00000000
+ Atom     8(C ) :    3.91272974    0.00000000
+ Atom     9(H ) :    0.93431746    0.00000000
+ Atom    10(H ) :    0.93210032    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:42 )
+
+ Input file path, for example E:\Real_world\Kanan.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F12.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.839377170985 Hartree,   Virial ratio:  2.01206326
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F12.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90766740
+ #    2:         1(C )    3(C )    0.80084057
+ #    3:         1(C )    5(C )    2.06020005
+ #    4:         3(C )    4(H )    0.90766740
+ #    5:         3(C )    8(C )    2.06020005
+ #    6:         5(C )    6(H )    0.90690372
+ #    7:         5(C )    7(H )    0.92341340
+ #    8:         8(C )    9(H )    0.92341340
+ #    9:         8(C )   10(H )    0.90690372
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.84816760    0.00000000
+ Atom     2(H ) :    0.92754771    0.00000000
+ Atom     3(C ) :    3.84816760    0.00000000
+ Atom     4(H ) :    0.92754771    0.00000000
+ Atom     5(C ) :    3.91530783    0.00000000
+ Atom     6(H ) :    0.93151811    0.00000000
+ Atom     7(H ) :    0.93374449    0.00000000
+ Atom     8(C ) :    3.91530783    0.00000000
+ Atom     9(H ) :    0.93374449    0.00000000
+ Atom    10(H ) :    0.93151811    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:46 )
+
+ Input file path, for example E:\Wake_Up,Girls!\Miyu_Okamoto.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F13.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.828552850555 Hartree,   Virial ratio:  2.01195436
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F13.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90686294
+ #    2:         1(C )    3(C )    0.78778982
+ #    3:         1(C )    5(C )    2.06622437
+ #    4:         3(C )    4(H )    0.90686294
+ #    5:         3(C )    8(C )    2.06622437
+ #    6:         5(C )    6(H )    0.90408982
+ #    7:         5(C )    7(H )    0.92185355
+ #    8:         8(C )    9(H )    0.92185355
+ #    9:         8(C )   10(H )    0.90408982
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.84509563    0.00000000
+ Atom     2(H ) :    0.92726717    0.00000000
+ Atom     3(C ) :    3.84509563    0.00000000
+ Atom     4(H ) :    0.92726717    0.00000000
+ Atom     5(C ) :    3.91716913    0.00000000
+ Atom     6(H ) :    0.93099978    0.00000000
+ Atom     7(H ) :    0.93322372    0.00000000
+ Atom     8(C ) :    3.91716913    0.00000000
+ Atom     9(H ) :    0.93322372    0.00000000
+ Atom    10(H ) :    0.93099978    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:50 )
+
+ Input file path, for example E:\Love_Live!\Nico_Yazawa.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F14.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.818688870170 Hartree,   Virial ratio:  2.01184190
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F14.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90621565
+ #    2:         1(C )    3(C )    0.77662309
+ #    3:         1(C )    5(C )    2.07126682
+ #    4:         3(C )    4(H )    0.90621565
+ #    5:         3(C )    8(C )    2.07126682
+ #    6:         5(C )    6(H )    0.90154922
+ #    7:         5(C )    7(H )    0.92036384
+ #    8:         8(C )    9(H )    0.92036384
+ #    9:         8(C )   10(H )    0.90154922
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.84242492    0.00000000
+ Atom     2(H ) :    0.92710180    0.00000000
+ Atom     3(C ) :    3.84242492    0.00000000
+ Atom     4(H ) :    0.92710180    0.00000000
+ Atom     5(C ) :    3.91833238    0.00000000
+ Atom     6(H ) :    0.93054890    0.00000000
+ Atom     7(H ) :    0.93276528    0.00000000
+ Atom     8(C ) :    3.91833238    0.00000000
+ Atom     9(H ) :    0.93276528    0.00000000
+ Atom    10(H ) :    0.93054890    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:54 )
+
+ Input file path, for example E:\EVA\Rei_Ayanami.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F15.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.809717750163 Hartree,   Virial ratio:  2.01172859
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F15.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90567420
+ #    2:         1(C )    3(C )    0.76711937
+ #    3:         1(C )    5(C )    2.07542221
+ #    4:         3(C )    4(H )    0.90567420
+ #    5:         3(C )    8(C )    2.07542221
+ #    6:         5(C )    6(H )    0.89929321
+ #    7:         5(C )    7(H )    0.91895438
+ #    8:         8(C )    9(H )    0.91895438
+ #    9:         8(C )   10(H )    0.89929321
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.84002916    0.00000000
+ Atom     2(H ) :    0.92701750    0.00000000
+ Atom     3(C ) :    3.84002916    0.00000000
+ Atom     4(H ) :    0.92701750    0.00000000
+ Atom     5(C ) :    3.91888162    0.00000000
+ Atom     6(H ) :    0.93016421    0.00000000
+ Atom     7(H ) :    0.93237067    0.00000000
+ Atom     8(C ) :    3.91888162    0.00000000
+ Atom     9(H ) :    0.93237067    0.00000000
+ Atom    10(H ) :    0.93016421    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:10:58 )
+
+ Input file path, for example E:\Rio_Rainbow_Gate\Rio_Rollins.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F16.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.801565685621 Hartree,   Virial ratio:  2.01161625
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F16.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90519557
+ #    2:         1(C )    3(C )    0.75903539
+ #    3:         1(C )    5(C )    2.07881740
+ #    4:         3(C )    4(H )    0.90519557
+ #    5:         3(C )    8(C )    2.07881740
+ #    6:         5(C )    6(H )    0.89731802
+ #    7:         5(C )    7(H )    0.91762991
+ #    8:         8(C )    9(H )    0.91762991
+ #    9:         8(C )   10(H )    0.89731802
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.83781772    0.00000000
+ Atom     2(H ) :    0.92698572    0.00000000
+ Atom     3(C ) :    3.83781772    0.00000000
+ Atom     4(H ) :    0.92698572    0.00000000
+ Atom     5(C ) :    3.91894597    0.00000000
+ Atom     6(H ) :    0.92984094    0.00000000
+ Atom     7(H ) :    0.93203692    0.00000000
+ Atom     8(C ) :    3.91894597    0.00000000
+ Atom     9(H ) :    0.93203692    0.00000000
+ Atom    10(H ) :    0.92984094    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:02 )
+
+ Input file path, for example E:\Kawaii_Dake_ja_Nai_Shikimori-san\Shikimori.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F17.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.794158091402 Hartree,   Virial ratio:  2.01150620
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F17.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90474623
+ #    2:         1(C )    3(C )    0.75212549
+ #    3:         1(C )    5(C )    2.08159579
+ #    4:         3(C )    4(H )    0.90474623
+ #    5:         3(C )    8(C )    2.08159579
+ #    6:         5(C )    6(H )    0.89560870
+ #    7:         5(C )    7(H )    0.91639018
+ #    8:         8(C )    9(H )    0.91639018
+ #    9:         8(C )   10(H )    0.89560870
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.83573196    0.00000000
+ Atom     2(H ) :    0.92698424    0.00000000
+ Atom     3(C ) :    3.83573196    0.00000000
+ Atom     4(H ) :    0.92698424    0.00000000
+ Atom     5(C ) :    3.91867433    0.00000000
+ Atom     6(H ) :    0.92957328    0.00000000
+ Atom     7(H ) :    0.93175787    0.00000000
+ Atom     8(C ) :    3.91867433    0.00000000
+ Atom     9(H ) :    0.93175787    0.00000000
+ Atom    10(H ) :    0.92957328    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:06 )
+
+ Input file path, for example E:\Haiyore!Nyaruko-san\Nyaruko.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F18.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.787421777593 Hartree,   Virial ratio:  2.01139923
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F18.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90430152
+ #    2:         1(C )    3(C )    0.74615080
+ #    3:         1(C )    5(C )    2.08390850
+ #    4:         1(C )   10(H )    0.05087698
+ #    5:         3(C )    4(H )    0.90430152
+ #    6:         3(C )    6(H )    0.05087698
+ #    7:         3(C )    8(C )    2.08390850
+ #    8:         5(C )    6(H )    0.89414151
+ #    9:         5(C )    7(H )    0.91523000
+ #   10:         8(C )    9(H )    0.91523000
+ #   11:         8(C )   10(H )    0.89414151
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.83374081    0.00000000
+ Atom     2(H ) :    0.92699703    0.00000000
+ Atom     3(C ) :    3.83374081    0.00000000
+ Atom     4(H ) :    0.92699703    0.00000000
+ Atom     5(C ) :    3.91821937    0.00000000
+ Atom     6(H ) :    0.92935404    0.00000000
+ Atom     7(H ) :    0.93152493    0.00000000
+ Atom     8(C ) :    3.91821937    0.00000000
+ Atom     9(H ) :    0.93152493    0.00000000
+ Atom    10(H ) :    0.92935404    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:10 )
+
+ Input file path, for example E:\Sakurako-san_no_Ashimoto_ni_wa_Shitai_ga_Umatteiru\Sakurako.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F19.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.781288444232 Hartree,   Virial ratio:  2.01129570
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F19.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90384453
+ #    2:         1(C )    3(C )    0.74088260
+ #    3:         1(C )    5(C )    2.08590800
+ #    4:         1(C )   10(H )    0.05198431
+ #    5:         3(C )    4(H )    0.90384453
+ #    6:         3(C )    6(H )    0.05198431
+ #    7:         3(C )    8(C )    2.08590800
+ #    8:         5(C )    6(H )    0.89288448
+ #    9:         5(C )    7(H )    0.91413911
+ #   10:         8(C )    9(H )    0.91413911
+ #   11:         8(C )   10(H )    0.89288448
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.83183476    0.00000000
+ Atom     2(H ) :    0.92701389    0.00000000
+ Atom     3(C ) :    3.83183476    0.00000000
+ Atom     4(H ) :    0.92701389    0.00000000
+ Atom     5(C ) :    3.91772369    0.00000000
+ Atom     6(H ) :    0.92917571    0.00000000
+ Atom     7(H ) :    0.93132763    0.00000000
+ Atom     8(C ) :    3.91772369    0.00000000
+ Atom     9(H ) :    0.93132763    0.00000000
+ Atom    10(H ) :    0.92917571    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:14 )
+
+ Input file path, for example E:\Natsuiro_Kiseki\Yuka_Hanaki.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F20.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.775696452331 Hartree,   Virial ratio:  2.01119578
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F20.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90336425
+ #    2:         1(C )    3(C )    0.73611813
+ #    3:         1(C )    5(C )    2.08773187
+ #    4:         1(C )   10(H )    0.05295007
+ #    5:         3(C )    4(H )    0.90336425
+ #    6:         3(C )    6(H )    0.05295007
+ #    7:         3(C )    8(C )    2.08773187
+ #    8:         5(C )    6(H )    0.89180151
+ #    9:         5(C )    7(H )    0.91310568
+ #   10:         8(C )    9(H )    0.91310568
+ #   11:         8(C )   10(H )    0.89180151
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.83001673    0.00000000
+ Atom     2(H ) :    0.92702825    0.00000000
+ Atom     3(C ) :    3.83001673    0.00000000
+ Atom     4(H ) :    0.92702825    0.00000000
+ Atom     5(C ) :    3.91730577    0.00000000
+ Atom     6(H ) :    0.92903072    0.00000000
+ Atom     7(H ) :    0.93115520    0.00000000
+ Atom     8(C ) :    3.91730577    0.00000000
+ Atom     9(H ) :    0.93115520    0.00000000
+ Atom    10(H ) :    0.92903072    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:18 )
+
+ Input file path, for example E:\Denkigai_No_Honyasan\Sennsei.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F21.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.770591524851 Hartree,   Virial ratio:  2.01109948
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F21.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90285480
+ #    2:         1(C )    3(C )    0.73168076
+ #    3:         1(C )    5(C )    2.08949917
+ #    4:         1(C )   10(H )    0.05380378
+ #    5:         3(C )    4(H )    0.90285480
+ #    6:         3(C )    6(H )    0.05380378
+ #    7:         3(C )    8(C )    2.08949917
+ #    8:         5(C )    6(H )    0.89085283
+ #    9:         5(C )    7(H )    0.91211618
+ #   10:         8(C )    9(H )    0.91211618
+ #   11:         8(C )   10(H )    0.89085283
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.82829668    0.00000000
+ Atom     2(H ) :    0.92703704    0.00000000
+ Atom     3(C ) :    3.82829668    0.00000000
+ Atom     4(H ) :    0.92703704    0.00000000
+ Atom     5(C ) :    3.91705362    0.00000000
+ Atom     6(H ) :    0.92891165    0.00000000
+ Atom     7(H ) :    0.93099720    0.00000000
+ Atom     8(C ) :    3.91705362    0.00000000
+ Atom     9(H ) :    0.93099720    0.00000000
+ Atom    10(H ) :    0.92891165    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:22 )
+
+ Input file path, for example E:\Love_Live!\Nishikino_Maki.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.
+E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F22.fchk
+ Please wait...
+ Loading various information of the wavefunction
+ The highest angular moment basis functions is D
+ Loading basis set definition...
+ Loading orbitals...
+ Converting basis function information to GTF information...
+ Generating density matrix based on SCF orbitals...
+ Generating overlap matrix...
+
+ Total/Alpha/Beta electrons:     30.0000     15.0000     15.0000
+ Net charge:     0.00000      Expected multiplicity:    1
+ Atoms:     10,  Basis functions:     72,  GTFs:    136
+ Total energy:    -155.770591524851 Hartree,   Virial ratio:  2.01109948
+ This is a restricted single-determinant wavefunction
+ Orbitals from 1 to    15 are occupied
+ Title line of this file: Title Card Required
+
+ Loaded E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/F_F22.fchk successfully!
+
+ Formula: H6 C4
+ Molecule weight:        54.09059 Da
+ Point group: C2h
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+9
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+1
+ Calculating, please wait...
+ Bond orders with absolute value >=  0.050000
+ #    1:         1(C )    2(H )    0.90285480
+ #    2:         1(C )    3(C )    0.73168076
+ #    3:         1(C )    5(C )    2.08949917
+ #    4:         1(C )   10(H )    0.05380378
+ #    5:         3(C )    4(H )    0.90285480
+ #    6:         3(C )    6(H )    0.05380378
+ #    7:         3(C )    8(C )    2.08949917
+ #    8:         5(C )    6(H )    0.89085283
+ #    9:         5(C )    7(H )    0.91211618
+ #   10:         8(C )    9(H )    0.91211618
+ #   11:         8(C )   10(H )    0.89085283
+
+ Total valences and free valences defined by Mayer:
+ Atom     1(C ) :    3.82829668    0.00000000
+ Atom     2(H ) :    0.92703704    0.00000000
+ Atom     3(C ) :    3.82829668    0.00000000
+ Atom     4(H ) :    0.92703704    0.00000000
+ Atom     5(C ) :    3.91705362    0.00000000
+ Atom     6(H ) :    0.92891165    0.00000000
+ Atom     7(H ) :    0.93099720    0.00000000
+ Atom     8(C ) :    3.91705362    0.00000000
+ Atom     9(H ) :    0.93099720    0.00000000
+ Atom    10(H ) :    0.92891165    0.00000000
+
+ If outputting bond order matrix to bndmat.txt in current folder? (y/n)
+n
+
+            ================ Bond order analysis ===============
+ -1 Define fragment 1 and 2 for options 1,3,4,7,8,10 (to be defined)
+ 0 Return
+ 1 Mayer bond order analysis
+ 2 Multicenter bond order analysis
+ -2 Multicenter bond order analysis in NAO basis
+ 3 Wiberg bond order analysis in Lowdin orthogonalized basis
+ 4 Mulliken bond order (Mulliken overlap population) analysis
+ 5 Decompose Mulliken bond order between two atoms to orbital contributions
+ 6 Orbital occupancy-perturbed Mayer bond order
+ 7 Fuzzy bond order analysis (FBO)
+ 8 Laplacian bond order (LBO)
+ 9 Decompose Wiberg bond order in NAO basis as atomic orbital pair contribution
+ 10 Intrinsic bond strength index (IBSI)
+ 11 AV1245 index (approximate multicenter bond order for large rings) and AVmin
+0
+
+ "q": Exit program gracefully          "r": Load a new file
+                    ************ Main function menu ************
+ 0 Show molecular structure and view orbitals
+ 1 Output all properties at a point       2 Topology analysis
+ 3 Output and plot specific property in a line
+ 4 Output and plot specific property in a plane
+ 5 Output and plot specific property within a spatial region (calc. grid data)
+ 6 Check & modify wavefunction
+ 7 Population analysis and calculation of atomic charges
+ 8 Orbital composition analysis           9 Bond order analysis
+ 10 Plot total DOS, partial DOS, OPDOS, local DOS and photoelectron spectrum
+ 11 Plot IR/Raman/UV-Vis/ECD/VCD/ROA/NMR spectrum
+ 12 Quantitative analysis of molecular surface
+ 13 Process grid data (No grid data is presented currently)
+ 14 Adaptive natural density partitioning (AdNDP) analysis
+ 15 Fuzzy atomic space analysis
+ 16 Charge decomposition analysis (CDA) and plot orbital interaction diagram
+ 17 Basin analysis                       18 Electron excitation analysis
+ 19 Orbital localization analysis        20 Visual study of weak interaction
+ 21 Energy decomposition analysis        22 Conceptual DFT (CDFT) analysis
+ 23 ETS-NOCV analysis                    24 (Hyper)polarizability analysis
+ 25 Electron delocalization and aromaticity analyses
+ 100 Other functions (Part 1)            200 Other functions (Part 2)
+ 300 Other functions (Part 3)
+r
+ Multiwfn -- A Multifunctional Wavefunction Analyzer
+ Version 3.8(dev), release date: 2022-Sep-12
+ Developer: Tian Lu (Beijing Kein Research Center for Natural Sciences)
+ Below paper ***MUST BE CITED*** if Multiwfn is utilized in your work:
+          Tian Lu, Feiwu Chen, J. Comput. Chem., 33, 580-592 (2012)
+ See "How to cite Multiwfn.pdf" in Multiwfn binary package for more information
+ Multiwfn official website: http://sobereva.com/multiwfn
+ Multiwfn English forum: http://sobereva.com/wfnbbs
+ Multiwfn Chinese forum: http://bbs.keinsci.com/wfn
+
+ ( Number of parallel threads:   4  Current date: 2022-09-19  Time: 11:11:25 )
+
+ Input file path, for example E:\Tiger_Mask_W\Miss_X.wfn
+ (Supported: .mwfn/wfn/wfx/fch/molden/31/chg/pdb/xyz/mol/mol2/cif/cub, etc.)
+ Hint: Press ENTER button directly can select file in a GUI window. To reload the file last time used, simply input the letter "o". Input such as ?miku.fch can open the miku.fch in the same folder as the file last time used.

@@ -4,7 +4,7 @@ from .. import utils
 from typing import *
 import numpy as np
 
-class Caculater:
+class Calculator:
 
     def __init__(self,mol:Mol) -> None:
         self.mol=mol
@@ -43,7 +43,7 @@ class Caculater:
     def calculate(self,bond:Bond)->Tuple[float,List[float]]:
         orbitals=self.get_piOrbitals(bond)
         As=self.mol.As2
-        print(As)
+        # print(As)
         centerAtom=bond.a1
         aroundAtom=bond.a2
         centerSquareSum=centerAtom.squareSum
@@ -51,5 +51,5 @@ class Caculater:
         centerRes=np.divide(centerSquareSum,As,out=np.zeros_like(As),where=As!=0)**0.5
         aroundRes=np.divide(aroundSquareSum,As,out=np.zeros_like(As),where=As!=0)**0.5
         orders=(centerRes*aroundRes)[:len(self.mol.O_orbitals)]*np.array(orbitals)*self.mol.orbitalElectron
-        print(self.mol.orbitalElectron)
+        # print(self.mol.orbitalElectron)
         return list(orders),sum(orders)

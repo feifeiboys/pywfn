@@ -9,7 +9,7 @@ class settingManager:
         print(cwd)
         if not os.path.exists(self.local('setting.json')):
             shutil.copyfile(self.local('rawSetting.json'),self.local('setting.json'))
-        self.setting:Dict=self.read()
+        self._setting:Dict=self.read()
 
     def local(self,path):
         """将相对路径转为绝对路径"""
@@ -18,16 +18,24 @@ class settingManager:
     def read(self):
         """读取设置文件"""
         with open(self.local('setting.json'),'r',encoding='utf-8') as f:
-            self.setting=json.loads(f.read())
+            return json.loads(f.read())
 
     def save(self):
         """保存设置信息"""
         with open(self.local('setting.json'),'w',encoding='utf-8') as f:
-            f.write(json.dumps(self.setting))
+            f.write(json.dumps(self._setting))
 
-    def get(self,name):
-        return self.setting[name]
+
+    @property
+    def lastOpenFilePath(self):
+        """最后一次打开文件的位置(文件夹)"""
+        return self._setting['lastOpenFilePath']
     
-    def set(self,name,value):
-        self.setting[name]=value
+    @lastOpenFilePath.setter
+    def lastOpenFilePath(self,value):
+        if not isinstance(value, str):
+            raise
+        self._setting['lastOpenFilePath']=value
+        self.save()
+
 

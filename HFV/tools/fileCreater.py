@@ -8,7 +8,7 @@ from pathlib import Path
 
 class Tool:
     def __init__(self,path:str) -> None:
-        self.path=path
+        self.path=Path(path)
         self.coordStr=None
         self.pwd=Path(__file__).parent
         # print(f'pwd={self.pwd}')
@@ -25,6 +25,6 @@ class Tool:
         self.coordStr='\n'.join(lines)
 
     def save(self):
-        content=self.template.replace('PATH',self.path).replace('COORD',self.coordStr)
+        content=self.template.replace('FILE',self.path.stem).replace('COORD',self.coordStr)
         with open(f'{self.path}','w',encoding='utf-8') as f:
             f.write(content)

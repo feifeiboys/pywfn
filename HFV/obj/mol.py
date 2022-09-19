@@ -2,6 +2,7 @@ from typing import *
 from .atom import Atom
 from .bond import Bond
 import numpy as np
+from .. import setting
 class Mol:
     def __init__(self) -> None:
         self.atoms:Dict[int:Atom]={} # 所有原子对象
@@ -39,14 +40,26 @@ class Mol:
             for idx2,atom2 in self.atoms.items():
                 if idx1<idx2:
                     distance=np.linalg.norm(atom1.coord-atom2.coord)
-                    if distance<=1.7:
+                    if distance<=setting.BOND_LIMIT:
                         bond=Bond(atom1,atom2)
                         bond.length=distance
                         self.bonds[f'{idx1}-{idx2}']=bond
 
-    def get_bond(self,idx1:int,idx2:int):
+    def add_bond(self,idx1:int,idx2:int):
+        """添加一个键"""
+        if idx2<idx1:idx1,idx2=idx2,idx1
+        self.bonds[f'{idx1}-{idx2}']=Bond(self.atoms[idx1], self.atoms[idx2])
+
+
+    def get_bond(self,idx1:int,idx2:int)->Bond:
         """根据原子的索引获得键"""
+        # 如果查询的键是存在的，则直接返回，否则生成一个新健
+        if idx2<idx1:idx1,idx2=idx2,idx1
+        bondID=f'{idx1}-{idx2}'
+        if bondID not in self.bonds.keys():
+            self.add_bond(idx1, idx2)    
         return self.bonds[f'{idx1}-{idx2}']
+        
 
     # def __repr__(self) -> str:
     #     return f''

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'app.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.1
+## Created by: Qt User Interface Compiler version 6.3.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -32,6 +32,8 @@ class Ui_MainWindow(object):
         icon = QIcon()
         icon.addFile(u":/title/mol.svg", QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
+        MainWindow.setDocumentMode(False)
+        MainWindow.setTabShape(QTabWidget.Rounded)
         self.actionopen = QAction(MainWindow)
         self.actionopen.setObjectName(u"actionopen")
         self.actionpiBondOrder = QAction(MainWindow)

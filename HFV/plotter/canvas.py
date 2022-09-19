@@ -107,8 +107,7 @@ class Canvas:
         """更新程序界面中的信息"""
         if self.app is None:
             return
-        message=f'atoms {[atom.idx for atom in self.selectedAtoms]}'
-        self.app.ui.label.setText(message)
+        self.app.updater.updateLabel()
 
 class Ball: # 定义球类型
     def __init__(self,atom:Atom,plotter) -> None:
