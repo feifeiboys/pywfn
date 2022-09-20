@@ -33,13 +33,13 @@ for i in range(21):
     lengths.append(bond.length)
     # 计算键级(π)
     caler=piBondOrder.Calculator(mol)
-    res=caler.calculate(bond)
+    res=caler.calculate(bond.a1,bond.a2)
     order=res['data']['order']
     orders_pi.append(order)
     print(order)
     # 计算键级(σ)
     caler=piBondOrder.Calculator(mol,orderType='sigma')
-    res=caler.calculate(bond)
+    res=caler.calculate(bond.a1,bond.a2)
     order=res['data']['order']
     orders_sigma.append(order)
     print(order)

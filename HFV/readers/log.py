@@ -2,7 +2,8 @@
 import re
 import numpy as np
 from typing import *
-from .mol import Mol
+from ..obj import Mol
+
 
 atomSymbols=[
     'H','He','li','Be','B',
@@ -13,12 +14,16 @@ atomSymbols=[
 
 class Reader:
     def __init__(self, logPath:str,program=None):
+        self.mol=Mol()
+        self.mol.reader=self
         with open(logPath,'r',encoding='utf-8') as f:
             self.content=f.read()
             self.logLines=self.content.splitlines(keepends=False)
         self.program = program
-        self.coefficients = {}
-        self.allConnect={}
+        self.read_Coords()
+        self.read()
+        self.read_standardBasis()
+        self.read_overlap()
 
     def read(self):
         self.read_orbitalCoefficients('  Molecular Orbital Coefficients')
@@ -43,7 +48,7 @@ class Reader:
             print('没有读取到原子坐标')
             return
         s1=r' +\d+ +(\d+) +\d +(-?\d+.\d{6}) +(-?\d+.\d{6}) +(-?\d+.\d{6})'
-        datas=[]
+        coords=[]
         for i in range(titleNum+5,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None:
@@ -52,10 +57,12 @@ class Reader:
                 symbol=atomSymbols[int(atomID)-1]
                 coord=[float(each) for each in res[1:]]
 
-                datas.append({'symbol':symbol,'coord':coord})
+                coords.append({'symbol':symbol,'coord':coord})
             else:
                 break
-        return datas
+        for each in coords:
+            self.mol.add_atom(symbol=each['symbol'],coord=each['coord'])
+
     
     def read_summery(self):
         '''读取log文件的总结信息'''
@@ -77,7 +84,7 @@ class Reader:
     #情况3     Eigenvalues --   -11.17917 -11.17907 -11.17829 -11.17818 -11.17794
     #情况4   1 1   C  1S         -0.00901  -0.01132   0.00047  -0.01645  -0.02767
     #情况5   2        2S         -0.00131  -0.00175  -0.00041  -0.00184  -0.00173
-    def read_orbitalCoefficients(self, title:str, mol:Mol):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
+    def read_orbitalCoefficients(self, title:str):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
         s1=r'\d+ +\d+ +\d+ +\d+ +\d+'
         s2=r'( *(\(\w+\)--){0,1}[OV]){5}'
         s3=r'Eigenvalues -- +(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5}) *(-?\d+.\d{5})'
@@ -92,7 +99,7 @@ class Reader:
         if titleNum is None:
             # print(f'不存在{title}')
             return
-        mol.isSplitOrbital=False if '  Molecular Orbital Coefficients' in title else True
+        self.mol.isSplitOrbital=False if '  Molecular Orbital Coefficients' in title else True
         # print(title,self.orbitalType,'  Molecular Orbital Coefficients' in title)
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
@@ -101,14 +108,14 @@ class Reader:
             elif re.search(s2, line) is not None: # 情况2，获得column
                 # print(line)
                 orbitals = re.split(r' +', line.replace('\n',''))[1:] # 获取占据轨道还是非占据轨道
-                mol.orbitals+=orbitals
+                self.mol.orbitals+=orbitals
             elif re.search(s3, line) is not None: # 情况3，每个·        
                 line_data=list(re.search(s3,line).groups())
-                mol.Eigenvalues+=line_data
+                self.mol.Eigenvalues+=line_data
             elif re.search(s4,line) is not None:
                 line_data=list(re.search(s4,line).groups())
                 atomIDx = int(line_data[0])
-                atom=mol.atoms[atomIDx]
+                atom=self.mol.atoms[atomIDx]
                 layer=line_data[2]
                 nums=[float(each) for each in line_data[3:]]
                 atom.set_layers(layer, nums)
@@ -126,8 +133,6 @@ class Reader:
                 # print('end_line',line)
                 break
 
-    
-    
     def read_standardBasis(self):
         '''读取GTO函数的拟合系数'''
         # self.windowLog('reading Overlap normalization...\n')
@@ -138,13 +143,13 @@ class Reader:
         if titleNum is None:
             print('没有系数')
             return
-        datas = []
+        basis = []
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
             if re.search(r'^  +\d+ +\d+', line) is not None:
-                datas.append([])
+                basis.append([])
             elif re.search(r'-?0.\d{10}D[+*/-]\d+ +-?0.\d{10}D[+*/-]\d+ +-?0.\d{10}D[+*/-]\d+',line) is not None:
-                datas[-1].append([float(each.replace('D', 'e')) for each in re.split(r' +', line)[1:]])
+                basis[-1].append([float(each.replace('D', 'e')) for each in re.split(r' +', line)[1:]])
             elif re.search(r'[A-Z]+ +\d 1.00       0.000000000000', line) is not None:
                 pass
             elif re.search(r'[*]{4}', line) is not None:
@@ -153,6 +158,59 @@ class Reader:
                 pass
             else:
                 break
-        # print(datas)
-        return datas
+        for i,each in enumerate(basis):
+            self.mol.atoms[i+1].standardBasis=np.array(each)
     
+    def read_overlap(self):
+        """读取重叠"""
+        s1='^( +\d+){1,5} *$'
+        s2=' +\d+( +-?\d.\d{6}D[+-]\d{2}){1,5} *'
+        
+        titleNum=None
+        for i,line in enumerate(self.logLines):
+            if ' *** Overlap *** ' in line:
+                titleNum=i
+        if titleNum is None:
+            return None
+        lineDatas=LineDatas()
+        for i in range(titleNum+1,len(self.logLines)):
+            line=self.logLines[i]
+            if re.match(s1, line) is not None:
+                continue
+            elif re.match(s2, line) is not None:
+                idx=int(re.split(' +',line)[1])
+                lineData=re.split(' +',line)[2:]
+                lineData=list(map(lambda s:float(s.replace('D','e')),lineData))
+                lineDatas.add(idx, lineData)
+            else:
+                print(f'|{line}|')
+                break
+        matrix=lineDatas()
+        self.mol.overlapMatrix=np.tril(matrix)+np.tril(matrix,-1).T
+
+
+
+class LineDatas:
+    def __init__(self):
+        self.data={}
+    
+    def add(self,idx,value):
+        if idx not in self.data.keys():
+            self.data[idx]=[]
+        if isinstance(value,list):
+            self.data[idx]+=value
+
+    def __getitem__(self,idx):
+        return self.data[idx]
+
+    def __call__(self):
+        total=len(self.data.keys())
+        for key,value in self.data.items():
+            self.data[key]=value+[0]*(total-key)
+        return np.array(list(self.data.values()))
+
+def numlist(l):
+    """将列表字符串转为数字"""
+    return [float(e) for e in l]
+if __name__=='__main__':
+    from ..obj.mol import Mol

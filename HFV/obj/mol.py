@@ -1,3 +1,23 @@
+"""
+基础的分子对象，其属性应该是标准的，已知的
+一个分子对象应该有哪些属性？
+结构相关
+- 原子
+- 键
+- 法向量
+- 重原子
+
+分子轨道相关
+轨道数量
+轨道类型
+是否分为α和β
+占据轨道序数
+非占据轨道序数
+重叠矩阵
+
+读取器
+"""
+
 from typing import *
 from .atom import Atom
 from .bond import Bond
@@ -5,7 +25,7 @@ import numpy as np
 from .. import setting
 class Mol:
     def __init__(self) -> None:
-        self.atoms:Dict[int:Atom]={} # 所有原子对象
+        self.atoms:Dict[int:Atom]={}
         self.bonds:Dict[str:Bond]={} # 所有键对象
         self.Eigenvalues:List[float]=[]
         self.isSplitOrbital:bool=None #轨道是否为劈裂的，值为0或1
@@ -15,6 +35,8 @@ class Mol:
         self.O_orbitals:List[int]
         self.V_orbitals:List[int]
         self.heavyAtoms:List[Atom]
+        self.overlapMatrix:np.ndarray=None
+        self.reader=None
         
     
     def add_atom(self,symbol:str,coord:List[float]):
@@ -50,7 +72,6 @@ class Mol:
         if idx2<idx1:idx1,idx2=idx2,idx1
         self.bonds[f'{idx1}-{idx2}']=Bond(self.atoms[idx1], self.atoms[idx2])
 
-
     def get_bond(self,idx1:int,idx2:int)->Bond:
         """根据原子的索引获得键"""
         # 如果查询的键是存在的，则直接返回，否则生成一个新健
@@ -59,17 +80,32 @@ class Mol:
         if bondID not in self.bonds.keys():
             self.add_bond(idx1, idx2)    
         return self.bonds[f'{idx1}-{idx2}']
+
+    def createAtomOrbitalRange(self):
+        """令每个原子生成其在轨道矩阵中的范围"""
+        total=0
+        for atom in self.atoms.values():
+            atom.orbitalMatrixRange=[total,total+len(atom.OC)]
+            total+=len(atom.OC)
+
+    def __repr__(self):
+        return f'atom number: {len(self.atoms)}'
         
 
-    # def __repr__(self) -> str:
-    #     return f''
 
 class Atoms:
     def __init__(self) -> None:
-        self.atoms:List[Atom]=[]
+        self.atoms:Dict[int:Atom]={}
     
     def __getitem__(self,item:int):
-        return self.atoms[item-1]
+        return self.atoms[item]
+
+    def __setitem__(self,item,atom:Atom):
+        self.atoms[item]=atom
     
-    def add_atom(self,atom:Atom):
-        self.atoms.append(atom)
+    def __len__(self):
+        return len(self.atoms)
+
+    def __repr__(self):
+        return '\n'.join([f'{atom}' for atom in self.atoms.values()])
+    

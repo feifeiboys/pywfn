@@ -30,20 +30,23 @@
 一个原子的坐标为`coord`  
 一个分子的所有原子的坐标为`coords`  
 多个分子的原子坐标为`allCoords`
+
 # API
-- `obj` 提供基础类
-    - `Reader` 用来读取高斯输出文件
-    - `File` 存储高斯读取文件的信息，可以包含对个分子对象
-    - `Mol` 分子(结构)对象
-    - `Atom` 原子对象
-    - `Bond` 键对象
-- `calculaters` 提供各种计算器
-    - `piBondOrder` 新方法计算π键级
-    - `piSelectOrder` 旧方法计算π键级
-    - `overlapIntegrate` 计算重叠积分
-- `tools` 提供对文件的额外处理
-    - `ScanSpliter` 将扫描文件分割成一份份单独的文件
-    - `FileCreator` 根据模板生成gjf文件
-- `data` 存储需要的数据文件
-    - `elements.json` 存储元素信息
-    - `gjfTemplate.txt` 默认的生成`gjf`文件的模板文件
+## `obj` 提供基础类
+### `Reader` 用来读取高斯输出文件
+### `File` 存储高斯读取文件的信息，可以包含对个分子对象
+### `Mol` 分子(结构)对象
+### `Atom` 原子对象
+### `Bond` 键对象
+## `calculaters` 提供各种计算器
+### `piBondOrder` 新方法计算π键级
+### `piSelectOrder` 旧方法计算π键级
+### `overlapIntegrate` 计算重叠积分
+## `tools` 提供对文件的额外处理
+### `ScanSpliter` 将扫描文件分割成一份份单独的文件
+### `FileCreator` 根据模板生成gjf文件
+## `data` 存储需要的数据文件
+### `elements.json` 存储元素信息
+### `gjfTemplate.txt` 默认的生成`gjf`文件的模板文件
+
+是否需要File对象？这是个问题

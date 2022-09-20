@@ -49,8 +49,11 @@ class Window(MainWindow):
         """初始化菜单的命令"""
         self.ui.actionopen.triggered.connect(self.openFile)
         self.ui.actionpiBondOrder.triggered.connect(lambda:self.compute_piOrder('new'))
+
+
         self.ui.actionpiSelectOrder.triggered.connect(lambda:self.compute_piOrder('old'))
         self.ui.actionlabel.triggered.connect(self.viewLabel)
+
 
 
     def clear_selectedAtoms(self):
@@ -63,6 +66,15 @@ class Window(MainWindow):
         res=self.commandLine.run(opt)
         self.addInfo(res)
 
+    def compute_sigmaOrder(self):
+        bond=self.currentFile.canvas.selectedBond
+        if bond is not None:
+            caler=piBondOrder.Calculator(self.currentFile.mol,orderType='sigma')
+            res=caler.calculate(bond)
+            orders=res['data']['orders']
+            order=res['data']['order']
+
+
     def compute_piOrder(self,orderType):
         bond=self.currentFile.canvas.selectedBond
         if bond is not None:
@@ -70,7 +82,7 @@ class Window(MainWindow):
                 computer=piSelectOrder.Caculater(self.currentFile.mol)
             if orderType=='new':
                 computer=piBondOrder.Calculator(self.currentFile.mol)
-            res=computer.calculate(bond)
+            res=computer.calculate(bond.a1,bond.a2)
             orders=res['data']['orders']
             order=res['data']['order']
             # 将orders根据大小进行排序，并删除为0的部分

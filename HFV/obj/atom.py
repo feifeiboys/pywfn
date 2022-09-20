@@ -4,6 +4,10 @@ import pandas as pd
 from numpy import ndarray
 from .. import utils
 from .. import setting
+"""
+一个原子的轨道组合系数就是一个矩阵，行数是基函数的数量，列数是分子轨道的数量
+
+"""
 class  Atom:
     def __init__(self,symbol:str,coord:List[float],idx:int,mol:"Mol"): # 每个原子应该知道自己属于哪个分子
         self.symbol=symbol
@@ -16,6 +20,7 @@ class  Atom:
         self.idx=idx
         self.orbitalDirections={} #存储所有分子轨道里原子轨道的方向
         self.standardBasis:ndarray=None
+        self.orbitalMatrixRange:List[int]
 
     def set_layers(self,layer:str,nums:List[float]):
         if layer not in self._layersData.keys():
@@ -85,6 +90,16 @@ class  Atom:
     def pLayersTs(self,orbital:int):
         '''获取原子某一轨道的p层数据'''
         return self.pLayersData[:,orbital]
+    
+    def get_pLayersProjection(self,direction,orbital:int):
+        """计算原子p系数在某个方向上的投影"""
+        ts=self.pLayersTs(orbital)
+        if np.linalg.norm(direction)==0 :
+            raise
+        direction=direction/np.linalg.norm(direction) # 投影向量归一化
+        ps=[np.array(ts[i:i+3]) for i in range(0,len(ts),3)] #每一项都是长度为3的数组
+        ps_=[np.dot(p, direction)*direction for p in ps] # 轨道向量在法向量方向上的投影
+        return ps_
     
     def spLayersTs(self,orbital:int):
         '''获取原子某一轨道的sp层数据'''

@@ -1,5 +1,5 @@
-#存储从文件中读取到的信息
-from .reader import Reader
+# 根据reader从文件中读取到的信息构建分子对象
+from ..readers import logReader as Reader
 from .mol import Mol
 import numpy as np
 class File:

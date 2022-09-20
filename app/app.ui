@@ -17,7 +17,7 @@
    <string>HFV</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="images/icons.qrc">
     <normaloff>:/title/mol.svg</normaloff>:/title/mol.svg</iconset>
   </property>
   <property name="documentMode">
@@ -54,7 +54,7 @@
        </property>
        <widget class="QWidget" name="tab_files">
         <attribute name="icon">
-         <iconset>
+         <iconset resource="images/icons.qrc">
           <normaloff>:/tabs/files.svg</normaloff>:/tabs/files.svg</iconset>
         </attribute>
         <attribute name="title">
@@ -313,6 +313,7 @@
     </property>
     <addaction name="actionpiBondOrder"/>
     <addaction name="actionpiSelectOrder"/>
+    <addaction name="actionsigmaBondOrder"/>
    </widget>
    <widget class="QMenu" name="menuview">
     <property name="title">
@@ -367,6 +368,11 @@
   <action name="actionclear">
    <property name="text">
     <string>clear</string>
+   </property>
+  </action>
+  <action name="actionsigmaBondOrder">
+   <property name="text">
+    <string>sigmaBondOrder</string>
    </property>
   </action>
  </widget>

@@ -39,10 +39,23 @@ def get_projection(ts,x_,z_):
     y_=y_/np.linalg.norm(y_)
     ps=[np.array(ts[i:i+3]) for i in range(0,len(ts),3)] #每一项都是长度为3的数组
     ps_=[np.dot(p, z_)/np.linalg.norm(z_)*z_ for p in ps] # 轨道向量在法向量方向上的投影
-    e=np.array([[1,0,0],[0,1,0],[0,0,1]]).T
+
+    e=np.array([[1,0,0],[0,1,0],[0,0,1]]).T # 空间坐标变换
     e_=np.array([x_,y_,z_]).T
     A_=np.dot(np.linalg.inv(e_),e)
     ps__=np.array([np.dot(A_,p[:,np.newaxis]) for p in ps_])
+    return ps__
+
+def coordTrans(nx,ny,nz,coords):
+    """对一个向量实行空间坐标变换
+    nx,ny,nz: 另一组基坐标
+    coord:要尽心变换的坐标/向量
+    """
+    e=np.array([[1,0,0],[0,1,0],[0,0,1]]).T # 空间坐标变换
+    nx,ny,nz=normalize(nx),normalize(ny),normalize(nz)
+    e_=np.array([nx,ny,nz]).T
+    A_=np.dot(np.linalg.inv(e_),e)
+    ps__=np.array([np.dot(A_,p) for p in coords])
     return ps__
 
 def posan_function(centerPos,aroundPos,paras,ts,onlyP=False): # 为了代码可读性，可以适当写出来罗嗦点的代码
@@ -276,3 +289,9 @@ def nodeNum(data):
     data[np.where(data==0)]=1e-6
     res=data[:-1]*data[1:]
     return len(np.where(res<=0)[0])
+
+def normalize(vector):
+    length=np.linalg.norm(vector)
+    if length==0:
+        raise
+    return vector/length

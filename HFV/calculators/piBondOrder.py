@@ -20,6 +20,9 @@ class Calculator:
         centerPos=center.coord
         aroundPos=around.coord
         bondVector=aroundPos-centerPos
+        
+        crossVector=np.cross(utils.normalize(bondVector),utils.normalize(direction))
+        
 
         As = self.mol.As[orbital]
         centerTs=center.pLayersTs(orbital)
@@ -27,14 +30,27 @@ class Calculator:
         if np.linalg.norm(centerTs)==0 or np.linalg.norm(aroundTs)==0:
             return 0
         if self.orderType=='pi':
-            centerTs__=utils.get_projection(centerTs,bondVector,direction)
-            aroundTs__=utils.get_projection(aroundTs,bondVector,direction)
-        elif self.orderType=='sigma':
-            centerTs__=utils.get_projection(centerTs,direction,bondVector)
-            aroundTs__=utils.get_projection(aroundTs,direction,bondVector*-1)
+            centerPsProjection=center.get_pLayersProjection(direction, orbital) # 先计算投影
+            aroundPsProjection=around.get_pLayersProjection(direction, orbital)
+            nx=bondVector
+            ny=crossVector
+            nz=direction
+            centerRes=utils.coordTrans(nx,ny,nz, centerPsProjection)
+            aroundRes=utils.coordTrans(nx,ny,nz, aroundPsProjection)
 
-        centerPZs=[each[-1].item() for each in centerTs__]
-        aroundPZs=[each[-1].item() for each in aroundTs__]
+        elif self.orderType=='sigma':
+
+            centerPsProjection=center.get_pLayersProjection(bondVector, orbital) # 计算出的向量方向与指定的方向相同
+            aroundPsProjection=around.get_pLayersProjection(bondVector, orbital)
+            nx=direction
+            ny=crossVector
+            nz=bondVector
+            centerRes=utils.coordTrans(nx,ny,nz, centerPsProjection)
+            aroundRes=utils.coordTrans(nx,ny,-nz, aroundPsProjection)
+
+
+        centerPZs=[each[-1] for each in centerRes]
+        aroundPZs=[each[-1] for each in aroundRes]
         pOrder=sum([cpz*apz/As for cpz,apz in zip(centerPZs,aroundPZs)])*self.mol.orbitalElectron
         orbitalOrder=pOrder
         return orbitalOrder
@@ -45,20 +61,12 @@ class Calculator:
         orders=[self.get_orbitalOrder(center,around,orbital,direction) for orbital in orbitals] # 所有的占据轨道都计算键级
         return orders
 
-    def calculateSigma(self):
-        """计算sigma键级"""
-
-
-
-    def calculate(self,bond:Bond) -> Tuple[float,List[float]]:
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom) -> Tuple[float,List[float]]:
         """指定一个键，计算该键的键级"""
-        centerAtom=bond.a1
-        aroundAtom=bond.a2
         O_orbitals=self.mol.O_orbitals
         normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量
         if normal is not None: # 如果原子有法向量(sp2)
             orders=self.get_orders(centerAtom,aroundAtom,O_orbitals,normal)
-            bond.piOrder=sum(orders)
             return {
                 "type":0,
                 "data":{
