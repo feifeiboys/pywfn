@@ -5,14 +5,14 @@ sys.path.append(str(hfvPath))
 
 import re
 import numpy as np
-from hfv.obj import File
+from hfv.readers import Reader
 from hfv.calculators import piBondOrder,mayerBondOrder
 
-file=File('examples/CH2=CH2.out')
-mol=file.mol
+path='examples/CH2=CH2.out'
+reader=Reader(path)
+mol=reader.mol
 centerAtom=mol.atoms[1]
-aroundAtom=mol.atoms[4]
+aroundAtom=mol.atoms[2]
 caler=mayerBondOrder.Caculater(mol)
 res=caler.calculate(centerAtom, aroundAtom)
-print(res.shape)
-print(res.sum())
+print(res)

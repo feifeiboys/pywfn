@@ -23,6 +23,7 @@ class  Atom:
         self.orbitalMatrixRange:List[int]
 
     def set_layers(self,layer:str,nums:List[float]):
+        layer=layer.strip()
         if layer not in self._layersData.keys():
             self._layersData[layer]=[]
         self._layersData[layer]+=nums

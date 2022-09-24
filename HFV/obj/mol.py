@@ -1,6 +1,6 @@
 """
 基础的分子对象，其属性应该是标准的，已知的
-一个分子对象应该有哪些属性？
+一个分子对象应该有哪些属性？基本属性(必须属性),计算属性(需要计算才能的到的属性)
 结构相关
 - 原子
 - 键
@@ -30,12 +30,14 @@ class Mol:
         self.Eigenvalues:List[float]=[]
         self.isSplitOrbital:bool=None #轨道是否为劈裂的，值为0或1
         self.orbitals:List[str]=[] # 存储所有轨道时占据还是非占据
-        self.orbitalNum:int
-        self.orbitalType:int
-        self.O_orbitals:List[int]
-        self.V_orbitals:List[int]
-        self.heavyAtoms:List[Atom]
-        self.overlapMatrix:np.ndarray=None
+        self._orbitalNum:int=None
+        # self.orbitalType:int=None
+        self._O_orbitals:List[int]=None
+        self._V_orbitals:List[int]=None
+        self._heavyAtoms:List[Atom]=None
+        self._CM:np.ndarray=None # 系数矩阵
+        self._SM:np.ndarray=None # 重叠矩阵
+        self._PM:np.ndarray=None # 密度矩阵
         self.reader=None
         
     
@@ -44,12 +46,66 @@ class Mol:
         atom=Atom(symbol,coord,idx,self)
         self.atoms[idx]=atom
 
-    def trans(self):
-        self.orbitalNum=len(self.orbitals)
-        self.O_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='O']
-        self.V_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='V']
+    @property
+    def orbitalNum(self):
+        if self._orbitalNum is None:
+            self._orbitalNum=len(self.orbitals)
+        return self._orbitalNum
 
-        self.heavyAtoms=[atom for atom in self.atoms.values() if atom.symbol!='H']
+    @property
+    def O_orbitals(self):
+        if self._O_orbitals is None:
+            self._O_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='O']
+        return self._O_orbitals
+    
+    @property
+    def V_orbitals(self):
+        if self._V_orbitals is None:
+            self._V_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='V']
+        return self._V_orbitals
+    
+    @property
+    def heavyAtoms(self):
+        if self._heavyAtoms is None:
+            self._heavyAtoms=[atom for atom in self.atoms.values() if atom.symbol!='H']
+        return self._heavyAtoms
+
+    @property
+    def CM(self)->np.ndarray:
+        """分子轨道系数矩阵"""
+        if self._CM is None:
+            self._CM=np.concatenate([atom.OC.to_numpy() for atom in self.atoms.values()],axis=0)
+        return self._CM
+    
+    @property
+    def SM(self):
+        """重叠矩阵"""
+        if self._SM is None:
+            if self.reader is not None:
+                self.reader.read_SM()
+        return self._SM
+
+    @property
+    def PM(self):
+        """密度矩阵"""
+        if self._PM is None:
+            # 自己计算密度矩阵吧
+            size=self.CM.shape[1]
+            PM=np.zeros((size,size)) # 重叠矩阵
+            Oe=1 if self.isSplitOrbital else 2
+            Onum,Vnum=len(self.O_orbitals),len(self.V_orbitals)
+            
+            n=np.array([Oe]*Onum+[0]*Vnum)
+            for i in range(size):
+                C1=self.CM[:,i][:,np.newaxis]
+                C2=self.CM[:,i][np.newaxis,:]
+                PM+=C1*C2*n[i]
+            self._PM=PM
+        return self._PM
+
+
+    def trans(self):
+
         self.As=np.array([np.sum(atom.spLayersData**2,axis=0) for atom in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
         self.As2=np.array([atom.squareSum for atom in self.atoms.values()]).sum(axis=0)
         self.orbitalElectron=1 if self.isSplitOrbital else 2

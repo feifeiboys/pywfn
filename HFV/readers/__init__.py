@@ -8,7 +8,6 @@ from .log import Reader as logReader
 
 from pathlib import Path
 
-
 def Reader(path):
     fileType=Path(path).suffix
     print(fileType)
