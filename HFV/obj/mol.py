@@ -38,6 +38,7 @@ class Mol:
         self._CM:np.ndarray=None # 系数矩阵
         self._SM:np.ndarray=None # 重叠矩阵
         self._PM:np.ndarray=None # 密度矩阵
+        self._As=None
         self.reader=None
         
     
@@ -103,10 +104,14 @@ class Mol:
             self._PM=PM
         return self._PM
 
+    @property
+    def As(self):
+        """# 所有原子所有轨道的平方和"""
+        if self._As is None:
+            self._As=np.array([np.sum(atom.spLayersData**2,axis=0) for atom in self.heavyAtoms]).sum(axis=0)
+        return self._As
 
     def trans(self):
-
-        self.As=np.array([np.sum(atom.spLayersData**2,axis=0) for atom in self.heavyAtoms]).sum(axis=0) # 所有原子所有轨道的平方和
         self.As2=np.array([atom.squareSum for atom in self.atoms.values()]).sum(axis=0)
         self.orbitalElectron=1 if self.isSplitOrbital else 2
         self.squareSums=np.array([atom.squareSum for atom in self.atoms.values()])

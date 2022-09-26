@@ -13,8 +13,9 @@ from PySide6.QtCore import Qt
 from pyvistaqt import QtInteractor, MainWindow
 
 from hfv.plotter.canvas import Canvas
-from hfv.obj import File,Mol
+from hfv.obj import Mol
 from hfv.calculators import piBondOrder,piSelectOrder
+from hfv.readers import Reader
 from .commands import Command
 from .ui_app import Ui_MainWindow
 from .setting import settingManager
@@ -92,7 +93,8 @@ class Window(MainWindow):
             orbitalNum=len(self.currentFile.mol.O_orbitals)
             orbitalNum=orbitalNum//2+orbitalNum%2
             # print(ranges,orbitalNum)
-            if self.currentFile.mol.orbitalElectron==1:
+            orbitalElectron=2 if self.currentFile.mol.isSplitOrbital else 1
+            if orbitalElectron==1:
                 ranges = [f"α{r}" if r <= orbitalNum else f'β{r-orbitalNum}' for r in ranges]
 
             orders=[o for r,o in orders if o>=limit]
@@ -174,7 +176,7 @@ class Window(MainWindow):
         """更新页面中的内容"""
         # 更新轨道信息
         self.ui.listWidget_orbitals.clear()
-        orbitals=self.currentFile.file.mol.orbitals
+        orbitals=self.currentFile.mol.orbitals
         orbitals=[f'{i+1} {o}' for i,o in enumerate(orbitals)]
         self.ui.listWidget_orbitals.addItems(orbitals)
         # 更新点云信息
@@ -194,9 +196,9 @@ class FileItem:
             self.init_mol()
         
     def init_mol(self):
-        self.file=File(self.filePath)
-        self.mol=self.file.mol
-        self.canvas.add_mol(self.file.mol)
+        self.mol=Reader(self.filePath).mol
+        self.mol.create_bonds()
+        self.canvas.add_mol(self.mol)
         self.property:Dict={} # 存储分子在属性栏中显示的内容
         print(self.widget.size())
     
