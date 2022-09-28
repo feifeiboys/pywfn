@@ -1,6 +1,7 @@
 from typing import *
 import numpy as np
 import pandas as pd
+import re
 from numpy import ndarray
 from .. import utils
 from .. import setting
@@ -94,6 +95,8 @@ class  Atom:
     
     def get_pLayersProjection(self,direction,orbital:int):
         """计算原子p系数在某个方向上的投影"""
+        if direction is None:
+            raise
         ts=self.pLayersTs(orbital)
         if np.linalg.norm(direction)==0 :
             raise
@@ -125,7 +128,10 @@ class  Atom:
                 return None # 如果两个原子连接的原子数量都不是三个的话，就没有法向量
             self.normals[f'{around.idx}-{self.idx}']=normal_vector_j
             self.normals[f'{self.idx}-{around.idx}']=normal_vector_i
-        return self.normals[f'{self.idx}-{around.idx}']
+        normal=self.normals[f'{self.idx}-{around.idx}']
+        if normal is None:
+            raise
+        return normal
     
     def get_orbitalDirection(self,orbital:int):
         """获得原子某一原子轨道的方向"""
@@ -146,5 +152,16 @@ class  Atom:
         """计算原子在指定位置的函数值"""
         values=utils.posan_function(centerPos=self.coord.reshape(3,1),aroundPos=points,paras=self.standardBasis,ts=self.pLayersTs(orbital))
         return values
+
+    def piOC(self,around:"Atom"):
+        
+        layers=self.OC.index # 所有的行的名称
+        pidxs=[idx for idx,layer in enumerate(layers) if re.match('\dP[XYZ]',layer)] # p轨道的序数
+        size=self.OC.shape[1] # 列数
+        for orbital in range(len(size)): # 对每一列进行循环
+            data=OC.iloc[:,orbital]
+            ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
+
+
 
 from .mol import Mol

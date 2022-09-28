@@ -119,7 +119,7 @@ class Reader:
                 atomIDx = int(atomIDX)
                 atom=self.mol.atoms[atomIDx]
                 nums=[float(each) for each in re.findall('-?\d+.\d+',line_data)]
-                print(nums)
+                # print(nums)
                 atom.set_layers(layer, nums)
             elif re.search(s5,line) is not None:
                 layer,line_data,_=re.search(s5,line).groups()
@@ -127,7 +127,7 @@ class Reader:
                 nums=[float(each) for each in line_data]
                 atom.set_layers(layer,nums)
             else: # 若不满足以上任意一种情况，说明已经查找完毕，则对收集到的数据进行处理
-                print('end_line',line)
+                # print('end_line',line)
                 break
 
     def read_standardBasis(self):
@@ -180,7 +180,7 @@ class Reader:
                 lineData=list(map(lambda s:float(s.replace('D','e')),lineData))
                 lineDatas.add(idx, lineData)
             else:
-                print(f'|{line}|')
+                # print(f'|{line}|')
                 break
         matrix=lineDatas()
         self.mol._SM=np.tril(matrix)+np.tril(matrix,-1).T

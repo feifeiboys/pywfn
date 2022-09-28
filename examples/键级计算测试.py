@@ -1,45 +1,32 @@
 
 
 # 指定文件以及要计算的键,计算键级
-from hfv.obj import File
+from pathlib import Path
+import sys
+hfvPath=Path(__file__).parent.parent
+sys.path.append(str(hfvPath))
+
+from hfv.readers import logReader
 from hfv.calculators import piBondOrder
-files=[
-    {
-        "path":r"E:\BaiduSyncdisk\gFile\Conjugate\sp3-sp2.out",
-        "bonds":[
-            [1,6]
-        ]
-    },
-    {
-        "path":r"E:\BaiduSyncdisk\gFile\Conjugate\sp3-sp.out",
-        "bonds":[
-            [1,2]
-        ]
-    },
-    {
-        "path":r"E:\BaiduSyncdisk\gFile\Conjugate\sp2-sp2.out",
-        "bonds":[
-            [1,2]
-        ]
-    },
-    {
-        "path":r"E:\BaiduSyncdisk\gFile\Conjugate\sp2-sp.out",
-        "bonds":[
-            [1,2]
-        ]
-    },
-    {
-        "path":r"E:\BaiduSyncdisk\gFile\Conjugate\sp-sp.out",
-        "bonds":[
-            [1,2]
-        ]
-    }
-]
-for file in files:
-    mol=File(file["path"]).mol
+import matplotlib.pyplot as plt
+lengths=[]
+orders=[]
+
+a1,a2=[1,4]
+for i in range(22):
+    path=path=f"E:/BaiduSyncdisk/gFile/C=C/CH2=CH2_Scan/f{i+1}.log"
+    
+    mol=logReader(path).mol
+    mol.create_bonds()
+    mol.add_bond(a1, a2)
+    mol.createAtomOrbitalRange()
+    
+    centerAtom=mol.atoms[a1]
+    aroundAtom=mol.atoms[a2]
     caler=piBondOrder.Calculator(mol)
-    for idx1,idx2 in file["bonds"]:
-        bond=mol.get_bond(idx1, idx2)
-        print(bond.length)
-        res=caler.calculate(bond)
-        print(res['data']['order'])
+    order=caler.calculate(centerAtom, aroundAtom)['data']['order']
+    lengths.append(mol.get_bond(a1, a2).length)
+    orders.append(order)
+
+plt.plot(lengths,orders,'-.*')
+plt.show()

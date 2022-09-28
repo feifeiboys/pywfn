@@ -35,7 +35,7 @@ class Caculater:
         
         a1_1,a1_2=a1.orbitalMatrixRange
         a2_1,a2_2=a2.orbitalMatrixRange
-        print(a1_1,a1_2,a2_1,a2_2)
+        # print(a1_1,a1_2,a2_1,a2_2)
         order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
         # S=self.mol.overlapMatrix[a1_1:a1_2,a2_1:a2_2]
         return order

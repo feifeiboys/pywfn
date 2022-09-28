@@ -55,7 +55,9 @@ class Tool:
         contents=self.split_raw()
         for i,content in enumerate(contents):
             coords=self.get_coord(content)
-            path=os.path.join(self.dirName,self.fileName,f'F{i+1}.gjf')
+            path=os.path.join(self.dirName,self.fileName,f'f{i+1}.gjf')
+            print(path)
             fileCreater=FileCreater(path=path)
             fileCreater.set_coord(coords)
+            fileCreater.set_chk(f'{i+1}')
             fileCreater.save()

@@ -11,6 +11,7 @@ class Tool:
         self.path=Path(path)
         self.coordStr=None
         self.pwd=Path(__file__).parent
+        self._chk=None
         # print(f'pwd={self.pwd}')
         with open(os.path.join(self.pwd.parent,'data\\gifTemplate.txt'),'r',encoding='utf-8') as f:
             self.template=f.read()
@@ -23,8 +24,11 @@ class Tool:
             line=f' {symbol}'+f'{x:.8f}'.rjust(14,' ')+f'{y:.8f}'.rjust(14,' ')+f'{z:.8f}'.rjust(14,' ')
             lines.append(line)
         self.coordStr='\n'.join(lines)
+    
+    def set_chk(self,path):
+        self._chk=path
 
     def save(self):
-        content=self.template.replace('FILE',self.path.stem).replace('COORD',self.coordStr)
+        content=self.template.replace('CHK',self._chk).replace('COORD',self.coordStr)
         with open(f'{self.path}','w',encoding='utf-8') as f:
             f.write(content)

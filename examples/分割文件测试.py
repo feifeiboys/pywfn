@@ -4,6 +4,6 @@ import sys
 sys.path.append(str(hfvPath))
 from hfv.tools import ScanSpliter
 
-path=r"E:\BaiduSyncdisk\gFile\C=C\CH2=CH-CH=CH2_Scan.out"
+path=r"E:\BaiduSyncdisk\gFile\C=C\CH2=CH2_Scan.out"
 tool=ScanSpliter(path=path)
 tool.split()
