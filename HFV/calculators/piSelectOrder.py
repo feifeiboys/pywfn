@@ -1,5 +1,5 @@
 # 挑选π轨道，计算π键级
-from ..obj import Mol,Bond
+from ..obj import Mol,Bond,Atom
 from .. import utils
 from typing import *
 import numpy as np
@@ -36,20 +36,24 @@ class Calculator:
         else:
             return 0
 
-    def get_piOrbitals(self,bond:Bond)->List[int]:
+    def get_piUnits(self,bond:Bond)->List[int]:
         """返回该键的所有π键"""
         return [self.judge_orbital(bond,orbital) for orbital in self.mol.O_orbitals]
 
-    def calculate(self,bond:Bond)->Tuple[float,List[float]]:
-        orbitals=self.get_piOrbitals(bond)
-        As=self.mol.As2
-        # print(As)
-        centerAtom=bond.a1
-        aroundAtom=bond.a2
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom)->Tuple[float,List[float]]:
+        bond=self.mol.get_bond(centerAtom.idx, aroundAtom.idx)
+        units=self.get_piUnits(bond)
+        As=np.array([atom.squareSum for atom in self.mol.atoms.values()]).sum(axis=0)
         centerSquareSum=centerAtom.squareSum
         aroundSquareSum=aroundAtom.squareSum
         centerRes=np.divide(centerSquareSum,As,out=np.zeros_like(As),where=As!=0)**0.5
         aroundRes=np.divide(aroundSquareSum,As,out=np.zeros_like(As),where=As!=0)**0.5
-        orders=(centerRes*aroundRes)[:len(self.mol.O_orbitals)]*np.array(orbitals)*self.mol.orbitalElectron
-        # print(self.mol.orbitalElectron)
-        return list(orders),sum(orders)
+        oE=1 if self.mol.isSplitOrbital else 2 # 每个分子轨道内的电子
+        orders=(centerRes*aroundRes)[:len(self.mol.O_orbitals)]*np.array(units)*oE
+        return {
+                "type":1,
+                "data":{
+                    "orders":list(orders),
+                    "order":sum(orders)
+                }
+                }

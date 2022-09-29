@@ -51,7 +51,7 @@ class Calculator:
 
         centerPZs=[each[-1] for each in centerRes]
         aroundPZs=[each[-1] for each in aroundRes]
-        orbitalElectron=2 if self.mol.isSplitOrbital else 1
+        orbitalElectron=1 if self.mol.isSplitOrbital else 2
         pOrder=sum([cpz*apz/As for cpz,apz in zip(centerPZs,aroundPZs)])*orbitalElectron
         orbitalOrder=pOrder
         return orbitalOrder

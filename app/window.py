@@ -80,7 +80,7 @@ class Window(MainWindow):
         bond=self.currentFile.canvas.selectedBond
         if bond is not None:
             if orderType=='old':
-                computer=piSelectOrder.Caculater(self.currentFile.mol)
+                computer=piSelectOrder.Calculator(self.currentFile.mol)
             if orderType=='new':
                 computer=piBondOrder.Calculator(self.currentFile.mol)
             res=computer.calculate(bond.a1,bond.a2)

@@ -1,11 +1,11 @@
 from pyvista import Plotter,Cylinder,Sphere,PolyData,Light
 from ..obj import Atom,Bond,Mol
-from .materials import atomColor
 import numpy as np
 from typing import *
 from .. import utils
 import pyvista as pv
 from . import util
+from .materials import elements
 
 
 class Canvas:
@@ -32,7 +32,11 @@ class Canvas:
         if meshType=='atom':
             atom=self.get_Obj(mesh.name).atom
             if atom is not None:
-                self.selectedAtoms.append(atom)
+                if atom not in self.selectedAtoms:
+                    self.selectedAtoms.append(atom)
+                else:
+                    index=self.selectedAtoms.index(atom)
+                    self.selectedAtoms.pop(index)
         elif meshType=='bond':
             bond=self.get_Obj(mesh.name).bond
             if bond is not None:
@@ -113,10 +117,10 @@ class Ball: # 定义球类型
     def __init__(self,atom:Atom,plotter) -> None:
         self.atom=atom
         symbol=atom.symbol
-        self.poly=Sphere(center=atom.coord)
+        self.poly=Sphere(center=atom.coord,radius=elements[symbol].radius)
         self.name=f'atom-{self.atom.idx}'
         self.poly.name=self.name
-        plotter.add_mesh(self.poly,color=atomColor[atom.symbol],smooth_shading=True,name=self.name)
+        plotter.add_mesh(self.poly,color=elements[symbol].color,smooth_shading=True,name=self.name)
         
 
 class Stick: # 定义棍类型
@@ -125,7 +129,7 @@ class Stick: # 定义棍类型
         center=(bond.a1.coord+bond.a2.coord)/2
         direction=bond.a2.coord-bond.a1.coord
         self.name=f'bond-{self.bond.a1.idx},{self.bond.a2.idx}'
-        self.poly=Cylinder(center=center,direction=direction,radius=0.2)
+        self.poly=Cylinder(center=center,direction=direction,radius=0.15)
         self.poly.name=self.name
         plotter.add_mesh(self.poly,name=self.name)
 

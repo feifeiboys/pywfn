@@ -10,19 +10,20 @@ from hfv.calculators import piBondOrder,mayerBondOrder
 import matplotlib.pyplot as plt
 orders=[]
 lengths=[]
+a1,a2=[1,4]
 for i in range(22):
     print(i+1)
-    path=f"E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/f{i+1}.log"
+    path=f"E:/BaiduSyncdisk/gFile/C=C/CH2=CH2_Scan/f{i+1}.log"
     reader=Reader(path)
     mol=reader.mol
     mol.create_bonds()
-    mol.add_bond(1, 3)
-    centerAtom=mol.atoms[1]
-    aroundAtom=mol.atoms[3]
+    mol.add_bond(a1, a2)
+    centerAtom=mol.atoms[a1]
+    aroundAtom=mol.atoms[a2]
     caler=mayerBondOrder.Caculater(mol)
     res=caler.calculate(centerAtom, aroundAtom)
     orders.append(res)
-    lengths.append(mol.get_bond(1, 3).length)
+    lengths.append(mol.get_bond(a1, a2).length)
     print(res)
 plt.plot(lengths,orders)
 plt.show()

@@ -91,13 +91,11 @@ class Mol:
         """密度矩阵"""
         if self._PM is None:
             # 自己计算密度矩阵吧
-            size=self.CM.shape[1]
-            PM=np.zeros((size,size)) # 重叠矩阵
+            h,w=self.CM.shape # h行,w列
+            PM=np.zeros(shape=(h,h)) # 重叠矩阵
             Oe=1 if self.isSplitOrbital else 2
-            Onum,Vnum=len(self.O_orbitals),len(self.V_orbitals)
-            
-            n=np.array([Oe]*Onum+[0]*Vnum)
-            for i in range(size):
+            n=np.array([Oe if 'O' in o else 0 for o in self.orbitals])
+            for i in range(w):
                 C1=self.CM[:,i][:,np.newaxis]
                 C2=self.CM[:,i][np.newaxis,:]
                 PM+=C1*C2*n[i]

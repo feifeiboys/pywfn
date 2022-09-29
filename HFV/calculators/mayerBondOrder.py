@@ -29,9 +29,9 @@ class Caculater:
         SM=self.mol.SM
 
         PS=PM@SM
-        pd.DataFrame(SM).to_csv('SM.csv')
-        pd.DataFrame(PM).to_csv('PM.csv')
-        pd.DataFrame(CM).to_csv('CM.csv')
+        # pd.DataFrame(SM).to_csv('SM.csv')
+        # pd.DataFrame(PM).to_csv('PM.csv')
+        # pd.DataFrame(CM).to_csv('CM.csv')
         
         a1_1,a1_2=a1.orbitalMatrixRange
         a2_1,a2_2=a2.orbitalMatrixRange

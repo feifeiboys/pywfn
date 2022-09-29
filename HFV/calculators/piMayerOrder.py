@@ -25,12 +25,11 @@ class Calculator:
             ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
         
     def get_PM(self,CM):
-        size=CM.shape[1]
-        PM=np.zeros_like(CM)
+        h,w=CM.shape # h行w列
+        PM=np.zeros(shape=(h,h))
         Oe=1 if self.mol.isSplitOrbital else 2
-        Onum,Vnum=len(self.mol.O_orbitals),len(self.mol.V_orbitals)
-        n=np.array([Oe]*Onum+[0]*Vnum)
-        for i in range(size):
+        n=np.array([Oe if 'O' in o else 0 for o in self.mol.orbitals])
+        for i in range(w):
             C1=CM[:,i][:,np.newaxis]
             C2=CM[:,i][np.newaxis,:]
             PM+=C1*C2*n[i]

@@ -9,18 +9,19 @@ from hfv.calculators import piMayerOrder
 import matplotlib.pyplot as plt
 orders=[]
 idxs=[]
+a1,a2=[1,4]
 for i in range(22):
-    path=f"E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan/f{i+1}.log"
+    path=f"E:/BaiduSyncdisk/gFile/C=C/CH2=CH2_Scan/f{i+1}.log"
     mol=logReader(path).mol
     mol.create_bonds()
-    mol.add_bond(1, 3)
+    mol.add_bond(a1, a2)
     mol.createAtomOrbitalRange()
-    centerAtom=mol.atoms[1]
-    aroundAtom=mol.atoms[3]
+    centerAtom=mol.atoms[a1]
+    aroundAtom=mol.atoms[a2]
 
     caler=piMayerOrder.Calculator(mol)
     res=caler.calculate(centerAtom, aroundAtom)
-    idxs.append(mol.get_bond(1, 3).length)
+    idxs.append(mol.get_bond(a1, a2).length)
     orders.append(res)
     # print(res)
 plt.plot(idxs,orders,'--*')
