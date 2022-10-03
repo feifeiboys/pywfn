@@ -1,6 +1,6 @@
 # 更新程序页面中的信息
 import numpy as np
-from hfv import utils
+from pywfn import utils
 
 
 class Updater:

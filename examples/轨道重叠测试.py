@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from hfv.obj import File
-from hfv.calculators import overlapIntegrate
+from pywfn.obj import File
+from pywfn.calculators import overlapIntegrate
 
 allRes=[]
 for i in range(20):

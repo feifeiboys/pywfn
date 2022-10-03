@@ -12,10 +12,10 @@ from PySide6.QtGui import QIcon,QFont
 from PySide6.QtCore import Qt
 from pyvistaqt import QtInteractor, MainWindow
 
-from hfv.plotter.canvas import Canvas
-from hfv.obj import Mol
-from hfv.calculators import piBondOrder,piSelectOrder
-from hfv.readers import Reader
+from pywfn.plotter.canvas import Canvas
+from pywfn.obj import Mol
+from pywfn.calculators import piBondOrder,piSelectOrder
+from pywfn.readers import Reader
 from .commands import Command
 from .ui_app import Ui_MainWindow
 from .setting import settingManager

@@ -6,8 +6,8 @@ import numpy as np
 hfvPath=Path(__file__).parent.parent
 sys.path.append(str(hfvPath))
 print(sys.path)
-from hfv.obj import File
-from hfv.calculators import piBondOrder,overlapIntegrate,piSelectOrder
+from pywfn.obj import File
+from pywfn.calculators import piBondOrder,overlapIntegrate,piSelectOrder
 import os
 import matplotlib.pyplot as plt
 from hfv import setting

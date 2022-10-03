@@ -6,8 +6,8 @@ import sys
 hfvPath=Path(__file__).parent.parent
 sys.path.append(str(hfvPath))
 
-from hfv.readers import logReader
-from hfv.calculators import piBondOrder
+from pywfn.readers import logReader
+from pywfn.calculators import piBondOrder
 import matplotlib.pyplot as plt
 lengths=[]
 orders=[]

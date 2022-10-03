@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('E:\code\HFV\hfv')
+sys.path.append('E:\code\HFV\pywfn')
 import os
 import PySide6
 dirname = os.path.dirname(PySide6.__file__) 

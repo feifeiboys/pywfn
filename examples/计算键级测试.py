@@ -5,8 +5,8 @@ sys.path.append(str(hfvPath))
 
 import re
 import numpy as np
-from hfv.readers import logReader
-from hfv.calculators import piBondOrder
+from pywfn.readers import logReader
+from pywfn.calculators import piBondOrder
 
 mol=logReader('examples/CH2=CH2.out').mol
 
