@@ -4,6 +4,6 @@ import sys
 sys.path.append(str(hfvPath))
 from pywfn.tools import ScanSpliter
 
-path=r"E:\BaiduSyncdisk\gFile\C=C\CH2=CH2_Scan.out"
+path=r"E:\BaiduSyncdisk\gFile\C=C\CH2=CH-CH=CH2_scanAngle.log"
 tool=ScanSpliter(path=path)
 tool.split()

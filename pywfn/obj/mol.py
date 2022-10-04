@@ -129,7 +129,9 @@ class Mol:
     def add_bond(self,idx1:int,idx2:int):
         """添加一个键"""
         if idx2<idx1:idx1,idx2=idx2,idx1
-        self.bonds[f'{idx1}-{idx2}']=Bond(self.atoms[idx1], self.atoms[idx2])
+        key=f'{idx1}-{idx2}'
+        if key not in self.bonds.keys():
+            self.bonds[key]=Bond(self.atoms[idx1], self.atoms[idx2])
 
     def get_bond(self,idx1:int,idx2:int)->Bond:
         """根据原子的索引获得键"""

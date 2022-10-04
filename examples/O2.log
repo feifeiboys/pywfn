@@ -2,8 +2,8 @@
  Input=O2.gjf
  Output=O2.log
  Initial command:
- /home/fly/software/gaussian/g16/l1.exe "/home/fly/software/gaussian/scr/Gau-6039.inp" -scrdir="/home/fly/software/gaussian/scr/"
- Entering Link 1 = /home/fly/software/gaussian/g16/l1.exe PID=      6041.
+ /home/fly/software/gaussian/g16/l1.exe "/home/fly/software/gaussian/scr/Gau-90.inp" -scrdir="/home/fly/software/gaussian/scr/"
+ Entering Link 1 = /home/fly/software/gaussian/g16/l1.exe PID=        92.
   
  Copyright (c) 1988-2021, Gaussian, Inc.  All Rights Reserved.
   
@@ -76,7 +76,7 @@
  
  ******************************************
  Gaussian 16:  ES64L-G16RevC.02  7-Dec-2021
-                21-Sep-2022 
+                 3-Oct-2022 
  ******************************************
  %chk=O2.chk
  -------------------------------------------
@@ -470,7 +470,7 @@
  NBsUse=    10 1.00D-06 EigRej= -1.00D+00 NBFU=     3     0     1     1     0     3     1     1
  Precomputing XC quadrature grid using
  IXCGrd= 4 IRadAn=           5 IRanWt=          -1 IRanGd=           0 AccXCQ= 0.00D+00.
- SetAtRh:  ITypeU=  23 NETotI=       0 ICharg=  3 NETot=       0.
+ SetAtRh:  ITypeU=  23 NETotI=       0 ICharg=*** NETot=       0.
  StAtR1:  I=    1 I1=    1 IA=  8 C=   8.0 OKShel=TTT
                                                   SSP
                                                   224
@@ -759,15 +759,17 @@
  Total kinetic energy from orbitals= 1.460439641365D+02
 
  Test job not archived.
- 1\1\GINC-DESKTOP-6CSR5D9\SP\RB3LYP\STO-3G\O2\FLY\21-Sep-2022\0\\# b3ly
+ 1\1\GINC-DESKTOP-6CSR5D9\SP\RB3LYP\STO-3G\O2\FLY\03-Oct-2022\0\\# b3ly
  p/sto-3g pop=full gfinput iop(3/33=1)\\Title Card Required\\0,1\O,0,0.
  ,0.,0.60797\O,0,0.,0.,-0.60797\\Version=ES64L-G16RevC.02\HF=-148.20413
  64\RMSD=1.014e-10\Dipole=0.,0.,0.\Quadrupole=0.8125945,-0.2825428,-0.5
  300517,0.,0.,0.\PG=D*H [C*(O1.O1)]\\@
 
 
- BULLDOZER: SOMEONE WHO SLEEPS THROUGH SPEECHES.
- Job cpu time:       0 days  0 hours  0 minutes  2.4 seconds.
- Elapsed time:       0 days  0 hours  0 minutes  1.6 seconds.
+ YOU CAN LEAD A BOY TO COLLEGE....
+ BUT YOU CANNOT MAKE HIM THINK....
+           ELBERT HUBBARD
+ Job cpu time:       0 days  0 hours  0 minutes  0.6 seconds.
+ Elapsed time:       0 days  0 hours  0 minutes  1.4 seconds.
  File lengths (MBytes):  RWF=      6 Int=      0 D2E=      0 Chk=      1 Scr=      1
- Normal termination of Gaussian 16 at Wed Sep 21 15:05:27 2022.
+ Normal termination of Gaussian 16 at Mon Oct  3 22:00:39 2022.

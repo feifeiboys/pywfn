@@ -8,7 +8,7 @@ import os
 import numpy as np
 from .fileCreater import Tool as FileCreater
 from pathlib import Path
-from ..elements import Elements
+from ..data import Elements
 
 class Tool:
     def __init__(self,path:str) -> None:

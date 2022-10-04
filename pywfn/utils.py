@@ -177,8 +177,8 @@ def vector_angle(a,b,trans=False): # 计算两向量之间的夹角
     if np.linalg.norm(a)*np.linalg.norm(b)==0:
         raise
     value=np.dot(a,b)/(np.linalg.norm(a)*np.linalg.norm(b))
-    if value>1:
-        value=1
+    if value>1:value=1
+    if value<-1:value=-1
     angle=np.arccos(value)/math.pi
     if not trans:
         return angle

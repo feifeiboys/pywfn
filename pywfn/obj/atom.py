@@ -22,6 +22,7 @@ class  Atom:
         self.orbitalDirections={} #存储所有分子轨道里原子轨道的方向
         self.standardBasis:ndarray=None
         self.orbitalMatrixRange:List[int]
+        self._sContribution:Dict={}
 
     def set_layers(self,layer:str,nums:List[float]):
         layer=layer.strip()
@@ -82,7 +83,7 @@ class  Atom:
         return [layer for layer in self.layers if ('P' in layer or 'S' in layer)]
 
     @property
-    def pLayersData(self):
+    def pLayersData(self)->np.ndarray:
         return self.layersData(self.pLayers)
 
     @property
@@ -97,7 +98,7 @@ class  Atom:
         """计算原子p系数在某个方向上的投影"""
         if direction is None:
             raise
-        ts=self.pLayersTs(orbital)
+        ts=self.pLayersTs(orbital) # p轨道的系数
         if np.linalg.norm(direction)==0 :
             raise
         direction=direction/np.linalg.norm(direction) # 投影向量归一化
@@ -162,6 +163,12 @@ class  Atom:
             data=OC.iloc[:,orbital]
             ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
 
-
+    def get_sContribution(self,orbital:int):
+        """获取某个原子轨道的贡献"""
+        if orbital not in self._sContribution.keys():
+            s=self.OC.iloc[0,orbital]
+            contribution=s/self.mol.As[orbital]
+            self._sContribution[orbital]=contribution
+        return self._sContribution[orbital]
 
 from .mol import Mol
