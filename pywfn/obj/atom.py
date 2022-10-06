@@ -167,7 +167,7 @@ class  Atom:
         """获取某个原子轨道的贡献"""
         if orbital not in self._sContribution.keys():
             s=self.OC.iloc[0,orbital]
-            contribution=s/self.mol.As[orbital]
+            contribution=s**2/self.mol.As[orbital]
             self._sContribution[orbital]=contribution
         return self._sContribution[orbital]
 

@@ -3,15 +3,17 @@ import sys
 hfvPath=Path(__file__).parent.parent
 sys.path.append(str(hfvPath))
 
-from hfv.readers import logReader
-from hfv.calculators import piMayerOrder
+from pywfn.readers import logReader
+from pywfn.calculators import piMayerOrder
 
 import matplotlib.pyplot as plt
+import numpy as np
 orders=[]
+elects=[]
 idxs=[]
-a1,a2=[1,4]
-for i in range(22):
-    path=f"E:/BaiduSyncdisk/gFile/C=C/CH2=CH2_Scan/f{i+1}.log"
+a1,a2=[3,12]
+for i in range(37):
+    path=f"E:\\BaiduSyncdisk\\gFile\\scans\\lianben\\lianben_scanAngle\\f{i+1}.log"
     mol=logReader(path).mol
     mol.create_bonds()
     mol.add_bond(a1, a2)
@@ -20,10 +22,12 @@ for i in range(22):
     aroundAtom=mol.atoms[a2]
 
     caler=piMayerOrder.Calculator(mol)
-    res=caler.calculate(centerAtom, aroundAtom)
+    order,elect=caler.calculate(centerAtom, aroundAtom)
     idxs.append(mol.get_bond(a1, a2).length)
-    orders.append(res)
+    orders.append(order)
+    elects.append(elect)
     # print(res)
-plt.plot(idxs,orders,'--*')
+plt.plot(np.arange(len(orders)),np.array(orders),'--*')
+plt.plot(np.arange(len(elects)),np.array(elects),'--*')
 plt.show()
 plt.savefig('piMayerOrder.png')

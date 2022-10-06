@@ -24,7 +24,8 @@ class Calculator:
         crossVector=np.cross(utils.normalize(bondVector),utils.normalize(direction))
         
 
-        As = self.mol.As[orbital]
+        # As = self.mol.As[orbital]
+        As=self.As[orbital]
         centerTs=center.pLayersTs(orbital)
         aroundTs=around.pLayersTs(orbital)
         if np.linalg.norm(centerTs)==0 or np.linalg.norm(aroundTs)==0:
@@ -63,6 +64,7 @@ class Calculator:
         return orders
 
     def calculate(self,centerAtom:Atom,aroundAtom:Atom) -> Tuple[float,List[float]]:
+        self.As=np.array([atom.squareSum for atom in self.mol.atoms.values()]).sum(axis=0) # 所有原子轨道系数平方和
         """指定一个键，计算该键的键级"""
         O_orbitals=self.mol.O_orbitals
         normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量

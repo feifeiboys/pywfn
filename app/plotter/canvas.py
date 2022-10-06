@@ -1,11 +1,12 @@
 from pyvista import Plotter,Cylinder,Sphere,PolyData,Light
-from ..obj import Atom,Bond,Mol
+from pywfn.obj import Atom,Bond,Mol
 import numpy as np
 from typing import *
-from .. import utils
+from pywfn import utils
 import pyvista as pv
 from . import util
-from .materials import elements
+from .materials import Elements
+elements=Elements()
 
 
 class Canvas:

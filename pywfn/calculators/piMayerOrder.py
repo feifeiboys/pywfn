@@ -39,8 +39,11 @@ class Calculator:
         """
         计算修改轨道后的mayer键级,需要重叠矩阵和重构的密度矩阵
         """
+        self.mol.create_bonds()
+        self.mol.add_bond(centerAtom.idx, aroundAtom.idx)
         SM=self.mol.SM.copy()
         CM=self.mol.CM.copy()
+        CM=np.zeros_like(CM)
         centerOC=centerAtom.OC.to_numpy() # 原始的系数矩阵，修改它
         aroundOC=aroundAtom.OC.to_numpy()
         centerOC=np.zeros_like(centerOC) # 全部为0
@@ -65,8 +68,10 @@ class Calculator:
         PM=self.get_PM(CM)
         print(np.mean(PM-self.mol.PM))
         PS=PM@SM
+        print('π电子: ',np.sum(PM*SM))
+        print('总电子: ',np.sum(self.mol.PM*SM))
         order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
-        return np.sum(order)
+        return np.sum(order),np.sum(PM*SM)
 
 if __name__=='__main__':
     from ..obj import Atom,Mol,Bond

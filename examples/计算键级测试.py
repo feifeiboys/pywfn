@@ -12,26 +12,29 @@ from pywfn.calculators import piBondOrder,piSelectOrder
 orders1=[]
 orders2=[]
 lengths=[]
-for i in range(22):
-    mol=logReader(f"E:\\BaiduSyncdisk\\gFile\\C=C\\CH2=CH-CH=CH2_scanAngle\\f{i+1}.log").mol
+a1,a2=[3,12]
+for i in range(37):
+    
+    mol=logReader(f"E:\\BaiduSyncdisk\\gFile\\scans\\lianben\\lianben_scanAngle\\f{i+1}.log").mol
     mol.create_bonds()
     # pd.DataFrame(mol.PM*mol.SM).to_csv('PS.csv')
 
     # print(np.sum(mol.PM*mol.SM,axis=0))
-    mol.add_bond(1, 3)
-    centerAtom=mol.atoms[1]
-    aroundAtom=mol.atoms[3]
+    mol.add_bond(a1, a2)
+    centerAtom=mol.atoms[a1]
+    aroundAtom=mol.atoms[a2]
     
     caler1=piBondOrder.Calculator(mol)
-    caler2=piSelectOrder.Calculator(mol)
+    # caler2=piSelectOrder.Calculator(mol)
     order1=caler1.calculate(centerAtom, aroundAtom)['data']['order']
-    order2=caler2.calculate(centerAtom, aroundAtom)['data']['order']
+    # order2=caler2.calculate(centerAtom, aroundAtom)['data']['order']
     # print(res)
-    lengths.append(mol.get_bond(1, 3).length)
+    lengths.append(mol.get_bond(a1, a2).length)
     orders1.append(order1)
-    orders2.append(order2)
-print(orders1)
-print(orders2)
+    # orders2.append(order2)
+    print(i+1,order1)
+# print(orders1)
+# print(orders2)
 plt.plot(np.arange(len(orders1)),np.array(orders1))
-# plt.plot(np.arange(len(orders2)),np.array(orders2))
+plt.plot(np.arange(len(orders2)),np.array(orders2))
 plt.show()

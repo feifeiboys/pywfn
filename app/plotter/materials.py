@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 class Elements:
     def __init__(self):
-        data=pd.read_csv(Path(__file__).parent.parent/'data/elements.csv')
+        data=pd.read_csv(Path(__file__).parent / 'elements.csv')
         self.elements=[]
         for i in range(data.shape[0]):
             idx,symbol,color,radius=data.iloc[i,:]
@@ -27,7 +27,6 @@ class Element:
         self.color=color
         self.radius=radius
 
-elements=Elements()
 if __name__=='__main__':
     data=pd.read_csv(Path(__file__).parent.parent/'data/elements.csv')
     for i in range(len(data)):

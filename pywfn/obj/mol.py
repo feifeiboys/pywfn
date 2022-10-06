@@ -46,6 +46,8 @@ class Mol:
         idx=len(self.atoms)+1
         atom=Atom(symbol,coord,idx,self)
         self.atoms[idx]=atom
+    
+    
 
     @property
     def orbitalNum(self):

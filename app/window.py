@@ -12,7 +12,8 @@ from PySide6.QtGui import QIcon,QFont
 from PySide6.QtCore import Qt
 from pyvistaqt import QtInteractor, MainWindow
 
-from pywfn.plotter.canvas import Canvas
+from .plotter.canvas import Canvas
+# from pywfn.plotter.canvas import Canvas
 from pywfn.obj import Mol
 from pywfn.calculators import piBondOrder,piSelectOrder
 from pywfn.readers import Reader
