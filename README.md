@@ -17,3 +17,13 @@ App.py是程序的入口，主要页面及功能保存在app文件夹内
     - mulliken电荷
 - 简单命令行交互
     - 插入箭头
+
+## 使用方式
+### GUI
+运行App.py
+### Shell
+使用ipython/python
+```python
+import pywfn
+pywfn.runShell()
+```

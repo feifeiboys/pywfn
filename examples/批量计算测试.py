@@ -6,11 +6,11 @@ import numpy as np
 hfvPath=Path(__file__).parent.parent
 sys.path.append(str(hfvPath))
 print(sys.path)
-from pywfn.obj import File
+from pywfn.base import File
 from pywfn.calculators import piBondOrder,overlapIntegrate,piSelectOrder
 import os
 import matplotlib.pyplot as plt
-from hfv import setting
+
 path="E:/BaiduSyncdisk/gFile/C=C/CH2=CH-CH=CH2_Scan"
 files=os.listdir(path)
 lengths=[]

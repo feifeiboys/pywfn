@@ -16,11 +16,12 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QMenu,
-    QMenuBar, QSizePolicy, QSplitter, QStatusBar,
-    QTabWidget, QTextBrowser, QTextEdit, QToolBar,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFormLayout, QFrame, QGridLayout,
+    QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QRadioButton, QSizePolicy, QSlider, QSplitter,
+    QStatusBar, QTabWidget, QTextBrowser, QTextEdit,
+    QToolBar, QVBoxLayout, QWidget)
 # import icons_rc
 
 class Ui_MainWindow(object):
@@ -30,7 +31,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowModality(Qt.NonModal)
         MainWindow.resize(1141, 677)
         icon = QIcon()
-        icon.addFile(u":/title/mol.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u":/title/mol.png", QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setDocumentMode(False)
         MainWindow.setTabShape(QTabWidget.Rounded)
@@ -90,6 +91,43 @@ class Ui_MainWindow(object):
         self.listWidget_orbitals.setFrameShape(QFrame.NoFrame)
 
         self.verticalLayout.addWidget(self.listWidget_orbitals)
+
+        self.gridLayout = QGridLayout()
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.radioCloud = QRadioButton(self.tab_orbitals)
+        self.radioCloud.setObjectName(u"radioCloud")
+
+        self.gridLayout.addWidget(self.radioCloud, 0, 1, 1, 1)
+
+        self.radioVector = QRadioButton(self.tab_orbitals)
+        self.radioVector.setObjectName(u"radioVector")
+        self.radioVector.setChecked(True)
+
+        self.gridLayout.addWidget(self.radioVector, 0, 0, 1, 1)
+
+
+        self.verticalLayout.addLayout(self.gridLayout)
+
+        self.formLayout = QFormLayout()
+        self.formLayout.setObjectName(u"formLayout")
+        self.label_3 = QLabel(self.tab_orbitals)
+        self.label_3.setObjectName(u"label_3")
+
+        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.label_3)
+
+        self.cloudRangeSlider = QSlider(self.tab_orbitals)
+        self.cloudRangeSlider.setObjectName(u"cloudRangeSlider")
+        self.cloudRangeSlider.setOrientation(Qt.Horizontal)
+
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.cloudRangeSlider)
+
+
+        self.verticalLayout.addLayout(self.formLayout)
+
+        self.clearCloudBtn = QPushButton(self.tab_orbitals)
+        self.clearCloudBtn.setObjectName(u"clearCloudBtn")
+
+        self.verticalLayout.addWidget(self.clearCloudBtn)
 
         self.tabWidget_2.addTab(self.tab_orbitals, "")
         self.tab_clouds = QWidget()
@@ -254,7 +292,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget_2.setCurrentIndex(0)
+        self.tabWidget_2.setCurrentIndex(1)
         self.tabWidget.setCurrentIndex(0)
 
 
@@ -270,6 +308,10 @@ class Ui_MainWindow(object):
         self.actionclear.setText(QCoreApplication.translate("MainWindow", u"clear", None))
         self.actionsigmaBondOrder.setText(QCoreApplication.translate("MainWindow", u"sigmaBondOrder", None))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_files), QCoreApplication.translate("MainWindow", u"files", None))
+        self.radioCloud.setText(QCoreApplication.translate("MainWindow", u"\u7bad\u5934", None))
+        self.radioVector.setText(QCoreApplication.translate("MainWindow", u"\u70b9\u4e91", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"\u663e\u793a\u8303\u56f4", None))
+        self.clearCloudBtn.setText(QCoreApplication.translate("MainWindow", u"\u6e05\u9664", None))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_orbitals), QCoreApplication.translate("MainWindow", u"orbitals", None))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_clouds), QCoreApplication.translate("MainWindow", u"clouds", None))
         self.label.setText("")

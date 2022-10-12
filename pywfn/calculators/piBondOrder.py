@@ -1,5 +1,5 @@
 # 此脚本用来计算π建键级
-from ..obj import Mol,Atom,Bond
+from ..base import Mol,Atom,Bond
 import numpy as np
 from .. import utils
 from typing import *
@@ -64,11 +64,12 @@ class Calculator:
         return orders
 
     def calculate(self,centerAtom:Atom,aroundAtom:Atom) -> Tuple[float,List[float]]:
+        self.mol.create_bonds()
         self.As=np.array([atom.squareSum for atom in self.mol.atoms.values()]).sum(axis=0) # 所有原子轨道系数平方和
         """指定一个键，计算该键的键级"""
         O_orbitals=self.mol.O_orbitals
         normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量
-        if normal is not None: # 如果原子有法向量(sp2)
+        if len(centerAtom.neighbors)==3: # 如果原子有法向量(sp2)
             orders=self.get_orders(centerAtom,aroundAtom,O_orbitals,normal)
             return {
                 "type":0,
@@ -82,6 +83,8 @@ class Calculator:
             orbitalDirection=None
             for o in O_orbitals[::-1]:
                 orbitalDirection=centerAtom.get_orbitalDirection(o)
+                if np.linalg.norm(orbitalDirection)==0:
+                    continue
                 bondDirection=self.mol.get_bond(centerAtom.idx, aroundAtom.idx).bondVector()
                 if utils.vector_angle(orbitalDirection, bondDirection,trans=True)>0.4: # 夹角要很大
                     break

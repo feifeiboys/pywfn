@@ -16,13 +16,13 @@ class Calculator:
     def get_OtherIDX(self,layers:List[str]):
         return [i for i,layer in enumerate(layers) if not re.search('\dP[XYZ]', layer)]
     
-    def get_piOC(self):
-        layers=self.OC.index # 所有的行的名称
-        pidxs=[idx for idx,layer in enumerate(layers) if re.match('\dP[XYZ]',layer)] # p轨道的序数
-        size=self.OC.shape[1] # 列数
-        for orbital in range(len(size)): # 对每一列进行循环
-            data=OC.iloc[:,orbital]
-            ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
+    # def get_piOC(self):
+    #     layers=self.OC.index # 所有的行的名称
+    #     pidxs=[idx for idx,layer in enumerate(layers) if re.match('\dP[XYZ]',layer)] # p轨道的序数
+    #     size=self.OC.shape[1] # 列数
+    #     for orbital in range(len(size)): # 对每一列进行循环
+    #         data=OC.iloc[:,orbital]
+    #         ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
         
     def get_PM(self,CM):
         h,w=CM.shape # h行w列
@@ -39,6 +39,7 @@ class Calculator:
         """
         计算修改轨道后的mayer键级,需要重叠矩阵和重构的密度矩阵
         """
+        self.mol.createAtomOrbitalRange()
         self.mol.create_bonds()
         self.mol.add_bond(centerAtom.idx, aroundAtom.idx)
         SM=self.mol.SM.copy()
@@ -66,12 +67,11 @@ class Calculator:
         CM[a1_1:a1_2,:]=centerOC
         CM[a2_1:a2_2,:]=aroundOC
         PM=self.get_PM(CM)
-        print(np.mean(PM-self.mol.PM))
         PS=PM@SM
-        print('π电子: ',np.sum(PM*SM))
+        print('π 电子: ',np.sum(PM*SM))
         print('总电子: ',np.sum(self.mol.PM*SM))
         order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
-        return np.sum(order),np.sum(PM*SM)
+        return np.sum(order)
 
 if __name__=='__main__':
-    from ..obj import Atom,Mol,Bond
+    from ..base import Atom,Mol,Bond

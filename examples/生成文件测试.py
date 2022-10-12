@@ -1,4 +1,4 @@
-from pywfn.obj import File
+from pywfn.base import File
 from pywfn.tools import FileCreater
 from pathlib import Path
 

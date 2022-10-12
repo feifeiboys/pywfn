@@ -14,9 +14,9 @@ from pyvistaqt import QtInteractor, MainWindow
 
 from .plotter.canvas import Canvas
 # from pywfn.plotter.canvas import Canvas
-from pywfn.obj import Mol
+from pywfn.base import Mol
 from pywfn.calculators import piBondOrder,piSelectOrder
-from pywfn.readers import Reader
+from pywfn.readers import get_reader
 from .commands import Command
 from .ui_app import Ui_MainWindow
 from .setting import settingManager
@@ -39,13 +39,16 @@ class Window(MainWindow):
         self.init_menu()
 
         self.ui.listWidget_files.itemClicked.connect(self.selectFile)
-        self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital)
+        self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital) # 点击分子轨道名时触发的事件
         self.files:Dict[str,FileItem]={}
         self.currentFile:FileItem=FileItem("",self,showMol=False) # 初始化一个啥都没有的文件
         self.ui.verticalLayout_canvas.addWidget(self.currentFile.widget) #第一次打开的时候添加组件，之后是替换组件
         self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
 
         self.updater=Updater(self)
+        self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
+        self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
+        self.ui.clearCloudBtn.clicked.connect(lambda:self.currentFile.canvas.clear('cloud'))
     
     def init_menu(self):
         """初始化菜单的命令"""
@@ -55,8 +58,6 @@ class Window(MainWindow):
 
         self.ui.actionpiSelectOrder.triggered.connect(lambda:self.compute_piOrder('old'))
         self.ui.actionlabel.triggered.connect(self.viewLabel)
-
-
 
     def clear_selectedAtoms(self):
         if self.currentFile is not None:
@@ -69,22 +70,23 @@ class Window(MainWindow):
         self.addInfo(res)
 
     def compute_sigmaOrder(self):
-        bond=self.currentFile.canvas.selectedBond
-        if bond is not None:
+        atoms=self.currentFile.canvas.selectedAtoms
+        if len(atoms)==2:
             caler=piBondOrder.Calculator(self.currentFile.mol,orderType='sigma')
-            res=caler.calculate(bond)
+            res=caler.calculate(atoms[0],atoms[1])
             orders=res['data']['orders']
             order=res['data']['order']
-
+        else:
+            self.addLog('compute bond order need two atoms')
 
     def compute_piOrder(self,orderType):
-        bond=self.currentFile.canvas.selectedBond
-        if bond is not None:
+        atoms=self.currentFile.canvas.selectedAtoms
+        if len(atoms)==2:
             if orderType=='old':
                 computer=piSelectOrder.Calculator(self.currentFile.mol)
             if orderType=='new':
                 computer=piBondOrder.Calculator(self.currentFile.mol)
-            res=computer.calculate(bond.a1,bond.a2)
+            res=computer.calculate(atoms[0],atoms[1])
             orders=res['data']['orders']
             order=res['data']['order']
             # 将orders根据大小进行排序，并删除为0的部分
@@ -93,17 +95,18 @@ class Window(MainWindow):
             ranges=[r+1 for r,o in orders if o>=limit]
             orbitalNum=len(self.currentFile.mol.O_orbitals)
             orbitalNum=orbitalNum//2+orbitalNum%2
-            # print(ranges,orbitalNum)
             orbitalElectron=2 if self.currentFile.mol.isSplitOrbital else 1
             if orbitalElectron==1:
                 ranges = [f"α{r}" if r <= orbitalNum else f'β{r-orbitalNum}' for r in ranges]
 
             orders=[o for r,o in orders if o>=limit]
-            self.addLog(f'compute piSelectOrder {bond.idx}')
+            self.addLog(f'compute piSelectOrder {atoms[0].idx}-{atoms[1].idx}')
             rangesStrs=[f'{each}' for each in ranges]
             ordersStrs=[f'{each:.4f}' for each in orders]
             self.formPrint([rangesStrs,ordersStrs],eachLength=8,lineNum=10)
             self.addLog(f'{order=:.4f}')
+        else:
+            self.addLog('compute bond order need two atoms')
 
     def viewLabel(self):
         """显示或隐藏原子的label"""
@@ -124,7 +127,6 @@ class Window(MainWindow):
             for log in logs:
                 self.addLog(log[i])
             
-
     def addInfo(self,info:str):
         """输出用户输入命令的处理结果"""
         self.ui.textInfo.append(f'>>> {info}')
@@ -135,6 +137,7 @@ class Window(MainWindow):
 
     def openFile(self):
         """打开log/out文件"""
+        print('打开文件')
         filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
         for filePath,fileType in zip(filePaths,fileTypes):
             self.ui.listWidget_files.addItem(filePath)
@@ -143,10 +146,10 @@ class Window(MainWindow):
             self.setting.lastOpenFilePath=str(Path(filePath).parent)
 
         name=list(self.files.keys())[-1] # 最后一个文件的名称
+        print(f'{name=}')
         self.showMol(self.currentFile,self.files[name])
         self.update()
             
-        
     def selectFile(self):
         """选择一个打开的文件,当选择文件名的时候，如果就是当前的文件，则不发生变化，如果不是则取代"""
         file=self.ui.listWidget_files.currentItem().text() # 点前选中的文件
@@ -157,9 +160,9 @@ class Window(MainWindow):
         newFile=self.files[file]
         self.showMol(oldFile,newFile)
         
-    
     def showMol(self,oldFile,newFile):
         """显示指定的分子"""
+        print('显示指定文字')
         self.ui.verticalLayout_canvas.replaceWidget(oldFile.widget,newFile.widget)
         oldFile.widget.hide()
         newFile.widget.show()
@@ -169,9 +172,16 @@ class Window(MainWindow):
     def selectOrbital(self):
         """选择某个轨道"""
         orbital=self.ui.listWidget_orbitals.currentIndex().row()
-        print(orbital)
         self.currentFile.canvas.selectedOrbital=orbital
-        self.currentFile.canvas.addCloud()
+        if self.orbitalType=='cloud':
+            self.currentFile.canvas.addCloud()
+        elif self.orbitalType=='arrow':
+            atoms=self.currentFile.canvas.selectedAtoms
+            for atom in atoms:
+                start=atom.coord
+                direction=atom.get_orbitalDirection(orbital)
+                name=f'{atom.idx}-{orbital}'
+                self.currentFile.canvas.add_arrow(start, direction,name)
 
     def update(self):
         """更新页面中的内容"""
@@ -186,10 +196,29 @@ class Window(MainWindow):
         self.ui.listWidget_clouds.clear()
         self.ui.listWidget_clouds.addItems(names)
 
+    def set_cloudRange(self,e):
+        """设置点云范围"""
+        self.currentFile.canvas.cloudRange=e/10000
+        # print(e)
+    
+    def on_exit(self):
+        for each in self.files.values():
+            each.canvas.plotter.Finalize()
+    
+    def closeEvent(self, event) -> None:
+        """退出程序时的回调函数"""
+        for each in self.files.values():
+            each.canvas.plotter.Finalize()
+        return super().closeEvent(event)
+            
+
+
 class FileItem:
     def __init__(self,filePath:str,app:Window,showMol:bool=True) -> None:
         self.filePath=filePath
         self.plotter:QtInteractor = QtInteractor(app.ui.canvas)
+        self.plotter.Finalize()
+        
         self.canvas:Canvas = Canvas(self.plotter,app=app)
         self.widget=self.plotter.interactor
         self.widget.key_press_event=lambda e:print(e)
@@ -197,7 +226,7 @@ class FileItem:
             self.init_mol()
         
     def init_mol(self):
-        self.mol=Reader(self.filePath).mol
+        self.mol=get_reader(self.filePath).mol
         self.mol.create_bonds()
         self.canvas.add_mol(self.mol)
         self.property:Dict={} # 存储分子在属性栏中显示的内容

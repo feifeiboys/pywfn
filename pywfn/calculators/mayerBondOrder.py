@@ -5,6 +5,7 @@ $\sum_{a\in A}\sum_{b\in B}PS$
 """
 import numpy as np
 import pandas as pd
+from colorama import Fore
 
 class Caculater:
     def __init__(self,mol:"Mol"):
@@ -27,11 +28,12 @@ class Caculater:
         PM=self.mol.PM
         # 获取重叠矩阵
         SM=self.mol.SM
+        if SM is None:
+            print(Fore.RED+'缺少重叠矩阵！')
+            return 'None'
 
         PS=PM@SM
-        # pd.DataFrame(SM).to_csv('SM.csv')
-        # pd.DataFrame(PM).to_csv('PM.csv')
-        # pd.DataFrame(CM).to_csv('CM.csv')
+
         
         a1_1,a1_2=a1.orbitalMatrixRange
         a2_1,a2_2=a2.orbitalMatrixRange
@@ -56,4 +58,4 @@ class Caculater:
 
 
 
-from ..obj import Mol,Atom
+from ..base import Mol,Atom

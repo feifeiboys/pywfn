@@ -1,7 +1,10 @@
-
+import atexit
 import sys
-sys.path.append('E:\code\HFV\pywfn')
+from pathlib import Path
+print(Path(__file__).parent)
+sys.path.append(Path(__file__).parent)
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import PySide6
 dirname = os.path.dirname(PySide6.__file__) 
 plugin_path = os.path.join(dirname, 'plugins', 'platforms')
@@ -14,9 +17,13 @@ import sys
 from app.window import Window
 
 
+
 if __name__=='__main__':
+
     app=QApplication(sys.argv)
     app.setStyle(QStyleFactory.create("Fusion")) #fusion风格
     w=Window()
+    w.setWindowIcon(QIcon('app/images/mol.png'))
     w.show()
+    
     sys.exit(app.exec_())

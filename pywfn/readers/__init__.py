@@ -4,14 +4,16 @@
 """
 
 from .fch import Reader as fchReader
-from .log import Reader as logReader
+from .log import LogReader
 
 from pathlib import Path
 
-def Reader(path):
+def get_reader(path):
+    """根据输入文件的类型自动判断应该使用哪个读取器"""
     fileType=Path(path).suffix
     print(fileType)
     if fileType=='.out':
-        return logReader(path)
+        return LogReader(path)
     if fileType=='.log':
-        return logReader(path)
+        return LogReader(path)
+

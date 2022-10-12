@@ -8,9 +8,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pywfn.readers import logReader
-from pywfn.calculators import piBondOrder,piSelectOrder
+from pywfn.calculators import piBondOrder,piSelectOrder,mayerBondOrder
 orders1=[]
 orders2=[]
+orders3=[]
 lengths=[]
 a1,a2=[3,12]
 for i in range(37):
@@ -23,18 +24,30 @@ for i in range(37):
     mol.add_bond(a1, a2)
     centerAtom=mol.atoms[a1]
     aroundAtom=mol.atoms[a2]
-    
-    caler1=piBondOrder.Calculator(mol)
-    # caler2=piSelectOrder.Calculator(mol)
-    order1=caler1.calculate(centerAtom, aroundAtom)['data']['order']
-    # order2=caler2.calculate(centerAtom, aroundAtom)['data']['order']
-    # print(res)
     lengths.append(mol.get_bond(a1, a2).length)
-    orders1.append(order1)
+    
+    # caler1=piBondOrder.Calculator(mol)
+    # order1=caler1.calculate(centerAtom, aroundAtom)['data']['order']
+    # orders1.append(order1)
+
+    # caler2=piSelectOrder.Calculator(mol)
+    # order2=caler2.calculate(centerAtom, aroundAtom)['data']['order']
     # orders2.append(order2)
-    print(i+1,order1)
+    # print(i+1,order1)
+
+    caler3=mayerBondOrder.Caculater(mol)
+    order3=caler3.calculate(centerAtom, aroundAtom)
+    orders3.append(order3)
+# np.save('orders1.npy', np.array(orders1))
+# np.save('orders2.npy', np.array(orders2))
+np.save('orders3.npy', np.array(orders3))
 # print(orders1)
 # print(orders2)
-plt.plot(np.arange(len(orders1)),np.array(orders1))
-plt.plot(np.arange(len(orders2)),np.array(orders2))
-plt.show()
+# angles=[(i*10)+90 if i<=27 else i*10-270 for i in range(37)]
+# plt.title(f'Bond Order - Dihedral Angle')
+# plt.xlabel('Dihedral Angle')
+# plt.ylabel('Bond Order')
+# plt.xticks(angles)
+# plt.plot(np.arange(len(orders1)),np.array(orders1))
+# # plt.plot(np.arange(len(orders2)),np.array(orders2))
+# plt.show()

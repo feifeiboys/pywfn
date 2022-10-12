@@ -12,4 +12,4 @@ class Calculator:
 
 
 if __name__=='__main__':
-    from ....pywfn.obj import Mol
+    from ....pywfn.base import Mol

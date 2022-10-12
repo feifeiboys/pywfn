@@ -21,7 +21,7 @@ class  Atom:
         self.idx=idx
         self.orbitalDirections={} #存储所有分子轨道里原子轨道的方向
         self.standardBasis:ndarray=None
-        self.orbitalMatrixRange:List[int]
+        self.orbitalMatrixRange:List[int] # 需要在分子对象中调用函数产生这个属性值
         self._sContribution:Dict={}
 
     def set_layers(self,layer:str,nums:List[float]):
@@ -154,14 +154,14 @@ class  Atom:
         values=utils.posan_function(centerPos=self.coord.reshape(3,1),aroundPos=points,paras=self.standardBasis,ts=self.pLayersTs(orbital))
         return values
 
-    def piOC(self,around:"Atom"):
+    # def piOC(self,around:"Atom"):
         
-        layers=self.OC.index # 所有的行的名称
-        pidxs=[idx for idx,layer in enumerate(layers) if re.match('\dP[XYZ]',layer)] # p轨道的序数
-        size=self.OC.shape[1] # 列数
-        for orbital in range(len(size)): # 对每一列进行循环
-            data=OC.iloc[:,orbital]
-            ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
+    #     layers=self.OC.index # 所有的行的名称
+    #     pidxs=[idx for idx,layer in enumerate(layers) if re.match('\dP[XYZ]',layer)] # p轨道的序数
+    #     size=self.OC.shape[1] # 列数
+    #     for orbital in range(len(size)): # 对每一列进行循环
+    #         data=OC.iloc[:,orbital]
+    #         ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
 
     def get_sContribution(self,orbital:int):
         """获取某个原子轨道的贡献"""

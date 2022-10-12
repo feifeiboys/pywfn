@@ -1,5 +1,5 @@
 # 挑选π轨道，计算π键级
-from ..obj import Mol,Bond,Atom
+from ..base import Mol,Bond,Atom
 from .. import utils
 from typing import *
 import numpy as np

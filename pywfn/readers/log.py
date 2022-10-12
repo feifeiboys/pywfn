@@ -1,9 +1,11 @@
 # 此脚本用来提取高斯输出文件的信息
+from ast import For
 import re
 import numpy as np
 from typing import *
-from ..obj import Mol
-
+from ..base import Mol
+from .reader import Reader
+from colorama import Fore
 
 atomSymbols=[
     'H','He','li','Be','B',
@@ -12,12 +14,16 @@ atomSymbols=[
     'S','Cl','Ar','K','Ca'
 ]
 
-class Reader:
-    def __init__(self, logPath:str,program=None):
+class LogReader(Reader):
+    def __init__(self, path:str,program=None):
+        Reader.__init__(self,path)
         self.mol=Mol()
         self.mol.reader=self
-        with open(logPath,'r',encoding='utf-8') as f:
+        self.path=path
+        with open(path,'r',encoding='utf-8') as f:
             self.content=f.read()
+            if 'Normal termination of Gaussian' not in self.content:
+                print(Fore.RED + '文件未正常结束!')
             self.logLines=self.content.splitlines(keepends=False)
         self.program = program
         self.read_Coords()
@@ -67,7 +73,7 @@ class Reader:
 
     
     def read_summery(self):
-        '''读取log文件的总结信息'''
+        '''读取总结信息'''
         summerys=re.findall(r' \d[\\||]\d[\S\s]*?@',self.content)
         summery=summerys[-1]
         summery=''.join([each[1:] for each in summery.split('\n')])
@@ -138,7 +144,7 @@ class Reader:
             if 'Overlap normalization' in line:
                 titleNum=i
         if titleNum is None:
-            print('没有系数')
+            print(Fore.YELLOW + '没有基组信息')
             return
         basis = []
         for i in range(titleNum+1,len(self.logLines)):
@@ -159,7 +165,7 @@ class Reader:
             self.mol.atoms[i+1].standardBasis=np.array(each)
     
     def read_SM(self):
-        """读取重叠"""
+        """读取重叠矩阵"""
         s1='^( +\d+){1,5} *$'
         s2=' +\d+( +-?\d.\d{6}D[+-]\d{2}){1,5} *'
         
@@ -186,7 +192,7 @@ class Reader:
         self.mol._SM=np.tril(matrix)+np.tril(matrix,-1).T
 
     def read_PM(self):
-        """读取重叠矩阵"""
+        """读取密度矩阵"""
         ...
 
 
@@ -215,4 +221,4 @@ def numlist(l):
     """将列表字符串转为数字"""
     return [float(e) for e in l]
 if __name__=='__main__':
-    from ..obj.mol import Mol
+    from ..base.mol import Mol

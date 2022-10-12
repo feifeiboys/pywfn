@@ -2,7 +2,7 @@
 # 重叠积分需要有两个原子，分别计算这两个原子的原子轨道
 from ctypes import util
 import numpy as np
-from ..obj import Mol,Atom
+from ..base import Mol,Atom
 from .. import utils
 class Calculator:
     def __init__(self,mol:Mol) -> None:

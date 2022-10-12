@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pywfn.obj import File
+from pywfn.base import File
 from pywfn.calculators import overlapIntegrate
 
 allRes=[]
