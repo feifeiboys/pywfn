@@ -67,13 +67,13 @@ class Mol:
         return self._orbitalNum
 
     @property
-    def O_orbitals(self):
+    def O_orbitals(self)->List[int]:
         if self._O_orbitals is None:
             self._O_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='O']
         return self._O_orbitals
     
     @property
-    def V_orbitals(self):
+    def V_orbitals(self)->List[int]:
         if self._V_orbitals is None:
             self._V_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='V']
         return self._V_orbitals

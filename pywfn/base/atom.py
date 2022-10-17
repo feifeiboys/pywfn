@@ -5,6 +5,7 @@ import re
 from numpy import ndarray
 from .. import utils
 from .. import setting
+print=utils.Printer()
 """
 一个原子的轨道组合系数就是一个矩阵，行数是基函数的数量，列数是分子轨道的数量
 
@@ -20,7 +21,7 @@ class Atom:
         self.mol:"Mol"=mol
         self.idx=idx
         self.orbitalDirections={} #存储所有分子轨道里原子轨道的方向
-        self.standardBasis:ndarray=None
+        self._basisData:ndarray=None
         self.orbitalMatrixRange:List[int] # 需要在分子对象中调用函数产生这个属性值
         self._sContribution:Dict={}
 
@@ -29,6 +30,13 @@ class Atom:
         if layer not in self._layersData.keys():
             self._layersData[layer]=[]
         self._layersData[layer]+=nums
+    
+    @property
+    def basisData(self):
+        return self._basisData
+    @basisData.setter
+    def basisData(self,data:ndarray):
+        self._basisData=data
 
     @property
     def neighbors(self)->List["Atom"]:
@@ -113,10 +121,10 @@ class Atom:
 
     def get_Normal(self,around:"Atom"=None): # 一个原子应该知道自己的法向量是多少
         """
-        获取原子的法向量,垂直于键轴,如果不传入另一个原子,则垂直于三个原子确定的平面
-        1.如果该原子有法向量，直接返回
-        2.如果该原子没有法向量
-            2.1 如果相邻的原子有法向量,返回邻原子的法向量
+        获取原子的法向量,垂直于键轴,如果不传入另一个原子,则垂直于三个原子确定的平面\n
+        1.如果该原子有法向量，直接返回\n
+        2.如果该原子没有法向量\n
+            2.1 如果相邻的原子有法向量,返回邻原子的法向量\n
             2.2 如果相邻原子没有法向量,返回None
         """
         stand=np.array([0,0,1]) #基准方向,因为求出来的法向量都有两个方向，为了使法相统一，添加基准方向
@@ -150,7 +158,7 @@ class Atom:
         if orbital not in self.orbitalDirections.keys():
             ts=self.pLayersTs(orbital)
             atomPos=self.coord.reshape(3,1)
-            paras=self.standardBasis
+            paras=self.basisData
             maxPos,maxValue=utils.get_extraValue(atomPos, paras, ts, 'max')
             direction=(maxPos-atomPos).flatten()
             self.orbitalDirections[orbital]=direction
@@ -165,7 +173,10 @@ class Atom:
         values=utils.posan_function(centerPos=self.coord.reshape(3,1),aroundPos=points,paras=self.standardBasis,ts=self.pLayersTs(orbital))
         return values
 
+
     def get_sContribution(self,orbital:int):
+        return self.get_sCont(orbital)
+    def get_sCont(self,orbital:int):
         """获取某个原子轨道的贡献"""
         if orbital not in self._sContribution.keys():
             s=self.OC.iloc[0,orbital]

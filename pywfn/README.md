@@ -45,6 +45,18 @@ mol=reader.mol
 atom=mol.atoms[1]
 
 ```
+# 盘点一下程序中会出现的变量名以及缩写
+> 变量名过长的话会导致程序冗长,而且函数会更长,所以尽量保持每一个含义长度在5以内  
+- 贡献 contribution cont
+- 坐标 coordinates coord
+- 系数 coefficients coeft
+- 投影 projection projt
+- 方向 direction 
+
 一个原子的坐标为`coord`  
 一个分子的所有原子的坐标为`coords`  
 多个分子的原子坐标为`allCoords`
+# 叨叨叨叨
+每一个模块都有一个类，所以调用起来可能比较费劲：`pywfn.子包.子模块.类`  
+一个模块只有一个类，感觉有点浪费，如果以后代码稳定了可以尝试把多个类写在同一个文件中  
+由于想把每个功能都写在一个模块文件中，所以代码可能会显得比较冗杂,但是问题不大

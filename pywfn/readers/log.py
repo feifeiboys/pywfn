@@ -6,6 +6,8 @@ from typing import *
 from ..base import Mol
 from .reader import Reader
 from colorama import Fore
+from .. import utils
+print=utils.Printer()
 
 atomSymbols=[
     'H','He','li','Be','B',
@@ -162,7 +164,8 @@ class LogReader(Reader):
             else:
                 break
         for i,each in enumerate(basis):
-            self.mol.atom(i+1).standardBasis=np.array(each)
+            atoms=self.mol.atoms()
+            atoms[i].basisData=np.array(each)
     
     def read_SM(self):
         """读取重叠矩阵"""

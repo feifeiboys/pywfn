@@ -5,6 +5,7 @@ import numpy as np
 import math
 import time
 from numba import jit
+from . import setting
 def get_nums(string):
     res = []
     for each in re.split(r',|，', string):
@@ -297,3 +298,10 @@ def normalize(vector):
     if length==0:
         raise
     return vector/length
+
+class Printer:
+    def __init__(self) -> None:
+        self.debug=setting.DEBUG
+    def __call__(self, content):
+        if self.debug:
+            print(f'debug:{content}')
