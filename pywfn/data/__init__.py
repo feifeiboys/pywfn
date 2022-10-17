@@ -3,6 +3,14 @@ from typing import *
 from pathlib import Path
 import pandas as pd
 
+class Element:
+    def __init__(self,idx,symbol,color,radius):
+        self.idx=int(idx)
+        self.charge=self.idx
+        self.symbol=symbol
+        self.color=color
+        self.radius=radius
+
 class Elements:
     def __init__(self) -> None:
         self.elements=[]
@@ -23,10 +31,11 @@ class Elements:
             if each.symbol==symbol:
                 return each
         return None
+    def __getitem__(self,key) -> Element:
+        if isinstance(key,int):
+            return self.get_element_by_idx(key)
+        elif isinstance(key,str):
+            return self.get_element_by_symbol(key)
+        else:
+            raise
 
-class Element:
-    def __init__(self,idx,symbol,color,radius):
-        self.idx=int(idx)
-        self.symbol=symbol
-        self.color=color
-        self.radius=radius

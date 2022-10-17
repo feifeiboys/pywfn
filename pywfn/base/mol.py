@@ -19,13 +19,13 @@
 """
 
 from typing import *
-from .atom import Atom
+from .atom import Atom,Atoms
 from .bond import Bond
 import numpy as np
 from .. import setting
 class Mol:
     def __init__(self) -> None:
-        self.atoms:Dict[int:Atom]={}
+        self._atoms=Atoms()
         self.bonds:Dict[str:Bond]={} # 所有键对象
         self.Eigenvalues:List[float]=[]
         self.isSplitOrbital:bool=None #轨道是否为劈裂的，值为0或1
@@ -43,9 +43,20 @@ class Mol:
         
     
     def add_atom(self,symbol:str,coord:List[float]):
-        idx=len(self.atoms)+1
+        """添加一个原子"""
+        idx=len(self._atoms)+1
         atom=Atom(symbol,coord,idx,self)
-        self.atoms[idx]=atom
+        # print(type(self._atoms),self._atoms,dir(self._atoms))
+        self._atoms.add(atom)
+    
+    def atom(self,idx:int)->Atom:
+        """根据原子编号获取一个原子,从1开始"""
+        if not isinstance(idx,int):raise
+        return self._atoms[idx-1]
+    
+    def atoms(self)->List[Atom]:
+        """获取所有原子"""
+        return self._atoms
     
     
 
@@ -70,14 +81,14 @@ class Mol:
     @property
     def heavyAtoms(self):
         if self._heavyAtoms is None:
-            self._heavyAtoms=[atom for atom in self.atoms.values() if atom.symbol!='H']
+            self._heavyAtoms=[atom for atom in self.atoms() if atom.symbol!='H']
         return self._heavyAtoms
 
     @property
     def CM(self)->np.ndarray:
         """分子轨道系数矩阵"""
         if self._CM is None:
-            self._CM=np.concatenate([atom.OC.to_numpy() for atom in self.atoms.values()],axis=0)
+            self._CM=np.concatenate([atom.OC.to_numpy() for atom in self.atoms()],axis=0)
         return self._CM
     
     @property
@@ -112,28 +123,28 @@ class Mol:
         return self._As
 
     def trans(self):
-        self.As2=np.array([atom.squareSum for atom in self.atoms.values()]).sum(axis=0)
+        self.As2=np.array([atom.squareSum for atom in self.atoms()]).sum(axis=0)
         self.orbitalElectron=1 if self.isSplitOrbital else 2
-        self.squareSums=np.array([atom.squareSum for atom in self.atoms.values()])
+        self.squareSums=np.array([atom.squareSum for atom in self.atoms()])
         self.create_bonds()
 
     def create_bonds(self):
         """生成键对象"""
-        for idx1,atom1 in self.atoms.items():
-            for idx2,atom2 in self.atoms.items():
+        for idx1,atom1 in enumerate(self.atoms()):
+            for idx2,atom2 in enumerate(self.atoms()):
                 if idx1<idx2:
                     distance=np.linalg.norm(atom1.coord-atom2.coord)
                     if distance<=setting.BOND_LIMIT:
                         bond=Bond(atom1,atom2)
                         bond.length=distance
-                        self.bonds[f'{idx1}-{idx2}']=bond
+                        self.bonds[f'{idx1+1}-{idx2+1}']=bond
 
     def add_bond(self,idx1:int,idx2:int):
         """添加一个键"""
         if idx2<idx1:idx1,idx2=idx2,idx1
         key=f'{idx1}-{idx2}'
         if key not in self.bonds.keys():
-            self.bonds[key]=Bond(self.atoms[idx1], self.atoms[idx2])
+            self.bonds[key]=Bond(self.atom(idx1), self.atom(idx2))
 
     def get_bond(self,idx1:int,idx2:int)->Bond:
         """根据原子的索引获得键"""
@@ -147,28 +158,10 @@ class Mol:
     def createAtomOrbitalRange(self):
         """令每个原子生成其在轨道矩阵中的范围"""
         total=0
-        for atom in self.atoms.values():
+        for atom in self.atoms():
             atom.orbitalMatrixRange=[total,total+len(atom.OC)]
             total+=len(atom.OC)
 
     def __repr__(self):
         return f'atom number: {len(self.atoms)}'
-        
-
-
-class Atoms:
-    def __init__(self) -> None:
-        self.atoms:Dict[int:Atom]={}
-    
-    def __getitem__(self,item:int):
-        return self.atoms[item]
-
-    def __setitem__(self,item,atom:Atom):
-        self.atoms[item]=atom
-    
-    def __len__(self):
-        return len(self.atoms)
-
-    def __repr__(self):
-        return '\n'.join([f'{atom}' for atom in self.atoms.values()])
     

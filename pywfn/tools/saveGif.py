@@ -16,7 +16,7 @@ class Gif:
     def str_coords(self):
         """生成坐标的字符串形式"""
         ss=[]
-        for atom in self.mol.atoms.values():
+        for atom in self.mol.atoms():
             x,y,z=atom.coord
             symbol=atom.symbol
             s=f' {symbol}'.ljust(14)+f'{x:.8f}'.rjust(14)+f'{y:.8f}'.rjust(14)+f'{z:.8f}'.rjust(14)

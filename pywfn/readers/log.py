@@ -122,8 +122,8 @@ class LogReader(Reader):
                 self.mol.Eigenvalues+=line_data
             elif re.search(s4,line) is not None:
                 atomIDX,atomType,layer,line_data,_=re.search(s4,line).groups()
-                atomIDx = int(atomIDX)
-                atom=self.mol.atoms[atomIDx]
+                atomIDX = int(atomIDX)
+                atom=self.mol.atom(atomIDX)
                 nums=[float(each) for each in re.findall('-?\d+.\d+',line_data)]
                 # print(nums)
                 atom.set_layers(layer, nums)
@@ -162,7 +162,7 @@ class LogReader(Reader):
             else:
                 break
         for i,each in enumerate(basis):
-            self.mol.atoms[i+1].standardBasis=np.array(each)
+            self.mol.atom(i+1).standardBasis=np.array(each)
     
     def read_SM(self):
         """读取重叠矩阵"""

@@ -9,7 +9,7 @@ from .. import setting
 一个原子的轨道组合系数就是一个矩阵，行数是基函数的数量，列数是分子轨道的数量
 
 """
-class  Atom:
+class Atom:
     def __init__(self,symbol:str,coord:List[float],idx:int,mol:"Mol"): # 每个原子应该知道自己属于哪个分子
         self.symbol=symbol
         self.coord=np.array(coord)
@@ -42,7 +42,8 @@ class  Atom:
             if idx1==self.idx:idxs.append(idx2)
             if idx2==self.idx:idxs.append(idx1)
 
-        for idx,atom in self.mol.atoms.items():
+        for idx,atom in enumerate(self.mol.atoms()):
+            idx+=1
             if idx in idxs:
                 res.append(atom)
         return res
@@ -110,28 +111,38 @@ class  Atom:
         '''获取原子某一轨道的sp层数据'''
         return self.spLayersData[:,orbital]
 
-    def get_Normal(self,around:"Atom"): # 一个原子应该知道自己的法向量是多少
+    def get_Normal(self,around:"Atom"=None): # 一个原子应该知道自己的法向量是多少
+        """
+        获取原子的法向量,垂直于键轴,如果不传入另一个原子,则垂直于三个原子确定的平面
+        1.如果该原子有法向量，直接返回
+        2.如果该原子没有法向量
+            2.1 如果相邻的原子有法向量,返回邻原子的法向量
+            2.2 如果相邻原子没有法向量,返回None
+        """
+        stand=np.array([0,0,1]) #基准方向,因为求出来的法向量都有两个方向，为了使法相统一，添加基准方向
+        #如果与基准方向夹角大于90度，则方向取反
         locNum=0.001
-        if f'{self.idx}-{around.idx}' not in self.normals.keys(): # 每个原子的法向量应该只计算一次
-            neighbors_i=self.neighbors
-            neighbors_j=around.neighbors
-            if len(neighbors_i)==3:
-                p1,p2,p3=[(each.coord-self.coord)*(1 if each.idx==around.idx else locNum) for each in neighbors_i] #获取中心原子到三个相邻原子的法向量
-                normal_vector_i=utils.get_normalVector(p1,p2,p3)
-                if len(neighbors_j)!=3:
-                    normal_vector_j=normal_vector_i
-            if len(neighbors_j)==3:
-                p1,p2,p3=[(each.coord-around.coord)*(1 if each.idx==self.idx else locNum) for each in neighbors_j] #获取中心原子到三个相邻原子的法向量
-                normal_vector_j=utils.get_normalVector(p1,p2,p3)
-                if len(neighbors_i)!=3:
-                    normal_vector_i=normal_vector_j
-            if len(neighbors_i)!=3 and len(neighbors_j)!=3:
-                return None # 如果两个原子连接的原子数量都不是三个的话，就没有法向量
-            self.normals[f'{around.idx}-{self.idx}']=normal_vector_j
-            self.normals[f'{self.idx}-{around.idx}']=normal_vector_i
-        normal=self.normals[f'{self.idx}-{around.idx}']
-        if normal is None:
-            raise
+        normal=None
+        key=f'{self.idx}-{around}' if around is None else f'{self.idx}-{around.idx}'
+        if key not in self.normals.keys(): # 每个原子的法向量应该只计算一次
+            neighbors=self.neighbors
+            if len(neighbors)==3:
+                if around is None:
+                    #获取中心原子到三个相邻原子的法向量
+                    p1,p2,p3=[(each.coord-self.coord) for each in neighbors] 
+                else:
+                    p1,p2,p3=[(each.coord-self.coord)*(1 if each.idx==around.idx else locNum) for each in neighbors] 
+                normal=utils.get_normalVector(p1,p2,p3)
+            else:
+                for each in neighbors:
+                    normal_=each.get_Normal(around=self)
+                    if normal_ is not None:
+                        normal=normal_
+                        break
+                    return None #如果周围原子也没有法向量的话，返回None
+            if utils.vector_angle(normal,stand)>0.5:normal*=-1
+            self.normals[key]=normal
+        normal=self.normals[key]
         return normal
     
     def get_orbitalDirection(self,orbital:int):
@@ -154,15 +165,6 @@ class  Atom:
         values=utils.posan_function(centerPos=self.coord.reshape(3,1),aroundPos=points,paras=self.standardBasis,ts=self.pLayersTs(orbital))
         return values
 
-    # def piOC(self,around:"Atom"):
-        
-    #     layers=self.OC.index # 所有的行的名称
-    #     pidxs=[idx for idx,layer in enumerate(layers) if re.match('\dP[XYZ]',layer)] # p轨道的序数
-    #     size=self.OC.shape[1] # 列数
-    #     for orbital in range(len(size)): # 对每一列进行循环
-    #         data=OC.iloc[:,orbital]
-    #         ps_=self.get_pLayersProjection(self.get_Normal(around), orbital)
-
     def get_sContribution(self,orbital:int):
         """获取某个原子轨道的贡献"""
         if orbital not in self._sContribution.keys():
@@ -170,5 +172,25 @@ class  Atom:
             contribution=s**2/self.mol.As[orbital]
             self._sContribution[orbital]=contribution
         return self._sContribution[orbital]
+
+
+class Atoms:
+    def __init__(self) -> None:
+        self.atoms=[]
+
+    def add(self,atom:Atom):
+        self.atoms.append(atom)
+
+    def __getitem__(self,key):
+        return self.atoms[key]
+    
+    def __len__(self):
+        return len(self.atoms)
+    
+    def __repr__(self) -> str:
+        return f'Atoms:{len(self.atoms)}'
+    
+    
+    
 
 from .mol import Mol

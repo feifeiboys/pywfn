@@ -65,7 +65,7 @@ class Calculator:
 
     def calculate(self,centerAtom:Atom,aroundAtom:Atom) -> Tuple[float,List[float]]:
         self.mol.create_bonds()
-        self.As=np.array([atom.squareSum for atom in self.mol.atoms.values()]).sum(axis=0) # 所有原子轨道系数平方和
+        self.As=np.array([atom.squareSum for atom in self.mol.atoms()]).sum(axis=0) # 所有原子轨道系数平方和
         """指定一个键，计算该键的键级"""
         O_orbitals=self.mol.O_orbitals
         normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量

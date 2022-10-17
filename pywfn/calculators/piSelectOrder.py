@@ -27,22 +27,22 @@ class Calculator:
         aroundPs,aroundPs_=np.array(aroundPs),np.array(aroundPs_)
         centerPs,centerPs_=centerPs.sum(axis=0),centerPs_.sum(axis=0) # 将不同组的p求和
         aroundPs,aroundPs_=aroundPs.sum(axis=0),aroundPs_.sum(axis=0)
-        centerL,centerL_=np.linalg.norm(centerPs),np.linalg.norm(centerPs_)
+        centerL,centerL_=np.linalg.norm(centerPs),np.linalg.norm(centerPs_) #p轨道系数组成向量的长度
         aroundL,aroundL_=np.linalg.norm(aroundPs),np.linalg.norm(aroundPs_)
         # centerRatio=np.linalg.norm(centerPs_)/np.linalg.norm(centerPs) # 投影后与投影前的比例
         # aroundRatio=np.linalg.norm(aroundPs_)/np.linalg.norm(aroundPs) 
         centerRatio=np.divide(centerL_,centerL,out=np.zeros_like(centerL),where=centerL!=0)
         aroundRatio=np.divide(aroundL_,aroundL,out=np.zeros_like(aroundL),where=aroundL!=0)
-        self.ratios[f'{centerAtom.idx}-{aroundAtom.idx}-{orbital}']=centerRatio
-        self.ratios[f'{aroundAtom.idx}-{centerAtom.idx}-{orbital}']=aroundRatio
+        self.ratios[f'{centerAtom.idx}-{aroundAtom.idx}-{orbital}']=centerRatio.item()
+        self.ratios[f'{aroundAtom.idx}-{centerAtom.idx}-{orbital}']=aroundRatio.item()
         
         centerScont=centerAtom.get_sContribution(orbital)
         aroundScont=aroundAtom.get_sContribution(orbital)
         # print(orbital,centerScont,aroundScont)
-        # if centerScont>0.001:
-        #     return 0 # s贡献太大的不是
-        # if centerScont>0.001:
-        #     return 0
+        if centerScont>0.001:
+            return 0 # s贡献太大的不是
+        if centerScont>0.001:
+            return 0
 
         # centerNormal=centerAtom.get_Normal(aroundAtom) #法向量方向
         # if len(aroundAtom.neighbors)==3:
@@ -61,14 +61,12 @@ class Calculator:
 
         # if centerAngle<0.2 and aroundAngle<0.2:
 
-        if centerRatio==0 or aroundRatio==0:
+        if centerRatio<=0.1 or aroundRatio<=0.1:
             return 0
         if utils.vector_angle(centerPs_,aroundPs_)<=0.5:
             return 1
         else:
             return -1
-        # else:
-        #     return 0
 
     def get_ratios(self,center:int,around:int):
         ratios=[self.ratios[f'{center}-{around}-{o}'] for o in self.mol.O_orbitals]
@@ -81,7 +79,7 @@ class Calculator:
     def calculate(self,centerAtom:Atom,aroundAtom:Atom)->Tuple[float,List[float]]:
         bond=self.mol.get_bond(centerAtom.idx, aroundAtom.idx)
         units=self.get_piUnits(bond)
-        As=np.array([atom.squareSum for atom in self.mol.atoms.values()]).sum(axis=0) # 所有原子轨道系数平方和
+        As=np.array([atom.squareSum for atom in self.mol.atoms()]).sum(axis=0) # 所有原子轨道系数平方和
         centerSquareSum=centerAtom.squareSum
         aroundSquareSum=aroundAtom.squareSum
         centerRatios=self.get_ratios(centerAtom.idx, aroundAtom.idx)
@@ -89,9 +87,7 @@ class Calculator:
         centerRes=np.divide(centerSquareSum,As,out=np.zeros_like(As),where=As!=0)[:len(self.mol.O_orbitals)]**0.5#*centerRatios
         aroundRes=np.divide(aroundSquareSum,As,out=np.zeros_like(As),where=As!=0)[:len(self.mol.O_orbitals)]**0.5#*aroundRatios
         oE=1 if self.mol.isSplitOrbital else 2 # 每个分子轨道内的电子
-        # print(units)
-        # print(centerRatios)
-        # print(aroundRatios)
+        print(units)
         orders=(centerRes*aroundRes)*np.array(units)*oE
         return {
                 "type":1,
