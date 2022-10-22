@@ -5,6 +5,15 @@
 黄色-警告
 红色-错误
 在没有特别提示的地方,空输入代表返回上级
+功能模块划分与pywfn设计一致
+主页
+    计算键级
+    原子属性
+        mulliken电荷
+    实用工具
+        导出SI信息
+        生成gif文件
+        分割扫描文件
 """
 
 import enum
@@ -14,12 +23,15 @@ from .tools import ScanSpliter
 import os
 from .calculators import piBondOrder,piSelectOrder,piMayerOrder,mayerBondOrder
 from .atomprop import mullikenCharge,piElectron
-from .tools import saveGif
+from . import tools
 from colorama import Fore,init
 from pathlib import Path
 from typing import *
+from . import setting
+import re
 init(autoreset=True)
-
+INPUT_COMMAND='input command option: '
+LINE='-'*40
 
 class Printer:
     def __init__(self) -> None:
@@ -44,39 +56,22 @@ class Printer:
     def res(self,content):
         """打印计算结果"""
         print(Fore.GREEN+f'{content}')
-
+    
+    def progress(self,idx,total):
+        """打印进度条;idx:当前的进度;total:总任务数"""
+        percent=idx/total
+        num=int(percent*20)
+        end='\n' if percent==1 else ''
+        print(f'\r{"*"*num}{"_"*(20-num)}{idx}/{total}',end=end)
 
 class Shell:
     def __init__(self):
         self.printer=Printer()
-        self.paths=None
-
-    def splitFile(self): # 分割扫描的文件
-        if self.paths is None:self.inputFile()
-        if len(self.paths)>1:self.printer.tip('仅能分割第一个文件')
-        path=self.paths[0]
-        tool=ScanSpliter(path=path)
-        tool.split()
-        input('分割完成，按任意键返回...')
-
-    def saveGif(self):
-        if self.path is None:
-            print('你可以输入文件(log或out)或文件夹')
-            self.inputFile()
-        if self.path.is_dir():
-            files=self.path.iterdir()
-        else:
-            files=[self.path]
-        templatePath=input('请输入模板文件,回车使用默认模板')
-        if templatePath=='':templatePath=None
-        for file in files:
-            reader=get_reader(file)
-            mol=reader.mol
-            gjf=saveGif.Gif(reader,templatePath=templatePath)
-            gjf.save()
+        self.paths:List[Path]=None
         
     def calerAtomProp(self):
         """计算原子属性"""
+        print(LINE)
         if self.paths is None:
             self.inputFile()
         opts=[
@@ -112,11 +107,10 @@ class Shell:
                 self.printer.res('\n'.join(resStr))
                 self.printer.res(f'total:{sum(res)}')
                 
-
     def calerOrder(self):
+        print(LINE)
         if self.paths is None:
             self.inputFile()
-        
         opts=[
             ['1','piBondOrder'],
             ['2','piSelectOrder'],
@@ -177,40 +171,68 @@ class Shell:
                     else:
                         print(Fore.GREEN + f'{res}')
 
+    def toolsPage(self):
+        """进入实用工具页面"""
+        print(LINE)
+        if self.paths is None:self.inputFile()
+        opts=[
+            ['1','导出SI信息'],
+            ['2','批量生成gif文件'],
+            ['3','分割扫描log文件']
+        ]
+        for idx,txt in opts:
+            print(f'{idx} {txt}')
+        opt=input(INPUT_COMMAND)
+        if opt=='':
+            return
+        elif opt=='1': # 导出SI
+            print('1.坐标 2.能量 3.频率')
+            selects=input('选择导出信息[默认全选]: ')
+            selects=re.findall('\d',selects)
+            
+            for i,path in enumerate(self.paths):
+                reader=get_reader(path)
+                tool=tools.ExportSI(reader)
+                tool.save(selects)
+                if i>0:self.printer.progress(i+1,len(self.paths))
+        elif opt=='2': # 根据模板文件批量生成gif文件
+            for i,path in enumerate(self.paths):
+                reader=get_reader(path)
+                tool=tools.SaveGif(reader)
+                tool.save()
+                if i>0:self.printer.progress(i+1,len(self.paths))
+            self.printer.res('文件生成完成 >_<')
+        elif opt=='3':
+            for i,path in enumerate(self.paths):
+                tool=ScanSpliter(path)
+                tool.split()
+            self.printer.res('文件分割完成 >_<')
+
     def home(self):
         print(Fore.BLUE + '欢迎使用pywfn,按照提示输入编号即可')
         opts=[
             ['q','退出程序'],
             ['r','读取文件[夹]'],
             ['1','计算键级'],
-            ['2','分割文件'],
-            ['3','导出文件'],
-            ['4','原子属性']
+            ['2','原子属性'],
+            ['3','实用工具']
         ]
         while True:
-            print('-'*20)
+            print(LINE)
             for key,opt in opts:
                 print(f'{key}.{opt}')
             opt=input('input command option: ')
-            if opt=='q':
-                return
-            elif opt=='r':
-                self.inputFile()
-            elif opt=='1': #计算键级
-                self.calerOrder()
-            elif opt=='2':
-                self.splitFile()
-            elif opt=='3':
-                self.saveGif()
-            elif opt=='4':
-                self.calerAtomProp()
-            else:
-                self.printer.warn('命令不存在')
+            if   opt=='q':return
+            elif opt=='r':self.inputFile()
+            elif opt=='1':self.calerOrder()
+            elif opt=='2':self.calerAtomProp()
+            elif opt=='3':self.toolsPage()
+            else:self.printer.warn('命令不存在')
             
     def inputFile(self):
         supportFileTypes=['.log','.out','.fch'] #支持的文件类型
         while True:
-            path=input('输入文件或文件夹名: ')
+            path=input('输入文件[夹]名: ')
             
             path=Path(path)
             if path.exists(): #如果路径存在
@@ -224,7 +246,7 @@ class Shell:
                     self.paths=[]
                     for each in path.iterdir(): # 对文件夹中的每个文件进行循环
                         if each.suffix in supportFileTypes: # 如果文件类型是支持的文件类型
-                            self.paths.append(path)
+                            self.paths.append(each)
                     self.printer.info(f'共{len(self.paths)}个文件')
                     break
                 
@@ -254,3 +276,11 @@ def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
     for i in range(len(logs[0])):
         for log in logs:
             print(log[i])
+
+
+if __name__=='__main__':
+    import time
+    printer=Printer()
+    for i in range(100):
+        printer.progress(i,100)
+        time.sleep(0.1)

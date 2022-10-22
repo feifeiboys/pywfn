@@ -5,7 +5,7 @@ fchk文件中有哪些属性是可以用到的？
 import re
 import numpy as np
 titleMatch='^(.{40}) {3}(.{1})(.{5})(.{12})$'
-class Reader:
+class FchReader:
     def __init__(self,path:str):
         self.path=path
         self.contents:Content=[]

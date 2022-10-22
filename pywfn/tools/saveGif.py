@@ -3,12 +3,12 @@
 """
 from pathlib import Path
 from ..base import Mol
-class Gif:
-    def __init__(self,reader,templatePath:str=None):
+from .. import setting
+class Tool:
+    def __init__(self,reader):
         self.reader=reader
         self.mol=reader.mol
-        if templatePath is None:
-            templatePath=Path(__file__).parent.parent/'data/gjfTemplate.txt'
+        templatePath=setting.GIF_TEMPLATE_PATH
         with open(templatePath,'r',encoding='utf-8') as f:
             content=f.read()
         self.template=content

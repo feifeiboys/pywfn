@@ -1,0 +1,15 @@
+C           -0.00000000     0.00000000    -0.52895900
+H            0.00000000     0.93788200    -1.12368000
+H           -0.00000000    -0.93788200    -1.12368000
+O            0.00000000    -0.00000000     0.67763900
+Zero-point correction=                                   0.026822
+Thermal correction to Energy=                            0.029688
+Thermal correction to Enthalpy=                          0.030632
+Thermal correction to Gibbs Free Energy=                 0.005812
+Sum of electronic and zero-point Energies=            -114.473651
+Sum of electronic and thermal Energies=               -114.470785
+Sum of electronic and thermal Enthalpies=             -114.469841
+Sum of electronic and thermal Free Energies=          -114.494660
+Vibrational frequencies
+1198.7140              1279.6613              1563.0257
+1849.2058              2915.8266              2966.8563

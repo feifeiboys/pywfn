@@ -301,7 +301,7 @@ def normalize(vector):
 
 class Printer:
     def __init__(self) -> None:
-        self.debug=setting.DEBUG
+        ...
     def __call__(self, content):
-        if self.debug:
+        if setting.DEBUG:
             print(f'debug:{content}')

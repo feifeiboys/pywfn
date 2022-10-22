@@ -47,6 +47,7 @@ atom=mol.atoms[1]
 ```
 # 盘点一下程序中会出现的变量名以及缩写
 > 变量名过长的话会导致程序冗长,而且函数会更长,所以尽量保持每一个含义长度在5以内  
+总规则: 动词_形容词+名词
 - 贡献 contribution cont
 - 坐标 coordinates coord
 - 系数 coefficients coeft
