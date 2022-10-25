@@ -58,7 +58,10 @@ class Mol:
         """获取所有原子"""
         return self._atoms
     
-    
+    @property
+    def coords(self):
+        """返回原子坐标矩阵[n,3]"""
+        return np.array([atom.coord for atom in self.atoms()])
 
     @property
     def orbitalNum(self):

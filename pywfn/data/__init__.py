@@ -26,7 +26,7 @@ class Elements:
                 return each
         return None
 
-    def get_element_by_symbol(self,symbol:str):
+    def get_element_by_symbol(self,symbol:str)->Element:
         for each in self.elements:
             if each.symbol==symbol:
                 return each
