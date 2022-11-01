@@ -25,18 +25,18 @@ def run_shell():
 def run_gui():
     import app
 
-if len(sys.argv)>1:
-    runType=sys.argv[1]
-    if runType=='shell':
-        run_shell()
-    if runType=='gui':
-        run_gui()
-    if runType=='manager':
-        from manager import main
-        main.run()
+
 
 if __name__=="__main__":
-    ...
-    from manager import main
-    main.run()
-    # from manager import game
+    if len(sys.argv)>1:
+        runType=sys.argv[1]
+        if runType=='shell':
+            run_shell()
+        if runType=='gui':
+            run_gui()
+        if runType=='manager':
+            from manager import main
+            main.run()
+        if runType=='game':
+            from manager import game
+    run_shell()

@@ -89,8 +89,7 @@ class Canvas:
         points=[]
         symboLabels=[]
         idxLabels=[]
-        atoms=mol.atoms
-        for i,atom in enumerate(atoms()):
+        for i,atom in enumerate(mol.atoms):
             ball=Ball(atom,self.plotter)
             self.balls.append(ball)
             points.append(atom.coord)

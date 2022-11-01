@@ -4,8 +4,9 @@
 """
 from .fch import FchReader
 from .log import LogReader
+from .xyz import XyzReader
 from .. import utils
-print=utils.Printer()
+from .. import printer
 
 from pathlib import Path
 

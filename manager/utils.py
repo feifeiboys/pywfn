@@ -81,12 +81,12 @@ def search(points):
     _,n=points.shape
     points=np.concatenate([points,np.ones(shape=(1,n))]) #[4,n]
     area=get_area(points)
-    print(f'{area=}')
+    # print(f'{area=}')
     steps=[points]
     while True:
         arounds=get_arounds(points) # 获取该点周围的构象
         areas=[get_area(e) for e in arounds]
-        print(areas)
+        # print(areas)
         for each in areas:
             if each>area:
                 maxArea=each
@@ -97,7 +97,7 @@ def search(points):
             area=areas[maxIdx]
             points=arounds[maxIdx]
             steps.append(points)
-            print(f'{area=}')
+            # print(f'{area=}')
         else:
             return points[:3,:].T,steps
         

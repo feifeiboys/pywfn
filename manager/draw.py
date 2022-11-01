@@ -22,7 +22,7 @@ def saveImg(mol:Mol,path):
         for j in range(i,len(coords)):
             if 0<np.linalg.norm(coords[j]-coords[i])<1.7:
                 bonds.append([i,j])
-    symbols=[atom.symbol for atom in mol.atoms()]
+    symbols=[atom.symbol for atom in mol.atoms]
 
     points=deduction(coords)*imgSize+imgSize/2
 

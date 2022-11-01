@@ -24,6 +24,8 @@ from .ui_main import Ui_MainWindow
 from .tools import Tools,Info,Infos
 from typing import *
 import time
+from threading import Thread
+from .rightMenu import RightMenu
 
 class Main(QMainWindow):
     def __init__(self):
@@ -40,32 +42,14 @@ class Main(QMainWindow):
         self.ui.table.itemDoubleClicked.connect(self.openFile)
         self.ui.table.itemClicked.connect(self.selectFile)
         self.ui.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.init_rightMenu()
-        
 
-        
+        self.rightMenu=RightMenu(self)
+    
         # self.ui.img.setScaledContents(True)
         self.ui.splitter.setStretchFactor(0,2)
         self.ui.splitter.setStretchFactor(1,6)
         self.ui.splitter.setStretchFactor(2,2)
         # self.ui.table.clear()
-    
-    def init_rightMenu(self):
-        """初始化右键菜单"""
-        self.ui.table.setContextMenuPolicy(Qt.ActionsContextMenu) # 允许右键菜单
-        # 具体菜单项
-        option = QAction(self.ui.table)
-        option.setText("更新")
-        option.triggered.connect(self.updateFile) # 点击菜单中的“发送控制代码”执行的函数
-
-        # tableView 添加具体的右键菜单
-        self.ui.table.addAction(option)
-    
-    def updateFile(self):
-        item=self.ui.table.currentItem()
-        info=self.table.infos[item.row()]
-        info.update()
-        self.tree.update()
     
     def openFile(self,item):
         path=self.table.infos[item.row()].path
@@ -98,6 +82,7 @@ class Main(QMainWindow):
     def dragEnterEvent(self, event) -> None:
         print('拖动事件')
 
+import multiprocessing as mp
 
 class Tree:
     """最左边的文件栏是树结构"""
@@ -149,7 +134,7 @@ class Table:
                 if title=='文件名':
                     content[title]=info.name
                 elif title=='原子数量':
-                    content[title]=f'{info.atomNum}'
+                    content[title]=f'{len(info.symbols)}'
                 elif title=='修改时间':
                     content[title]=f'{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(info.st_mtime))}'
             contents.append(content)

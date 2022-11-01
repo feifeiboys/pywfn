@@ -1,6 +1,4 @@
-O_orbital: 351
-V_orbital: 1487
-atomCoord:
+coords:
 - - 0.336216
   - -0.164454
   - -1.307507
@@ -274,7 +272,14 @@ atomCoord:
 - - 6.528592
   - 4.111547
   - 3.087029
-atomSymbol:
+hash: 995164b3849f6a8fe27bc1d5d51dcb83
+labels: []
+name: s-14-2-m2-dou-1-pop.log
+note: ''
+ooNum: 175
+path: D:\code\pywfn\manager\storages\9wnOtiBPDG06UTsogBPn\s-14-2-m2-dou-1-pop.log
+route: null
+symbols:
 - C
 - C
 - C
@@ -366,7 +371,4 @@ atomSymbol:
 - H
 - H
 - H
-hash: 995164b3849f6a8fe27bc1d5d51dcb83
-name: s-14-2-m2-dou-1-pop.log
-path: d:\code\pywfn\manager\storages\9wnOtiBPDG06UTsogBPn\s-14-2-m2-dou-1-pop.log
-route: null
+voNum: 744

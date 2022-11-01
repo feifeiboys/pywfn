@@ -1,6 +1,4 @@
-O_orbital: 65
-V_orbital: 255
-atomCoord:
+coords:
 - - 0.003463
   - 1.188516
   - 0.000107
@@ -91,38 +89,42 @@ atomCoord:
 - - -3.463559
   - 2.753485
   - -6.5e-05
-atomSymbol:
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- H
-- H
-- H
-- H
-- H
-- H
-- H
-- H
-- H
-- H
 hash: e1f6403b556c1f572d1e68c6b57b8186
+labels: []
 name: C10H10.log
-path: d:\code\pywfn\manager\storages\SBu3QgkoBEUrs308pING\C10H10.log
+note: ''
+ooNum: 65
+path: D:\code\pywfn\manager\storages\SBu3QgkoBEUrs308pING\C10H10.log
 route: null
+symbols:
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+voNum: 255

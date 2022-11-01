@@ -12,7 +12,7 @@ elements=Elements()
 path=input('输入path:')
 reader=LogReader(path)
 mol=reader.mol
-symbols=[atom.symbol for atom in mol.atoms()]
+symbols=[atom.symbol for atom in mol.atoms]
 
 import pygame
 from .utils import search,pers
@@ -45,6 +45,7 @@ def wordPoint(points):
     return points+centerPoint
 
 i=0
+d=1
 while True:
     # 循环获取事件，监听事件状态
     for event in pygame.event.get():
@@ -55,10 +56,11 @@ while True:
             #终止程序，确保退出程序
             sys.exit()
     pygame.draw.rect(screen,'white',(0,0,width,height))
-    if i<len(steps)-1:
-        i+=1
-    else:
-        i=0
+    if i==len(steps)-1:
+        d=-1
+    if i==0:
+        d=1
+    i+=d
     wordStep=wordPoint(steps[i])
     for a,(x,y,z) in enumerate(wordStep): # 绘制点
         symbol=symbols[a]

@@ -1,6 +1,4 @@
-O_orbital: 47
-V_orbital: 183
-atomCoord:
+coords:
 - - 0.0
   - 3.464352
   - -0.310522
@@ -73,32 +71,36 @@ atomCoord:
 - - 0.0
   - -0.889113
   - -2.483162
-atomSymbol:
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- C
-- H
-- C
-- C
-- C
-- H
-- H
-- H
-- H
-- H
-- H
-- H
-- H
-- H
 hash: 1417eed3323f144a04dbbf5e87cd0d63
+labels: []
 name: ph3.out
-path: d:\code\pywfn\manager\storages\c1ugwP1GeaibHLFGbnMZ\ph3.out
+note: ''
+ooNum: 47
+path: D:\code\pywfn\manager\storages\c1ugwP1GeaibHLFGbnMZ\ph3.out
 route: null
+symbols:
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- C
+- H
+- C
+- C
+- C
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+- H
+voNum: 183

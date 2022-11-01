@@ -4,32 +4,57 @@ fchk文件中有哪些属性是可以用到的？
 """
 import re
 import numpy as np
+from ..base import Mol
+from .. import elements
+from typing import *
+
 titleMatch='^(.{40}) {3}(.{1})(.{5})(.{12})$'
 class FchReader:
     def __init__(self,path:str):
+        self.mol=Mol
         self.path=path
-        self.contents:Content=[]
+        self.contents:List[Content]=[]
         with open(self.path,'r',encoding='utf-8') as f:
-            self.lines=f.read().split('\n')
+            self.text=f.read()
+            self.lines=self.text.split('\n')
         self.jobTitle:str=self.lines[0]
         self.jobType,self.jobMethod,self.jobBasis=re.match(r'(.{10})(.{30})(.{30})',self.lines[1]).groups()
-        for idx in range(2,len(self.lines)):
+        # 正式的数据从第十行开始
+        for idx in range(10,len(self.lines)):
             line=self.lines[idx]
             if re.match(titleMatch, line) is not None:
                 self.contents.append(Content(idx+1, line))
+        
+        self.get_all()
     
-    def __call__(self,title:str):
+    def get_content(self,title:str):
         title=title.ljust(40,' ')
         for each in self.contents:
             if each.title==title:
                 return each.get(self)
         else:
             return None
+    
+    def get_all(self):
+        """
+        获取所有数据
+        1. 原子符号
+        2. 原子坐标(fch中的原子坐标单位是Bohr,1Bohr=0.53A)
+        3. 轨道能量(根据是否含有alpha判断是否为开壳层)
+        4. 系数矩阵
+        5. 重叠矩阵
+        """
+        atoms=self.get_content('Atomic numbers')
+        symbols=[elements[int(e)].symbol for e in atoms]
+        coords=self.get_content('Current cartesian coordinates').reshape(-1,3)*0.53
+        
+        print(atoms)
 
 
 
 class Content:
     def __init__(self,idx:int,line:str):
+        """fch中的数据格式非常规整，刚初始化的时候不读取数据，需要的时候再读取"""
         self.idx=idx
         title,dataType,isArray,number=re.match(titleMatch,line).groups()
         self.title:str=title
@@ -37,14 +62,25 @@ class Content:
         self.isArray=True if 'N=' in isArray else False
         self.number:int=int(number)
 
-    def get(self,reader):
-        """读取其中内容"""
+    def get(self,reader:FchReader):
+        """
+        读取其中内容
+        整数一行六个数据，浮点数一行五个数据
+        """
+        ps={
+            'I':'\d+',
+            'R':'-?\d+.\d+E[\+-]\d{2}'
+        }
+        ds={
+            'I':np.int8,
+            'R':np.float32
+        }
         if self.isArray:
             lineNum=self.number//5+1
             print(self.idx,lineNum)
             text='\n'.join(reader.lines[i] for i in range(self.idx,self.idx+lineNum))
-            res=re.findall(r'-?\d+.\d+', text)
-            return np.array(res)
+            res=re.findall(ps[self.dataType], text)
+            return np.array(res,dtype=ds[self.dataType])
 
     def __repr__(self):
         return f'{self.idx},{self.title},{self.dataType},{self.isArray},{self.number}\n'

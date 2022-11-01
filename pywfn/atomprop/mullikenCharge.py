@@ -18,7 +18,7 @@ class Calculator:
             return
         charges=[]
         for atom in atoms:
-            a_1,a_2=atom.orbitalMatrixRange
+            a_1,a_2=atom.obtMatrixRange
             charge=PS_[a_1:a_2]
             symbol=atom.symbol
             charges.append(elements[symbol].charge-charge.sum())

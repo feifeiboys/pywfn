@@ -43,8 +43,7 @@ class Tool:
             
     def write_coord(self):
         mol=self.reader.mol
-        atoms=mol.atoms()
-        for atom in atoms:
+        for atom in mol.atoms:
             symbol=atom.symbol
             x,y,z=atom.coord
             self.resContent+=f'{symbol:8} {x:14.8f} {y:14.8f} {z:14.8f}\n'

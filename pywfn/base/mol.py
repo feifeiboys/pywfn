@@ -19,27 +19,25 @@
 """
 
 from typing import *
+from pywfn.utils import vector_angle
 from .atom import Atom,Atoms
 from .bond import Bond
+from .basis import Basis
 import numpy as np
 from .. import setting
+from functools import cached_property, lru_cache
+
 class Mol:
     def __init__(self) -> None:
-        self._atoms=Atoms()
-        self.bonds:Dict[str:Bond]={} # 所有键对象
+        self._atoms:Atoms=Atoms()
         self.Eigenvalues:List[float]=[]
-        self.isSplitOrbital:bool=None #轨道是否为劈裂的，值为0或1
+        self.isOpenShell:bool=None #轨道是否为开壳层，值为0或1
         self.orbitals:List[str]=[] # 存储所有轨道时占据还是非占据
-        self._orbitalNum:int=None
-        # self.orbitalType:int=None
-        self._O_orbitals:List[int]=None
-        self._V_orbitals:List[int]=None
+        self.obtElcts:List[int]=[] # 存储每个分子轨道占据的电子数量(包含占据信息)
         self._heavyAtoms:List[Atom]=None
-        self._CM:np.ndarray=None # 系数矩阵
         self._SM:np.ndarray=None # 重叠矩阵
-        self._PM:np.ndarray=None # 密度矩阵
-        self._As=None
         self.reader=None
+        self.basis:Basis=None
         
     
     def add_atom(self,symbol:str,coord:List[float]):
@@ -47,124 +45,104 @@ class Mol:
         idx=len(self._atoms)+1
         atom=Atom(symbol,coord,idx,self)
         # print(type(self._atoms),self._atoms,dir(self._atoms))
-        self._atoms.add(atom)
+        self._atoms.append(atom)
     
     def atom(self,idx:int)->Atom:
         """根据原子编号获取一个原子,从1开始"""
         if not isinstance(idx,int):raise
         return self._atoms[idx-1]
     
+    @property
     def atoms(self)->List[Atom]:
         """获取所有原子"""
         return self._atoms
     
-    @property
+    @cached_property
     def coords(self):
         """返回原子坐标矩阵[n,3]"""
-        return np.array([atom.coord for atom in self.atoms()])
+        return np.array([atom.coord for atom in self.atoms])
 
-    @property
-    def orbitalNum(self):
-        if self._orbitalNum is None:
-            self._orbitalNum=len(self.orbitals)
-        return self._orbitalNum
+    @cached_property
+    def orbital_symbols(self):
+        n=len(self.orbitals)
+        if self.isOpenShell:
+            return [f'α{e+1}' if e<n/2 else f'β{int(e-n/2+1)}' for e in range(n)]
+        else:
+            return [f'{e+1}' for e in range(n)]
 
-    @property
-    def O_orbitals(self)->List[int]:
-        if self._O_orbitals is None:
-            self._O_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='O']
-        return self._O_orbitals
+    @cached_property
+    def O_obts(self)->List[int]:
+        return [i for i,s in enumerate(self.orbitals) if s[-1]=='O']
     
-    @property
-    def V_orbitals(self)->List[int]:
-        if self._V_orbitals is None:
-            self._V_orbitals=[orbital for orbital in range(self.orbitalNum) if self.orbitals[orbital][-1]=='V']
-        return self._V_orbitals
+    @cached_property
+    def V_obts(self)->List[int]:
+        return [i for i,s in enumerate(self.orbitals) if s[-1]=='V']
     
-    @property
+    @cached_property
     def heavyAtoms(self):
-        if self._heavyAtoms is None:
-            self._heavyAtoms=[atom for atom in self.atoms() if atom.symbol!='H']
-        return self._heavyAtoms
+        return [atom for atom in self.atoms if atom.symbol!='H']
 
-    @property
+    @cached_property
     def CM(self)->np.ndarray:
         """分子轨道系数矩阵"""
-        if self._CM is None:
-            self._CM=np.concatenate([atom.OC.to_numpy() for atom in self.atoms()],axis=0)
-        return self._CM
+        return np.concatenate([atom.OC for atom in self.atoms],axis=0)
     
     @property
     def SM(self):
         """重叠矩阵"""
         if self._SM is None:
-            if self.reader is not None:
-                self.reader.read_SM()
+            print('没有重叠矩阵')
         return self._SM
 
-    @property
+    @cached_property
     def PM(self):
-        """密度矩阵"""
-        if self._PM is None:
-            # 自己计算密度矩阵吧
-            h,w=self.CM.shape # h行,w列
-            PM=np.zeros(shape=(h,h)) # 重叠矩阵
-            Oe=1 if self.isSplitOrbital else 2
-            n=np.array([Oe if 'O' in o else 0 for o in self.orbitals])
-            for i in range(w):
-                C1=self.CM[:,i][:,np.newaxis]
-                C2=self.CM[:,i][np.newaxis,:]
-                PM+=C1*C2*n[i]
-            self._PM=PM
-        return self._PM
-
+        """计算密度矩阵(其实可以读的,但是感觉读的没有计算的快,因为可以直接根据系数矩阵计算)"""
+        A=(self.CM[:,self.O_obts].T)[:,:,np.newaxis]
+        B=(self.CM[:,self.O_obts].T)[:,np.newaxis,:]
+        PM=np.sum(A@B,axis=0) # 重叠矩阵
+        return PM
+    
     @property
+    def oE(self):
+        """轨道电子数"""
+        return 1 if self.isOpenShell else 2
+
+    @cached_property
     def As(self):
-        """# 所有原子所有轨道的平方和"""
-        if self._As is None:
-            self._As=np.array([np.sum(atom.spLayersData**2,axis=0) for atom in self.heavyAtoms]).sum(axis=0)
-        return self._As
+        """所有原子所有轨道的平方和再开根号"""
+        CM=self.CM.copy() #分子轨道矩阵
+        return np.sqrt(np.sum(CM**2,axis=0)) #平方和再开根号
 
-    def trans(self):
-        self.As2=np.array([atom.squareSum for atom in self.atoms()]).sum(axis=0)
-        self.orbitalElectron=1 if self.isSplitOrbital else 2
-        self.squareSums=np.array([atom.squareSum for atom in self.atoms()])
-        self.create_bonds()
-
-    def create_bonds(self):
-        """生成键对象"""
-        for idx1,atom1 in enumerate(self.atoms()):
-            for idx2,atom2 in enumerate(self.atoms()):
-                if idx1<idx2:
-                    distance=np.linalg.norm(atom1.coord-atom2.coord)
-                    if distance<=setting.BOND_LIMIT:
-                        bond=Bond(atom1,atom2)
-                        bond.length=distance
-                        self.bonds[f'{idx1+1}-{idx2+1}']=bond
-
-    def add_bond(self,idx1:int,idx2:int):
-        """添加一个键"""
+    @cached_property
+    def bonds(self):
+        atomNum=len(self.atoms)
+        idxs=[(i+1,j+1) for i in range(atomNum) for j in range(atomNum) if i<j]
+        return [Bond(self.atom(idx1), self.atom(idx2)) for idx1,idx2 in idxs]
+    
+    @lru_cache
+    def bond(self,idx1:int,idx2:int):
+        """第一次调用是生成键,第二次调用时直接返回,秒啊"""
         if idx2<idx1:idx1,idx2=idx2,idx1
-        key=f'{idx1}-{idx2}'
-        if key not in self.bonds.keys():
-            self.bonds[key]=Bond(self.atom(idx1), self.atom(idx2))
-
-    def get_bond(self,idx1:int,idx2:int)->Bond:
-        """根据原子的索引获得键"""
-        # 如果查询的键是存在的，则直接返回，否则生成一个新健
-        if idx2<idx1:idx1,idx2=idx2,idx1
-        bondID=f'{idx1}-{idx2}'
-        if bondID not in self.bonds.keys():
-            self.add_bond(idx1, idx2)    
-        return self.bonds[f'{idx1}-{idx2}']
+        return Bond(self.atom(idx1), self.atom(idx2))
 
     def createAtomOrbitalRange(self):
         """令每个原子生成其在轨道矩阵中的范围"""
         total=0
-        for atom in self.atoms():
-            atom.orbitalMatrixRange=[total,total+len(atom.OC)]
+        for atom in self.atoms:
+            atom.obtMatrixRange=[total,total+len(atom.OC)]
             total+=len(atom.OC)
-
+    
+    def get_dihedralAngle(self,idx1:int,idx2:int,idx3:int,idx4:int):
+        """计算二面角"""
+        a,b,c,d=self.atom(idx1),self.atom(idx2),self.atom(idx3),self.atom(idx4)
+        vba=a.coord-b.coord
+        vbc=c.coord-b.coord
+        vcd=d.coord-c.coord
+        vcb=b.coord-c.coord
+        vi=np.cross(vba,vbc)
+        vj=np.cross(vcb,vcd)
+        angle=vector_angle(vi,vj)
+        return angle
     def __repr__(self):
         return f'atom number: {len(self.atoms)}'
     

@@ -1,4 +1,9 @@
-# 此脚本用来提取高斯输出文件的信息
+"""
+此脚本用来提取高斯输出文件的信息
+高斯的输出文件包含迭代信息(结构优化、扫描等)
+但是封装成分子对象之后就只有一个信息了
+所以迭代信息只能在reader对象中存在,且不是默认属性
+"""
 from ast import For
 import re
 import numpy as np
@@ -7,7 +12,7 @@ from ..base import Mol
 from .reader import Reader
 from colorama import Fore
 from .. import utils
-print=utils.Printer()
+from .. import printer
 
 atomSymbols=[
     'H','He','li','Be','B',
@@ -30,12 +35,14 @@ class LogReader(Reader):
         self.program = program
         self.read_Coords()
         self.read()
-        self.read_standardBasis()
+        self.read_basis()
         self.read_SM()
 
     
-
     def read(self):
+        self.OCdict:Dict[int,OC]={}
+        self.OS:List[str]=[] #所有分子轨道的符号
+        self.ES:List[float]=[] #所有分子轨道能量
         self.read_orbitalCoefficients('  Molecular Orbital Coefficients')
         self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
         self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
@@ -107,8 +114,10 @@ class LogReader(Reader):
         if titleNum is None:
             # print(f'不存在{title}')
             return
-        self.mol.isSplitOrbital=False if '  Molecular Orbital Coefficients' in title else True
+        self.mol.isOpenShell=False if '  Molecular Orbital Coefficients' in title else True
         # print(title,self.orbitalType,'  Molecular Orbital Coefficients' in title)
+        
+
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None: #情况1
@@ -116,31 +125,46 @@ class LogReader(Reader):
             elif re.search(s2, line) is not None: # 情况2，获得column
                 # print(line)
                 orbitals = re.split(r' +', line.replace('\n',''))[1:] # 获取占据轨道还是非占据轨道
-                self.mol.orbitals+=orbitals
+                self.OS+=orbitals
             elif re.search(s3, line) is not None: # 情况3，每个·        
                 line_data,_=re.search(s3,line).groups()
                 line_data=re.findall('-?\d+.\d+', line_data)
                 line_data=[float(each) for each in line_data]
-                self.mol.Eigenvalues+=line_data
+                self.ES+=line_data
             elif re.search(s4,line) is not None:
                 atomIDX,atomType,layer,line_data,_=re.search(s4,line).groups()
                 atomIDX = int(atomIDX)
-                atom=self.mol.atom(atomIDX)
                 nums=[float(each) for each in re.findall('-?\d+.\d+',line_data)]
-                # print(nums)
-                atom.set_layers(layer, nums)
+                if atomIDX not in self.OCdict.keys():self.OCdict[atomIDX]=OC()
+                self.OCdict[atomIDX].set(layer,nums)
             elif re.search(s5,line) is not None:
                 layer,line_data,_=re.search(s5,line).groups()
                 line_data=re.findall('-?\d+.\d+', line_data)
                 nums=[float(each) for each in line_data]
-                atom.set_layers(layer,nums)
+                self.OCdict[atomIDX].set(layer,nums)
             else: # 若不满足以上任意一种情况，说明已经查找完毕，则对收集到的数据进行处理
                 # print('end_line',line)
+                self.mol.Eigenvalues=self.ES
+                self.mol.orbitals=self.OS
+                oe= 1 if self.mol.isOpenShell else 2
+                self.mol.obtElcts=[oe if 'O' in o else 0 for o in self.OS] # 每个轨道的电子数量
+                for key,value in self.OCdict.items():
+                    layers,matrix=value()
+                    atom=self.mol.atom(key)
+                    atom.layers=layers
+                    atom.OC=matrix
                 break
-
-    def read_standardBasis(self):
+    # 情况1：      1 0 #开始一个原子
+    # 情况2：S   6 1.00       0.000000000000 #开始新的一层
+    def read_basis(self):
         '''读取GTO函数的拟合系数'''
+        from ..base.basis import Basis
+        s1='^ +(\d+) +\d+' # 开始一个原子
+        s2='^ ([A-Za-z]+) +\d ' # 开始新的一层
+        s3='^ +(( +-?0.\d{10}D[+*/-]\d{2}){2,3})' # 获取一层内的数据
+        s4=' ****'
         # self.windowLog('reading Overlap normalization...\n')
+        ifRead=True #是否读取数据(防止重读读取)
         titleNum=None
         for i,line in enumerate(self.logLines):
             if 'Overlap normalization' in line:
@@ -148,24 +172,31 @@ class LogReader(Reader):
         if titleNum is None:
             print(Fore.YELLOW + '没有基组信息')
             return
-        basis = []
-        for i in range(titleNum+1,len(self.logLines)):
+        basis=Basis()
+        i=titleNum+1
+        while i < len(self.logLines):
             line=self.logLines[i]
-            if re.search(r'^  +\d+ +\d+', line) is not None:
-                basis.append([])
-            elif re.search(r'-?0.\d{10}D[+*/-]\d+ +-?0.\d{10}D[+*/-]\d+ +-?0.\d{10}D[+*/-]\d+',line) is not None:
-                basis[-1].append([float(each.replace('D', 'e')) for each in re.split(r' +', line)[1:]])
-            elif re.search(r'[A-Z]+ +\d 1.00       0.000000000000', line) is not None:
-                pass
-            elif re.search(r'[*]{4}', line) is not None:
-                pass
-            elif re.search(r'-?0.\d{10}D[+*/-]\d+ +-?0.\d{10}D[+*/-]\d+', line) is not None:
-                pass
-            else:
+            if re.search(s1, line) is not None:
+                atomNum:int=int(re.search(s1, line).groups()[0])
+                symbol=self.mol.atom(atomNum).symbol
+                ifRead=basis.new(symbol) #生成一个新的原子的基组,并返回是否还要继续读取
+            elif ifRead:
+                if re.search(s2,line) is not None:
+                    layerName=re.search(s2,line).groups()[0]
+                    layer=basis.get(symbol).add_layer(layerName)
+                elif re.search(s3,line) is not None: #读取基组数据
+                    linesearch=re.search(s3,line).groups()[0] #长字符串
+                    linerep=linesearch.replace('D','e')
+                    linestrs=re.findall('-?0.\d{10}e[+*/-]\d{2}',linerep) # 分割
+                    linefloats=[float(e) for e in linestrs] #转为浮点数
+                    layer.add(linefloats)
+                elif line==s4:
+                    pass
+            elif not line:
+                print(line)
                 break
-        for i,each in enumerate(basis):
-            atoms=self.mol.atoms()
-            atoms[i].basisData=np.array(each)
+            i+=1
+        self.mol.basis=basis
     
     def read_SM(self):
         """读取重叠矩阵"""
@@ -199,8 +230,6 @@ class LogReader(Reader):
         ...
 
 
-
-
 class Data:
     def __init__(self):
         self.data={}
@@ -223,5 +252,23 @@ class Data:
 def numlist(l):
     """将列表字符串转为数字"""
     return [float(e) for e in l]
+
+# 自己定义一些数据类型,方便读取
+class OC:
+    """原子轨道系数矩阵"""
+    def __init__(self) -> None:
+        self.data:Dict[str:List[float]]={}
+    
+    def set(self,layer:str,values:List[float]):
+        layer=layer.strip()
+        if layer not in self.data.keys():self.data[layer]=[]
+        self.data[layer]+=values #数组的拼接
+    
+    def __call__(self) ->Tuple[List[str],np.ndarray]:
+        layers=list(self.data.keys())
+        matrix=[each for each in self.data.values()]
+        matrix=np.array(matrix)
+        return layers,matrix
+
 if __name__=='__main__':
     from ..base.mol import Mol

@@ -13,7 +13,7 @@ class Calculator:
     def __init__(self,mol:"Mol"):
         self.mol=mol
 
-    def calculate(self,atoms:List[Atom]=None):
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
         """计算两原子之间的mayer键级"""
         self.mol.create_bonds()
         self.mol.createAtomOrbitalRange() # 为每个原子分配其在轨道矩阵中的序数范围
@@ -25,12 +25,9 @@ class Calculator:
             print(Fore.RED+'缺少重叠矩阵！')
             return 'None'
         PS=PM@SM
-        orders=[]
-        if atoms is None:atoms=self.mol.atoms()
-        for i in range(len(atoms)-1): # 输入的每两个原子之间计算键级
-            for j in range(i+1,len(atoms)):
-                a1_1,a1_2=atoms[i].orbitalMatrixRange
-                a2_1,a2_2=atoms[j].orbitalMatrixRange
-                order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
-                orders.append([i,j,order])
-        return orders
+
+        a1_1,a1_2=centerAtom.obtMatrixRange
+        a2_1,a2_2=aroundAtom.obtMatrixRange
+        order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
+
+        return order

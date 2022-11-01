@@ -28,24 +28,6 @@ def get_points_between_two_pos(pos1,pos2,n):
     all_pos=[pos1+dp/(n-1)*i for i in range(n)]
     return np.array(all_pos)
 
-def get_projection(ts,x_,z_):
-    '''计算原子轨道组合系数在法向量的投影,x_是键轴方向,z_是法向量或者轨道方向'''
-    if np.linalg.norm(x_)==0 or np.linalg.norm(z_)==0:
-        raise
-    x_=x_/np.linalg.norm(x_)
-    z_=z_/np.linalg.norm(z_)
-    y_=np.cross(x_,z_)
-    if np.linalg.norm(y_)==0:
-        raise
-    y_=y_/np.linalg.norm(y_)
-    ps=[np.array(ts[i:i+3]) for i in range(0,len(ts),3)] #每一项都是长度为3的数组
-    ps_=[np.dot(p, z_)/np.linalg.norm(z_)*z_ for p in ps] # 轨道向量在法向量方向上的投影
-
-    e=np.array([[1,0,0],[0,1,0],[0,0,1]]).T # 空间坐标变换
-    e_=np.array([x_,y_,z_]).T
-    A_=np.dot(np.linalg.inv(e_),e)
-    ps__=np.array([np.dot(A_,p[:,np.newaxis]) for p in ps_])
-    return ps__
 
 def coordTrans(nx,ny,nz,coords):
     """对一个向量实行空间坐标变换
@@ -59,63 +41,21 @@ def coordTrans(nx,ny,nz,coords):
     ps__=np.array([np.dot(A_,p) for p in coords])
     return ps__
 
-def posan_function(centerPos,aroundPos,paras,ts,onlyP=False): # 为了代码可读性，可以适当写出来罗嗦点的代码
-    '''计算中心原子周围点处的函数值'''
-    alphas=paras[:,0]
-    c_s=paras[:,1]
-    c_p=paras[:,2]
-    x,y,z=aroundPos.reshape(3,-1)
-    x0,y0,z0=centerPos.reshape(3,-1)
-    R=np.sum((aroundPos-centerPos)**2,axis=0,keepdims=True)
-    psx=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(x-x0)*math.e**(-1*a*R)
-    psy=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(y-y0)*math.e**(-1*a*R)
-    psz=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*(z-z0)*math.e**(-1*a*R)
-    s=lambda a:(2*a/math.pi)**(3/4)*2*a**0.5*math.e**(-1*a*R)
-    px2=sum([c*psx(a) for c,a in zip(c_p[:-1],alphas[:-1])])  # 对于3-21
-    py2=sum([c*psy(a) for c,a in zip(c_p[:-1],alphas[:-1])])
-    pz2=sum([c*psz(a) for c,a in zip(c_p[:-1],alphas[:-1])])
-    px3=c_p[-1]*psx(alphas[-1])
-    py3=c_p[-1]*psy(alphas[-1])
-    pz3=c_p[-1]*psz(alphas[-1])
-    s2=sum([c*s(a) for c,a in zip(c_s[:-1],alphas[:-1])])
-    s3=c_p[-1]*s(alphas[-1])
-    if onlyP:
-        s2=s3=0
-    s2=s3=0
-    ps=[px2,py2,pz2,px3,py3,pz3]
-    mo=sum([t*p for t,p in zip(ts,ps)])
-    return mo
-def multiFunction(orbital:int,atoms:list,selectPos,Data):
-    '''
-    计算多个原子的波函数在指定点的叠加
-    atoms:多个原子的序数
-    aroundPos:指定的点
-    '''
-    res=[]
-    for atom in atoms:
-        atomPos=Data.atomPos(atom).reshape(3,1)
-        paras = np.array(Data.standard_basis[atom])
-        layers=['2PX','2PY','2PZ','3PX','3PY','3PZ']
-        ts=Data.get_ts(atom,orbital,layers)
-        values=posan_function(atomPos,selectPos,paras,ts)
-        res.append(values)
-    return np.array(res).sum(axis=0).flatten()
-
+arounds=np.array([
+        [-1,0,0],
+        [+1,0,0],
+        [0,-1,0],
+        [0,+1,0],
+        [0,0,-1],
+        [0,0,+1]
+    ])
 def get_aroundPoints(p,step): # 
     '''
     计算空间中一个点周围六个点处的坐标
-    p:(3,1)坐标
+    p:[3,]坐标
     step:步长
     '''
-    x,y,z=p.flatten()
-    return np.array([
-        [x-step,y,z],
-        [x+step,y,z],
-        [x,y-step,z],
-        [x,y+step,z],
-        [x,y,z-step],
-        [x,y,z+step]
-    ]).T
+    return p+arounds*step
 def removePos(aroundPos,searched):
     '''去除已经搜索过的点'''
     idxs=[]
@@ -132,29 +72,32 @@ def addSearched(aroundPos,searched):
         key=f'{x:.6f}-{y:.6f}-{z:.6f}'
         searched.append(key)
     return searched
-def get_extraValue(atomPos,paras,ts,valueType):
+
+from . import base
+def get_extraValue(atom:"base.Atom",obt:int,valueType='max'):
     '''
-    从指定位置开始,利用爬山算法寻找函数极值
-    atomPos:(3,1)
-    maxPos:(3,1)
+    从指定位置开始,利用爬山算法寻找原子波函数极值
+    maxPos:[3,]
     '''
-    startPos=atomPos.copy()
-    startValue=0 # 计算原子坐标处的初始值
+    p=p0=atom.coord #起始点
+    v0=0 # 计算原子坐标处的初始值
+    # print(f'{v0=:.6f},{p0=}')
     step=0.1
     while True:
-        aroundPos=get_aroundPoints(startPos,step) # aroundPos:(3,n)
-        aroundValues=posan_function(atomPos,aroundPos,paras,ts,onlyP=True)
-        if valueType=='max' and np.max(aroundValues)>startValue:
-            startValue=np.max(aroundValues)
-            maxID=np.argmax(aroundValues)
-            startPos=aroundPos[:,maxID].reshape(3,1)
-        elif valueType=='min' and np.min(aroundValues)<startValue:
-            startValue=np.min(aroundValues)
-            minID=np.argmin(aroundValues)
-            startPos=aroundPos[:,minID].reshape(3,1)
+        aroundPs=get_aroundPoints(p0,step) # aroundPs:(n,3)
+        aroundVs=atom.get_cloud(aroundPs-p,obt)
+        if valueType=='max' and np.max(aroundVs)>v0:
+            v0=np.max(aroundVs)
+            maxID=np.argmax(aroundVs)
+            p0=aroundPs[maxID,:]
+            # print(f'{v0=:.6f},{p0=}')
+        elif valueType=='min' and np.min(aroundVs)<v0:
+            v0=np.min(aroundVs)
+            minID=np.argmin(aroundVs)
+            p0=aroundPs[minID,:]
         else:
-            if step<=1e-6:
-                return startPos,startValue # startPos:(3,1)
+            if step<=1e-4:
+                return p0,v0 #
             else:
                 step/=10
 
@@ -189,21 +132,15 @@ def vector_angle(a,b,trans=False): # 计算两向量之间的夹角
         return 0.5-abs(angle-0.5)
 
 def get_normalVector(p1,p2,p3):
-    '''获取三点确定的平面的单位法向量'''
-    x1,y1,z1=p1
-    x2,y2,z2=p2
-    x3,y3,z3=p3
-    A = (y2 - y1)*(z3 - z1) - (z2 - z1)*(y3 - y1)
-    B = (z2 - z1)*(x3 - x1) - (x2 - x1)*(z3 - z1)
-    C = (x2 - x1)*(y3 - y1) - (y2 - y1)*(x3 - x1)
-    n=np.array([A,B,C])
+    '''
+    获取三点确定的平面的单位法向量
+    根据两个向量也可以确定法向量
+    '''
+    vi=p3-p2
+    vj=p1-p2
+    n=np.cross(vi,vj)
+    if vector_angle(n,setting.BASE_VECTOR)>0.5:n*=-1
     return n/np.linalg.norm(n) # 返回单位向量
-
-def get_dihedralAngle(p1,p2,p3,p4):
-    '''根据四个点，计算二面角'''
-    n1=get_normalVector(p1,p2,p3)
-    n2=get_normalVector(p4,p3,p2)
-    return vector_angle(n1,n2)
 
 def timeit(func):
     '''定义一个装饰器，统计函数的执行时间'''
@@ -243,7 +180,8 @@ def linear_classify(points): #将向量分类转为表示角度的数值分类
         types[idx].append(each)
         idxs[idx].append(i)
     return idxs
-def orbital_classify(atom,vectors,O_orbitals):
+
+def orbital_classify(atom,vectors,O_obts):
     '''定义函数将轨道分类'''
     points=[]
     orbitals=[]
@@ -251,7 +189,7 @@ def orbital_classify(atom,vectors,O_orbitals):
     for key in keys:
         atomidx=int(key.split('-')[0])
         orbitalidx=int(key.split('-')[1])
-        if atomidx==atom and orbitalidx in O_orbitals and vectors[key] is not None:
+        if atomidx==atom and orbitalidx in O_obts and vectors[key] is not None:
             vector=vectors[key]/np.linalg.norm(vectors[key])
             points.append(vector)
             orbitals.append(orbitalidx)
@@ -298,10 +236,3 @@ def normalize(vector):
     if length==0:
         raise
     return vector/length
-
-class Printer:
-    def __init__(self) -> None:
-        ...
-    def __call__(self, content):
-        if setting.DEBUG:
-            print(f'debug:{content}')

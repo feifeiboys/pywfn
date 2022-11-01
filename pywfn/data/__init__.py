@@ -13,29 +13,29 @@ class Element:
 
 class Elements:
     def __init__(self) -> None:
-        self.elements=[]
+        self.elements=[] #原子列表，一定是按照顺序排列的
+        self.sym2idx:Dict[str,int]={} #构建一个原子符号到原子序数的对应表
         self.scriptPath=Path(__file__) #当前脚本所在的路径
         self.data=pd.read_csv(self.scriptPath.parent / 'elements.csv')
         for i in range(len(self.data)):
             idx,symbol,color,radius=self.data.iloc[i,:]
             self.elements.append(Element(idx,symbol,color,radius))
+            self.sym2idx[symbol]=idx
 
-    def get_element_by_idx(self,idx:int):
-        for each in self.elements:
-            if each.idx==idx:
-                return each
-        return None
+    def get_element_by_idx(self,idx:int)->Element:
+        return self.elements[idx-1]
 
     def get_element_by_symbol(self,symbol:str)->Element:
-        for each in self.elements:
-            if each.symbol==symbol:
-                return each
-        return None
+        idx=self.sym2idx[symbol]
+        return self.get_element_by_idx(idx)
+
+
     def __getitem__(self,key) -> Element:
         if isinstance(key,int):
             return self.get_element_by_idx(key)
         elif isinstance(key,str):
             return self.get_element_by_symbol(key)
         else:
+            print(type(key))
             raise
 

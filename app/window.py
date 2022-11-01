@@ -15,7 +15,7 @@ from pyvistaqt import QtInteractor, MainWindow
 from .plotter.canvas import Canvas
 # from pywfn.plotter.canvas import Canvas
 from pywfn.base import Mol
-from pywfn.calculators import piBondOrder,piSelectOrder
+from pywfn.bondorder import piDM,piSH
 from pywfn.readers import get_reader
 from .commands import Command
 from .ui_app import Ui_MainWindow
@@ -72,7 +72,7 @@ class Window(MainWindow):
     def compute_sigmaOrder(self):
         atoms=self.currentFile.canvas.selectedAtoms
         if len(atoms)==2:
-            caler=piBondOrder.Calculator(self.currentFile.mol,orderType='sigma')
+            caler=piDM.Calculator(self.currentFile.mol)
             res=caler.calculate(atoms[0],atoms[1])
             orders=res['data']['orders']
             order=res['data']['order']
@@ -83,9 +83,9 @@ class Window(MainWindow):
         atoms=self.currentFile.canvas.selectedAtoms
         if len(atoms)==2:
             if orderType=='old':
-                computer=piSelectOrder.Calculator(self.currentFile.mol)
+                computer=piSH.Calculator(self.currentFile.mol)
             if orderType=='new':
-                computer=piBondOrder.Calculator(self.currentFile.mol)
+                computer=piDM.Calculator(self.currentFile.mol)
             res=computer.calculate(atoms[0],atoms[1])
             orders=res['data']['orders']
             order=res['data']['order']
@@ -93,10 +93,10 @@ class Window(MainWindow):
             orders=sorted(zip(range(len(orders)),orders),key=lambda x:x[1])
             limit=1e-4
             ranges=[r+1 for r,o in orders if o>=limit]
-            orbitalNum=len(self.currentFile.mol.O_orbitals)
+            orbitalNum=len(self.currentFile.mol.O_obts)
             orbitalNum=orbitalNum//2+orbitalNum%2
-            orbitalElectron=2 if self.currentFile.mol.isSplitOrbital else 1
-            if orbitalElectron==1:
+            oE=1 if self.currentFile.mol.isOpenShell else 2
+            if oE==1:
                 ranges = [f"α{r}" if r <= orbitalNum else f'β{r-orbitalNum}' for r in ranges]
 
             orders=[o for r,o in orders if o>=limit]
@@ -179,7 +179,7 @@ class Window(MainWindow):
             atoms=self.currentFile.canvas.selectedAtoms
             for atom in atoms:
                 start=atom.coord
-                direction=atom.get_orbitalDirection(orbital)
+                direction=atom.get_obtWay(orbital)
                 name=f'{atom.idx}-{orbital}'
                 self.currentFile.canvas.add_arrow(start, direction,name)
 
