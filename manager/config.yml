@@ -1,7 +1,2 @@
 routes: []
-storagePath: !!python/object/apply:pathlib.WindowsPath
-- D:\
-- code
-- pywfn
-- manager
-- storages
+storagePath: null

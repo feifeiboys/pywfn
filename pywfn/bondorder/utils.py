@@ -22,7 +22,7 @@ def CM2PMs(CM,orbital:List[int],oe:int):
     """
     A=(CM[:,orbital].T)[:,:,np.newaxis]
     B=(CM[:,orbital].T)[:,np.newaxis,:]
-    return A@B #用矩阵乘法的形式直接构建矩阵可比逐元素计算多了
+    return A@B*oe #用矩阵乘法的形式直接构建矩阵可比逐元素计算多了
 
 def judgeOrbital(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)->int:
     """

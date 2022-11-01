@@ -117,7 +117,10 @@ class Mol:
     def bonds(self):
         atomNum=len(self.atoms)
         idxs=[(i+1,j+1) for i in range(atomNum) for j in range(atomNum) if i<j]
-        return [Bond(self.atom(idx1), self.atom(idx2)) for idx1,idx2 in idxs]
+        for idx1,idx2 in idxs:
+            r=np.linalg.norm(self.atom(idx2).coord-self.atom(idx1).coord)
+            if r<1.7:
+                yield self.bond(idx1,idx2)
     
     @lru_cache
     def bond(self,idx1:int,idx2:int):

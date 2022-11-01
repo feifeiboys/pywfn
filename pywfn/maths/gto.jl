@@ -1,5 +1,8 @@
-function gto(n,l,m,a,c,x,y,z)
-    x^n*y^l*z^m
+struct Layer
+    name::String
 end
-
-print(gto(1,1,1,1,1,1,2,3))
+e=3.14
+π=3.14
+function s(c::Float32,a::Float32,R)
+    return c(2a/π)^(3/4)*2a^0.5e^(-1)
+end

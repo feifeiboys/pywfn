@@ -39,7 +39,7 @@ class Atom:
     def neighbors(self)->List["Atom"]:
         """每个原子相邻的原子有哪些，根据分子的键来判断"""
         idxs=[]
-        bonds=self.mol.bonds.values()
+        bonds=self.mol.bonds
         for bond in bonds:
             idx1,idx2=bond.idx.split('-')
             idx1,idx2=int(idx1),int(idx2) # 键的两个原子
@@ -108,7 +108,7 @@ class Atom:
                 normal=utils.get_normalVector(p1,p2,p3)
         elif main: #如果是在递归中调用本函数的话就不要再次递归了
             for each in neighbors:
-                normal_=each.get_Normal(around=self,main=False)
+                normal_=each.get_Normal(self.idx,main=False)
                 if normal_ is not None:
                     normal=normal_
                     break

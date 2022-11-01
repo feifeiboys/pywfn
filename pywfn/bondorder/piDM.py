@@ -23,15 +23,14 @@ class Calculator:
         if centerAtom.symbol=='H' or aroundAtom.symbol=='H':
             print(Fore.YELLOW+'不能计算含有H的键')
             return 0
-        self.mol.create_bonds()
         self.mol.createAtomOrbitalRange()
         CM_=np.zeros_like(self.mol.CM,dtype=np.float32) #新的系数矩阵
         orbitals=self.mol.O_obts #占据轨道的索引
 
-        normal=centerAtom.get_Normal(aroundAtom)
+        normal=centerAtom.get_Normal(aroundAtom.idx)
         if normal is None:
             print(Fore.RED+'中心原子没有法向量')
-            for orbital in orbital[::-1]:
+            for orbital in orbitals[::-1]:
                 direction=centerAtom.get_obtWay(orbital)
                 if vector_angle(direction,aroundAtom.coord-centerAtom.coord,trans=True)<0.1:
                     normal=direction
@@ -63,8 +62,8 @@ class Calculator:
         if setting.IF_ORBITAL_ORDER: # 是否拆分轨道键级成分
             self.PMs_=CM2PMs(CM_,orbitals,oe) #三维数组
             self.PSs=self.PMs_@SM
-            OS=self.get_OM()
-            orders=OS.sum(axis=0)
+            OM=self.get_OM() # 键级矩阵
+            orders=OM.sum(axis=0)
             order=np.sqrt(np.abs(np.sum(orders)))
             ratios=orders/np.sum(orders)*order
             printOrders(ratios,self.mol.orbital_symbols)
@@ -77,38 +76,28 @@ class Calculator:
 
     def get_OMi(self,idx): #计算一个矩阵元
         i,j=idx
-        # print(i,j)
-        # Pi=self.PMs_[i,:,:]
-        # Pj=self.PMs_[j,:,:]
-        a1_1,a1_2=self.centerAtom.obtMatrixRange
-        a2_1,a2_2=self.aroundAtom.obtMatrixRange
-        # SM=self.mol.SM
-        PSs=self.PSs
-        # res=np.sum((Pi@SM)[a1_1:a1_2,a2_1:a2_2]*(Pj@SM)[a2_1:a2_2,a1_1:a1_2].T)
-        res=np.sum((PSs[i,:,:])[a1_1:a1_2,a2_1:a2_2]*(PSs[j,:,:])[a2_1:a2_2,a1_1:a1_2].T)
-        del PSs, #SM,Pi,Pj
-        return i,j,res
+        a1,a2=self.centerAtom.obtMatrixRange
+        b1,b2=self.aroundAtom.obtMatrixRange
+        PSi=self.PSs[i,:,:]
+        PSj=self.PSs[j,:,:]
+        res=np.sum(PSi[a1:a2,b1:b2]*PSj[b1:b2,a1:a2].T)
+        return res
 
     def get_OM(self): # 计算键级矩阵
         obtNum=self.obtNum # 占据轨道的数量
         OM=np.zeros(shape=(obtNum,obtNum)) # 轨道键级矩阵，是一个对称矩阵
         idxs=get_idxs(obtNum)
-        if obtNum>500:   # 如果轨道数量很多就开启多进程计算
-            print('检测到计算量太大将开启多进程计算')
-            for i,j,v in tqdm(mp.Pool(2).imap(self.get_OMi,idxs),total=len(idxs)):
-                OM[i,j]=v
-        else:
-            for i,j in tqdm(idxs,total=len(idxs)):
-                i,j,v=self.get_OMi((i,j))
-                OM[i,j]=v
-                # progress('构建键级矩阵',i*obtNum+j+1,obtNum**2)
-        # OM是一个上三角矩阵,将其转为对角矩阵
+        for i,j in tqdm(idxs,total=len(idxs),desc='构建键级矩阵'):
+            v=self.get_OMi((i,j))
+            OM[i,j]=v
+            # progress('构建键级矩阵',i*obtNum+j+1,obtNum**2)
+        # OM是一个下三角矩阵,将其转为对角矩阵
         OM+=np.tril(OM.T,-1)
         return OM
 
-@jit(nopython=True)
 def get_idxs(n):
-    return [[i,j] for j in range(n) for i in range(n) if i>j]
+    """返回下三角矩阵的索引"""
+    return [[i,j] for j in range(n) for i in range(n) if j<=i]
 
 def printOrders(orders,orbitals):
     """将轨道根据大小排序后输出"""

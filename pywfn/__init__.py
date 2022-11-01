@@ -5,7 +5,7 @@ elements=Elements()
 from . import setting
 
 # print('pywfn 初始化',__name__)
-def runShell():
+def run():
     from .shell import Shell
     shell=Shell()
     shell.home()
@@ -21,15 +21,15 @@ class Printer:
             print(text,end=end)
 
     def warn(self,text):
-        self.__call__(Fore.YELLOW+text)
+        self.__call__(Fore.YELLOW+f'{text}')
 
     def info(self,text):
-        self.__call__(Fore.BLUE+text)
+        self.__call__(Fore.BLUE+f'{text}')
 
     def wrong(self,text):
-        self.__call__(Fore.RED+text)
+        self.__call__(Fore.RED+f'{text}')
     
     def res(self,text):
-        self.__call__(Fore.GREEN+text)
+        self.__call__(Fore.GREEN+f'{text}')
 
 printer=Printer()

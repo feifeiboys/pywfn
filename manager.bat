@@ -1,0 +1,1 @@
+%cd%/python38/python.exe run.py manager
