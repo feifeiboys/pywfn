@@ -1,1 +1,1 @@
-python run.py gui
+%cd%/python38/python.exe run.py gui

@@ -3,6 +3,7 @@ from typing import *
 import numpy as np
 from ..data import Elements
 elements=Elements()
+from .. import printer
 class Calculator:
     def __init__(self,mol:"Mol"):
         self.mol=mol
@@ -14,8 +15,7 @@ class Calculator:
         PS=PM*SM
         PS_=np.sum(PS,axis=0)
         if SM is None:
-            print('没有密度矩阵')
-            return
+            return 0
         charges=[]
         for atom in atoms:
             a_1,a_2=atom.obtMatrixRange

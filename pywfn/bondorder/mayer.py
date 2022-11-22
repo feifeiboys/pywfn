@@ -15,7 +15,6 @@ class Calculator:
 
     def calculate(self,centerAtom:Atom,aroundAtom:Atom):
         """计算两原子之间的mayer键级"""
-        self.mol.create_bonds()
         self.mol.createAtomOrbitalRange() # 为每个原子分配其在轨道矩阵中的序数范围
         # 获取密度矩阵 P
         PM=self.mol.PM

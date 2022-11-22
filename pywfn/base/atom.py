@@ -78,7 +78,7 @@ class Atom:
         return ps_
     
     @lru_cache
-    def get_Normal(self,aroundIdx:int,main:bool=True): # 一个原子应该知道自己的法向量是多少
+    def get_Normal(self,aroundIdx:int=None,main:bool=True): # 一个原子应该知道自己的法向量是多少
         """
         mian:代表是否为主动调用(防止递归)
         获取原子的法向量,垂直于键轴,如果不传入另一个原子,则垂直于三个原子确定的平面\n
@@ -90,15 +90,14 @@ class Atom:
             2.2 如果相邻原子没有法向量,返回None
         """
         locNum=0.001
-        around=self.mol.atom(aroundIdx)
         neighbors=self.neighbors
         normal=None
         if len(neighbors)==3:
-            if around is None:
+            if aroundIdx is None: #如果传入的没有相邻原子的序号
                 #获取中心原子到三个相邻原子的法向量
                 p1,p2,p3=[(each.coord-self.coord) for each in neighbors] 
             else:
-                p1,p2,p3=[(each.coord-self.coord)*(1 if each.idx==around.idx else locNum) for each in neighbors] 
+                p1,p2,p3=[(each.coord-self.coord)*(1 if each.idx==aroundIdx else locNum) for each in neighbors] 
             normal=utils.get_normalVector(p1,p2,p3)
         elif len(neighbors)==2:
             p2=self.coord
@@ -106,12 +105,13 @@ class Atom:
             angle=utils.vector_angle(p1-p2,p3-p2)
             if angle>=0.01:
                 normal=utils.get_normalVector(p1,p2,p3)
+            else:return None
         elif main: #如果是在递归中调用本函数的话就不要再次递归了
             for each in neighbors:
                 normal_=each.get_Normal(self.idx,main=False)
                 if normal_ is not None:
                     normal=normal_
-                    break
+                    return normal
                 return None #如果周围原子也没有法向量的话，返回None
         return normal
     

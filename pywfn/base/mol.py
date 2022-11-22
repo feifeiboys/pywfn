@@ -26,6 +26,7 @@ from .basis import Basis
 import numpy as np
 from .. import setting
 from functools import cached_property, lru_cache
+from .. import printer
 
 class Mol:
     def __init__(self) -> None:
@@ -91,7 +92,7 @@ class Mol:
     def SM(self):
         """重叠矩阵"""
         if self._SM is None:
-            print('没有重叠矩阵')
+            printer.wrong('没有重叠矩阵')
         return self._SM
 
     @cached_property
@@ -114,16 +115,18 @@ class Mol:
         return np.sqrt(np.sum(CM**2,axis=0)) #平方和再开根号
 
     @cached_property
-    def bonds(self):
+    def bonds(self)->List[Bond]:
         atomNum=len(self.atoms)
+        bonds=[]
         idxs=[(i+1,j+1) for i in range(atomNum) for j in range(atomNum) if i<j]
         for idx1,idx2 in idxs:
             r=np.linalg.norm(self.atom(idx2).coord-self.atom(idx1).coord)
             if r<1.7:
-                yield self.bond(idx1,idx2)
+                bonds.append(self.bond(idx1,idx2))
+        return bonds
     
     @lru_cache
-    def bond(self,idx1:int,idx2:int):
+    def bond(self,idx1:int,idx2:int)->Bond:
         """第一次调用是生成键,第二次调用时直接返回,秒啊"""
         if idx2<idx1:idx1,idx2=idx2,idx1
         return Bond(self.atom(idx1), self.atom(idx2))

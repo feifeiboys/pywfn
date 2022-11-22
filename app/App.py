@@ -1,7 +1,4 @@
-import sys
-from pathlib import Path
-print(Path(__file__).parent)
-sys.path.append(Path(__file__).parent.parent)
+
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import PySide6

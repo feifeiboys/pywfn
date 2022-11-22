@@ -7,16 +7,17 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 os.environ["QT_API"] = "pyside6"
 import pyvista as pv
 
-from PySide6.QtWidgets import QApplication,QWidget,QLabel,QMainWindow,QStyleFactory,QFileDialog,QMenu
+from PySide6.QtWidgets import QFileDialog,QVBoxLayout
 from PySide6.QtGui import QIcon,QFont
 from PySide6.QtCore import Qt
 from pyvistaqt import QtInteractor, MainWindow
 
-from .plotter.canvas import Canvas
-# from pywfn.plotter.canvas import Canvas
+
 from pywfn.base import Mol
 from pywfn.bondorder import piDM,piSH
 from pywfn.readers import get_reader
+
+from .plotter.canvas import Canvas
 from .commands import Command
 from .ui_app import Ui_MainWindow
 from .setting import settingManager
@@ -31,24 +32,29 @@ class Window(MainWindow):
         self.setting=settingManager()
         self.ui:Ui_MainWindow=Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.canvas.setVisible(False)
+        self.canvas=Canvas(self.ui.canvasWidget)
+        self.ui.canvasLayout.addWidget(self.canvas.interactor)
+
         self.commandLine=Command(self)
-        self.ui.textLog.setFont(QFont('Courier New'))
+        self.ui.log.setFont(QFont('Courier New'))
         self.ui.lineEdit.returnPressed.connect(self.command)
         
         self.init_menu()
 
         self.ui.listWidget_files.itemClicked.connect(self.selectFile)
         self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital) # 点击分子轨道名时触发的事件
-        self.files:Dict[str,FileItem]={}
-        self.currentFile:FileItem=FileItem("",self,showMol=False) # 初始化一个啥都没有的文件
-        self.ui.verticalLayout_canvas.addWidget(self.currentFile.widget) #第一次打开的时候添加组件，之后是替换组件
+        
+        
         self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
 
         self.updater=Updater(self)
         self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
         self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
         self.ui.clearCloudBtn.clicked.connect(lambda:self.currentFile.canvas.clear('cloud'))
+
+        self.files:Dict[str,FileItem]={}
+        # self.currentFile:FileItem=FileItem("",self,showMol=False) # 初始化一个啥都没有的文件
+        # self.ui.verticalLayout_canvas.addWidget(self.currentFile.widget) #第一次打开的时候添加组件，之后是替换组件
     
     def init_menu(self):
         """初始化菜单的命令"""
@@ -69,15 +75,6 @@ class Window(MainWindow):
         res=self.commandLine.run(opt)
         self.addInfo(res)
 
-    def compute_sigmaOrder(self):
-        atoms=self.currentFile.canvas.selectedAtoms
-        if len(atoms)==2:
-            caler=piDM.Calculator(self.currentFile.mol)
-            res=caler.calculate(atoms[0],atoms[1])
-            orders=res['data']['orders']
-            order=res['data']['order']
-        else:
-            self.addLog('compute bond order need two atoms')
 
     def compute_piOrder(self,orderType):
         atoms=self.currentFile.canvas.selectedAtoms
@@ -114,26 +111,10 @@ class Window(MainWindow):
         visible=label.GetVisibility()
         label.SetVisibility(int(not visible))
         print(label.GetVisibility())
-
-    def formPrint(self,contents:List[List[str]],eachLength:int,lineNum:int):
-        """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
-        logs=[]
-        for content in contents:
-            logs.append([])
-            for i in range(0,len(content),lineNum):
-                text=''.join([f'{each}'.rjust(eachLength,' ') for each in content[i:i+lineNum]])
-                logs[-1].append(text)
-        for i in range(len(logs[0])):
-            for log in logs:
-                self.addLog(log[i])
-            
-    def addInfo(self,info:str):
-        """输出用户输入命令的处理结果"""
-        self.ui.textInfo.append(f'>>> {info}')
     
     def addLog(self,log:str):
         """输出程序的执行结果"""
-        self.ui.textLog.append(log)
+        self.ui.log.append(log)
 
     def openFile(self):
         """打开log/out文件"""
@@ -163,10 +144,6 @@ class Window(MainWindow):
     def showMol(self,oldFile,newFile):
         """显示指定的分子"""
         print('显示指定文字')
-        self.ui.verticalLayout_canvas.replaceWidget(oldFile.widget,newFile.widget)
-        oldFile.widget.hide()
-        newFile.widget.show()
-        self.currentFile=newFile
         self.update()
 
     def selectOrbital(self):
@@ -185,16 +162,7 @@ class Window(MainWindow):
 
     def update(self):
         """更新页面中的内容"""
-        # 更新轨道信息
-        self.ui.listWidget_orbitals.clear()
-        orbitals=self.currentFile.mol.orbitals
-        orbitals=[f'{i+1} {o}' for i,o in enumerate(orbitals)]
-        self.ui.listWidget_orbitals.addItems(orbitals)
-        # 更新点云信息
-        clouds=self.currentFile.canvas.clouds
-        names=[cloud.name for cloud in clouds]
-        self.ui.listWidget_clouds.clear()
-        self.ui.listWidget_clouds.addItems(names)
+        ...
 
     def set_cloudRange(self,e):
         """设置点云范围"""
@@ -212,25 +180,28 @@ class Window(MainWindow):
         return super().closeEvent(event)
             
 
-
+from .plotter.canvas import Mol as MolActor
 class FileItem:
+    """每个文件对象都对应一个分子对象"""
     def __init__(self,filePath:str,app:Window,showMol:bool=True) -> None:
+        self.app=app
         self.filePath=filePath
-        self.plotter:QtInteractor = QtInteractor(app.ui.canvas)
-        self.plotter.Finalize()
-        
-        self.canvas:Canvas = Canvas(self.plotter,app=app)
-        self.widget=self.plotter.interactor
-        self.widget.key_press_event=lambda e:print(e)
-        if showMol:
-            self.init_mol()
+        self.init_mol()
         
     def init_mol(self):
         self.mol=get_reader(self.filePath).mol
-        self.mol.create_bonds()
-        self.canvas.add_mol(self.mol)
-        self.property:Dict={} # 存储分子在属性栏中显示的内容
-        print(self.widget.size())
+        molActor=MolActor(self.app.canvas)
+        for atom in self.mol.atoms:
+            molActor.add_atom(atom.coord,atom.symbol,atom.idx)
+        for bond in self.mol.bonds:
+            a1,a2=bond.a1,bond.a2
+            molActor.add_bond(a1.coord,a2.coord,bond.idx)
+        self.app.canvas.mols.append(molActor)
+    
+    def hide_mol(self):
+        """隐藏原子"""
+        ...
+        
     
     def onClick(self):
         print('click')

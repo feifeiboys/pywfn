@@ -1,10 +1,11 @@
 # 定义各种原子的颜色
 import pandas as pd
 from pathlib import Path
+from typing import *
 class Elements:
     def __init__(self):
         data=pd.read_csv(Path(__file__).parent / 'elements.csv')
-        self.elements=[]
+        self.elements:List[Element]=[]
         for i in range(data.shape[0]):
             idx,symbol,color,radius=data.iloc[i,:]
             self.elements.append(Element(idx, symbol, color, radius))

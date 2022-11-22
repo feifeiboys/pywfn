@@ -5,36 +5,23 @@ from ..base import Mol,Atom
 from typing import *
 import numpy as np
 import pandas as pd
+from ..maths import CM2PM
+from .. import printer
 
 class Calculator:
     def __init__(self,mol:Mol) -> None:
         self.mol=mol
 
-    def get_pIndex(self,layers:List[str]):
-        return [i for i,l in enumerate(layers) if 'P' in l]
-    
-    def transts(self,atom:Atom,normal,orbital):
-        """将系数转为多个向量"""
-        nvecs=[]
-        ts_=atom.get_pProj(normal,orbital)
-        ts_=np.concatenate(ts_)
-        ts=atom.OC.iloc[:,orbital].to_numpy()
-        # print(ts_)
-        return ts_
-            
-            
-
-    
+        
     def calculate(self,atoms:List[Atom]=None):
         """计算π电子数量,如果不指定则计算所有的π电子"""
-        self.mol.create_bonds()
         SM=self.mol.SM #重叠矩阵
+        if SM is None:
+            return 0
         # 重构系数矩阵
-        CM_=np.zeros_like(self.mol.CM)
+        CM_=np.zeros_like(self.mol.CM,dtype=np.float32)
         if atoms is None:
-            atoms=self.mol.atoms
-        else:
-            atoms=[self.mol.atom(i) for i in atoms]
+            atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
         
         self.mol.createAtomOrbitalRange()
         orbitals=self.mol.O_obts
@@ -44,30 +31,20 @@ class Calculator:
             normal=atom.get_Normal()
              # 占据轨道
             a_1,a_2=atom.obtMatrixRange
-            AC=atom.OC
-            AC_=np.zeros_like(AC)
-            idxs=self.get_pIndex(atom.layers)
-            for orbital in orbitals:
-                 # 具有n*3个数据，将这些作为n个向量投影到法向量上
-                ps_=self.transts(atom,normal,orbital)
-                AC_[idxs,orbital]=ps_
-            CM_[a_1:a_2,:]=AC_
+            pIndex=[i for i,l in enumerate(atom.layers) if 'P' in l]
+            for i,orbital in enumerate(orbitals):
+                Cop=atom.get_pProj(normal,orbital)
+                Co=np.zeros(len(atom.layers))
+                Co[pIndex]=np.concatenate(Cop)
+                CM_[a_1:a_2,orbital]=Co
+
         # 计算密度矩阵
-        PM_=np.zeros_like(self.mol.PM)
-        oE=1 if self.mol.isOpenShell else 2
-        n=np.array([oE if 'O' in o else 0 for o in self.mol.orbitals])
-        for j in range(CM_.shape[1]):
-            ci=CM_[:,j].copy().reshape(-1,1)
-            cj=CM_[:,j].copy().reshape(1,-1)
-            PM_+=ci@cj*n[j]
+        PM_=CM2PM(CM_,orbitals,self.mol.oE)
         PS=PM_*SM
         PSS=PS.sum(axis=0)
         electrons=[]
         for atom in atoms:
             a_1,a_2=atom.obtMatrixRange
             electrons.append(np.sum(PSS[a_1:a_2]))
-        # print(electrons,sum(electrons))
-        pd.DataFrame(CM_).to_csv('CM_.csv')
-        pd.DataFrame(PM_).to_csv('PM_.csv')
         return electrons
 

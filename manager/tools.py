@@ -8,6 +8,10 @@ from typing import *
 from . import utils
 from .draw import saveImg
 from pywfn.readers import LogReader
+import multiprocessing
+from threading import Thread
+from PySide6.QtWidgets import QFileDialog
+
 
 def get_yaml(path)->dict:
     with open(path,'r',encoding='utf-8') as f:
@@ -18,7 +22,8 @@ def set_yaml(path,data):
         yaml.dump(data,f)
 
 class Tools:
-    def __init__(self) -> None:
+    def __init__(self,window) -> None:
+        self.window=window
         self.confifPath=Path(__file__).parent/'config.yml'
         self.config=self.get_config()
         self.check()
@@ -27,8 +32,10 @@ class Tools:
         """
         有时候需要为程序添加一些新的功能，就需要添加一些新的记录属性
         """
-        if self.config["storagePath"] is None: # 初始化存储路径的绝对位置
-            self.config['storagePath']=Path(__file__).parent/'storages'
+        if not Path(self.config["storagePath"]).exists():
+            path=QFileDialog.getExistingDirectory(self.window,'选择存储位置')
+            print(path)
+            self.config['storagePath']=path
             self.set_config()
 
     def get_config(self):
@@ -40,18 +47,20 @@ class Tools:
         set_yaml(self.confifPath,self.config)
         self.config=self.get_config()
 
+
     def create_file(self,path):
         """
         创建一个本地文件
         文件名是随机的,内部包含一个yml文件用来保存文件的信息
         """
         # 获取文件哈希值
+        print(f'{path=}')
         path=Path(path)
         fileHash=utils.get_fileHash(path)
         if self.infos.exists(fileHash):
             print('相同的文件已经存在')
             return
-        print(f'{fileHash=}')
+        # print(f'{fileHash=}')
         # 随机生成一个文件名
         name=utils.get_randomName()
         # 创建文件夹
@@ -60,24 +69,26 @@ class Tools:
         # 将文件拷贝到文件夹中
         copyfile(path,folder/path.name)
 
-        self.infos.add(folder,update=True)
+        info=self.infos.add(folder,update=True)
+        return info
 
-class Infos:
+class Infos(list):
     """存储所有log文件的信息,实例化的时候会准备好已经存在的信息"""
     def __init__(self,tools:Tools) -> None:
-        self.data:List[Info]=[]
+        list.__init__([])
         self.tools=tools
         self.update()
     
-    def add(self,folder:str,update=False):
+    def add(self,folder:str,update=False)->"Info":
         """添加info,检查是否已经存在,已经存在的话就不添加了"""
         info=Info(folder)
         if update:info.update()
-        self.data.append(info)
+        self.append(info)
+        return info
     
     def exists(self,hash):
         """根据哈希值判断文件是否存在"""
-        for each in self.data:
+        for each in self:
             if each.hash==hash:
                 return True
         return False
@@ -89,10 +100,10 @@ class Infos:
             self.add(folder)
 
     def __getitem__(self,item)->"Info":
-        return self.data[item]
+        return self[item]
     
     def __repr__(self) -> str:
-        return f'{len(self.data)}'
+        return f'{len(self)}'
     
 class Info:
     # 设置一个文件应该有的属性,如果没有就补充,多余的话就删除

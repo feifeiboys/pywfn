@@ -3,15 +3,14 @@
 """
 import sys
 from pathlib import Path
-
-from numpy import Inf
 print(Path(__file__).parent)
 sys.path.append(Path(__file__).parent)
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import PySide6
 dirname = os.path.dirname(PySide6.__file__) 
-plugin_path = os.path.join(dirname, 'plugins', 'platforms')
+plugin_path = os.path.join(dirname, 'plugins', 'platforms') # 指定动态链接库的位置
+print(plugin_path)
 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 os.environ["QT_API"] = "pyside6"
 
@@ -26,6 +25,9 @@ from typing import *
 import time
 from threading import Thread
 from .rightMenu import RightMenu
+from tqdm import tqdm
+import multiprocessing as mp
+from collections import Counter
 
 class Main(QMainWindow):
     def __init__(self):
@@ -34,10 +36,7 @@ class Main(QMainWindow):
         ui.setupUi(self)
         ui.action_import.triggered.connect(self.import_files)
         self.setAcceptDrops(True)
-        self.tools=Tools()
         
-        self.table=Table(self)
-        self.tree=Tree(self)
         self.currentRoute=None #当前文件分类
         self.ui.table.itemDoubleClicked.connect(self.openFile)
         self.ui.table.itemClicked.connect(self.selectFile)
@@ -50,7 +49,16 @@ class Main(QMainWindow):
         self.ui.splitter.setStretchFactor(1,6)
         self.ui.splitter.setStretchFactor(2,2)
         # self.ui.table.clear()
+        self.tools=Tools(self)
+        self.table=Table(self)
+        self.tree=RouteList(self)
+        
+        self.ui.route_btn.clicked.connect(self.add_route)
     
+    def add_route(self):
+        name=self.ui.route_input.text()
+        self.tree.add(name)
+
     def openFile(self,item):
         path=self.table.infos[item.row()].path
         print(path)
@@ -72,46 +80,57 @@ class Main(QMainWindow):
         
     def import_files(self):
         """导入外部文件"""
+        import multiprocessing as mp
         files,fileType=QFileDialog.getOpenFileNames(self,'打开文件')
+        ts=[]
         for file in files:
-            print(f'{file=}')
-            self.tools.create_file(file)
-            self.update_tree()
-            self.update_table()
+            t=Thread(target=self.tools.create_file,args=(file,))
+            ts.append(t)
+            t.start()
+        for t in ts:
+            t.join()
+        self.tree.update()
 
     def dragEnterEvent(self, event) -> None:
         print('拖动事件')
 
-import multiprocessing as mp
+    def showMsg(self,text):
+        """在状态栏显示信息"""
+        self.ui.statusbar.showMessage(text,500)
 
-class Tree:
+class RouteList:
     """最左边的文件栏是树结构"""
     def __init__(self,window:Main) -> None:
-        self.nodes={} # 每一个节点是一个表格信息{route:{wid}}
         self.window=window
-        self.infos=window.tools.infos
-        self.currentNode=None
-        self.update()
+        self.infos:List[Info]=window.tools.infos
+        self.msgs:List[str]=[]
+        self.init()
 
-    def update(self):
-        """更新节点信息"""
-        self.nodes={}
+    def init(self):
+        """初始化节点信息"""
+        names=[]
         for info in self.infos:
             route=info.route
-            if route not in self.nodes.keys():self.nodes[route]=[]
-            self.nodes[route].append(info)
-        self.window.table.set_content(self.nodes[self.currentNode])
+            name='未分类文件' if route is None else route
+            names.append(name)
+        
+        for name in set(names):
+            self.msgs.append(f'{name}-{names.count(name)}')
+        
         self.show()
     
+    def add(self,name):
+        msg=f'{name}-0'
+        if msg not in self.msgs:
+            self.msgs.append(msg)
+            self.show()
+    
     def show(self):
-        """将节点信息显示到树组件上"""
-        for key,infos in self.nodes.items():
-            name=key if key is not None else '未分类文件'
-            treeNode=QTreeWidgetItem()
-            treeNode.setText(0,name)
-            for info in infos:
-                treeNode.addChild(QTreeWidgetItem([info.name]))
-            self.window.ui.tree.addTopLevelItem(treeNode)
+        """根据节点信息显示组件内容"""
+        self.window.ui.list.clear()
+        for msg in self.msgs:
+            self.window.ui.list.addItem(msg)
+    
             
 class Table:
     """
@@ -122,11 +141,21 @@ class Table:
         self.titles=['文件名','原子数量','修改时间'] # 字符串组成的列表，用于控制显示那些类型的信息
         self.infos=[]
         self.contents=[] # 字典组成的列表
+        self.show(None)
     
-    def set_content(self,infos:List[Info]):
-        print(len(infos))
+    def show(self,route):
+        infos=[]
+        """显示指定路由的信息"""
+        for info in self.window.tools.infos:
+            if info.route==route:
+                infos.append(info)
+        self.set(infos)
+
+    
+    def set(self,infos:List[Info]):
+        """将传入的info以列表的形式显示出来"""
         self.infos=infos
-        self.window.showProp(infos[0])
+        self.window.showProp(infos[0]) # 显示第一个信息
         contents=[]
         for info in infos:
             content={}
@@ -139,7 +168,6 @@ class Table:
                     content[title]=f'{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(info.st_mtime))}'
             contents.append(content)
         self.contents=contents
-        print(contents)
         self.update()
 
     def update(self):
@@ -161,8 +189,6 @@ class Table:
         
         self.window.ui.table.resizeColumnsToContents()
         
-
-
 def run():
     app=QApplication(sys.argv)
     app.setStyle(QStyleFactory.create("Fusion")) #fusion风格

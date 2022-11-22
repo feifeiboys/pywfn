@@ -90,7 +90,6 @@ class Calculator:
         for i,j in tqdm(idxs,total=len(idxs),desc='构建键级矩阵'):
             v=self.get_OMi((i,j))
             OM[i,j]=v
-            # progress('构建键级矩阵',i*obtNum+j+1,obtNum**2)
         # OM是一个下三角矩阵,将其转为对角矩阵
         OM+=np.tril(OM.T,-1)
         return OM
