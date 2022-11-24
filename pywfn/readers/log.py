@@ -159,7 +159,7 @@ class LogReader(Reader):
     def read_basis(self):
         '''读取GTO函数的拟合系数'''
         from ..base.basis import Basis
-        s1='^ +(\d+) +\d+' # 开始一个原子
+        s1='^ +(\d+) +\d' # 开始一个原子
         s2='^ ([A-Za-z]+) +\d ' # 开始新的一层
         s3='^ +(( +-?0.\d{10}D[+*/-]\d{2}){2,3})' # 获取一层内的数据
         s4=' ****'
@@ -176,7 +176,8 @@ class LogReader(Reader):
         i=titleNum+1
         while i < len(self.logLines):
             line=self.logLines[i]
-            if re.search(s1, line) is not None:
+            if not line:break
+            elif re.search(s1, line) is not None:
                 atomNum:int=int(re.search(s1, line).groups()[0])
                 symbol=self.mol.atom(atomNum).symbol
                 ifRead=basis.new(symbol) #生成一个新的原子的基组,并返回是否还要继续读取
@@ -192,9 +193,6 @@ class LogReader(Reader):
                     layer.add(linefloats)
                 elif line==s4:
                     pass
-            elif not line:
-                print(line)
-                break
             i+=1
         self.mol.basis=basis
     

@@ -28,8 +28,6 @@ pkgs=[
 ]
 # 导入与安装
 # 安装时的名称和导入时的名称是不一样滴
-with open(Path.cwd()/'requires.txt','r',encoding='utf-8') as f:
-    pkgs=[e.split(',') for e in f.read().splitlines(keepends=False)]
 for pkg in pkgs:chkPkgs(pkg)
 os.system('clear')
 def run(opt):

@@ -58,7 +58,7 @@ class Calculator:
         self.centerAtom=centerAtom
         self.aroundAtom=aroundAtom
         self.obtNum=obtNum=len(orbitals)
-
+        
         if setting.IF_ORBITAL_ORDER: # 是否拆分轨道键级成分
             self.PMs_=CM2PMs(CM_,orbitals,oe) #三维数组
             self.PSs=self.PMs_@SM
