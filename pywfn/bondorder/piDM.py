@@ -40,7 +40,7 @@ class Calculator:
         a2_1,a2_2=aroundAtom.obtMatrixRange
         centerPIndex=[i for i,l in enumerate(centerAtom.layers) if 'P' in l]
         aroundPIndex=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
-        for i,orbital in enumerate(orbitals):
+        for i,orbital in tqdm(enumerate(orbitals),total=len(orbitals),desc='重构密度矩阵'):
             C1op=centerAtom.get_pProj(normal,orbital)
             C2op=aroundAtom.get_pProj(normal,orbital)
             C1o=np.zeros(len(centerAtom.layers))
@@ -49,7 +49,7 @@ class Calculator:
             C2o[aroundPIndex]=np.concatenate(C2op)
             CM_[a1_1:a1_2,orbital]=C1o
             CM_[a2_1:a2_2,orbital]=C2o
-            progress('重构密度矩阵',i+1,len(orbitals))
+            # progress('重构密度矩阵',i+1,len(orbitals))
         oe=1 if self.mol.isOpenShell else 2
         n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
         SM=self.mol.SM
@@ -83,7 +83,7 @@ class Calculator:
         res=np.sum(PSi[a1:a2,b1:b2]*PSj[b1:b2,a1:a2].T)
         return res
 
-    def get_OM(self): # 计算键级矩阵
+    def get_OM(self): # 计算键级矩阵,每两个原子轨道之间有一个键级
         obtNum=self.obtNum # 占据轨道的数量
         OM=np.zeros(shape=(obtNum,obtNum)) # 轨道键级矩阵，是一个对称矩阵
         idxs=get_idxs(obtNum)

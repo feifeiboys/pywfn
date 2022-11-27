@@ -92,7 +92,8 @@ class Mol:
     def SM(self):
         """重叠矩阵"""
         if self._SM is None:
-            printer.wrong('没有重叠矩阵')
+            printer.wrong('没有重叠矩阵,将使用单位矩阵作为重叠矩阵!!!')
+            self._SM=np.eye(self.CM.shape[0])
         return self._SM
 
     @cached_property

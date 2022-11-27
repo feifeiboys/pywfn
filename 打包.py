@@ -46,8 +46,7 @@ opts=[
     'app',
     'manager',
     'main.py',
-    'main.bat',
-    'requirments.txt'
+    'main.bat'
 ]
 rms=[
     '__pycache__',
@@ -63,5 +62,5 @@ for opt in opts:
     get(Path(opt))
 
 
-# zip()
+zip(files)
 count(files)

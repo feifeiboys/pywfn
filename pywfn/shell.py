@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import *
 from . import setting
 import re
+import sys
 init(autoreset=True)
 INPUT_COMMAND='input command option: '
 LINE='-'*40
@@ -46,6 +47,7 @@ class Shell:
     def __init__(self):
 
         self.paths:List[Path]=None
+        self.explain=(Path(__file__).parent / 'data' / 'explain.txt').read_text(encoding='utf-8')
         
     def calerAtomProp(self):
         """计算原子属性"""
@@ -186,30 +188,31 @@ class Shell:
             printer.res('文件分割完成 >_<')
 
     def home(self):
-        print(Fore.BLUE + '欢迎使用pywfn,按照提示输入编号即可')
         opts=[
-            ['q','退出程序'],
-            ['r','读取文件[夹]'],
             ['1','计算键级'],
             ['2','原子属性'],
             ['3','实用工具']
         ]
         while True:
-            print(LINE)
-            for key,opt in opts:
-                print(f'{key}.{opt}')
-            opt=input('input command option: ')
-            if   opt=='q':return
-            elif opt=='r':self.inputFile()
-            elif opt=='1':self.calerBondOrder()
-            elif opt=='2':self.calerAtomProp()
-            elif opt=='3':self.toolsPage()
-            else:printer.warn('命令不存在')
+            self.inputFile()
+            while True:
+                print(LINE)
+                for key,opt in opts:
+                    print(f'{key}.{opt}')
+                opt=input('input command option: ')
+                if opt=='1':self.calerBondOrder()
+                elif opt=='2':self.calerAtomProp()
+                elif opt=='3':self.toolsPage()
+                elif opt=='':break #返回上一级
+                else:printer.warn('命令不存在')
             
     def inputFile(self):
         supportFileTypes=['.log','.out','.fch'] #支持的文件类型
+        print(Fore.BLUE+self.explain)
         while True:
             path=input('输入文件[夹]名: ')
+            if path=='q':sys.exit()
+            if path=='':continue
             
             path=Path(path)
             if path.exists(): #如果路径存在
@@ -229,4 +232,3 @@ class Shell:
                 
             else:
                 printer.wrong('路径不存在')
-

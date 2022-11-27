@@ -1,0 +1,3 @@
+欢迎使用pywfn，详情信息可访问 https://feifeiboys.github.io/pywfn/ 查看
+按 q 即可退出程序，如无特殊提示，按 Enter 可返回上一级
+按照提示输入编号即可使用程序
