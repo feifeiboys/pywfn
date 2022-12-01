@@ -27,8 +27,8 @@ def get(path):
         for each in path.iterdir():
             get(each)
 
-def zip(files):
-    zipFile=zipfile.ZipFile('pywfn.zip','w')
+def zip(files,name):
+    zipFile=zipfile.ZipFile(f'{name}.zip','w')
     for each in files:
         zipFile.write(each)
     
@@ -56,11 +56,13 @@ rms=[
 
 files=[]
 lines=[]
-
-
 for opt in opts:
     get(Path(opt))
+zip(files,'pywfn')
 
-
-zip(files)
-count(files)
+files=[]
+opts.append('env')
+for opt in opts:
+    get(Path(opt))
+zip(files,'pywfn_env')
+# count(files)

@@ -5,11 +5,12 @@ sys.path.append(str(hfvPath))
 # 设定好执行库所必须的文件
 import importlib
 import os
-# libSource='https://pypi.tuna.tsinghua.edu.cn/simple'
-libSource='http://mirrors.aliyun.com/pypi/simple'
+libSource='https://pypi.tuna.tsinghua.edu.cn/simple'
+# libSource='http://mirrors.aliyun.com/pypi/simple'
 def chkPkgs(pkg):
     """检查所需的包是否完整,不完整的话就下载"""
     lib,name = pkg
+    # os.system(f'env\python.exe -m pip install {lib} -i {libSource}')
     try:
         importlib.import_module(name)
     except:
@@ -30,7 +31,7 @@ pkgs=[
 # 导入与安装
 # 安装时的名称和导入时的名称是不一样滴
 for pkg in pkgs:chkPkgs(pkg)
-os.system('cls')
+# os.system('cls')
 def run(opt):
     if opt=='1':
         import pywfn
