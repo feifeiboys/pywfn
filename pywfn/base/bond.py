@@ -15,6 +15,11 @@ class Bond:
     def length(self):
         """获取键长"""
         return np.linalg.norm(self.a2.coord-self.a1.coord)
+
+    @cached_property
+    def vector(self):
+        """获取键向"""
+        return self.a2.coord-self.a1.coord
     
     def __repr__(self) -> str:
         return f'length={self.length}'

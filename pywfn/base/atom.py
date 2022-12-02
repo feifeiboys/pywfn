@@ -48,7 +48,11 @@ class Atom:
         return [self.mol.atom(idx) for idx in set(idxs)]
     
     def get_cloud(self,pos:ndarray,obt:int)->ndarray:
-        """获取波函数的点云数据"""
+        """
+        获取波函数的点云数据
+        以原子中心为原点
+        pos[n,3]
+        """
         basi=self.mol.basis.get(self.symbol)
         res=agto(pos,basi,self.OC[:,obt],self.layers)
         return res
@@ -117,10 +121,12 @@ class Atom:
     
     @lru_cache
     def get_obtWay(self,obt:int):
-        """获得原子某一原子轨道的方向"""
+        """获得原子某一轨道的方向"""
         atomPos=self.coord
         maxPos,maxValue=utils.get_extraValue(self,obt)
-        way=maxPos-atomPos
+        way=maxPos-atomPos # 如果两者相同说明完全没有电子云、这显然不对啊
+        if np.linalg.norm(way)==0:
+            raise
         return way/np.linalg.norm(way)
 
     def __repr__(self) -> str:

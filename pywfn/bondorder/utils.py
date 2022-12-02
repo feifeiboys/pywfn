@@ -39,7 +39,7 @@ def judgeOrbital(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)->int:
     if sContCenter>0.01 or sContAround>0.01:
         return 0
     # 2. p轨道的方向要处在垂直分子平面方向
-    cenDir=centerAtom.get_obtWay(orbital)
+    cenDir=centerAtom.get_obtWay(orbital) #中心原子的p轨道方向
     aroDir=aroundAtom.get_obtWay(orbital)
     centerAngle=vector_angle(cenDir,normal)
     aroundAngle=vector_angle(aroDir,normal)

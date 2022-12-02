@@ -7,7 +7,7 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 os.environ["QT_API"] = "pyside6"
 import pyvista as pv
 
-from PySide6.QtWidgets import QFileDialog,QVBoxLayout
+from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel
 from PySide6.QtGui import QIcon,QFont
 from PySide6.QtCore import Qt
 from pyvistaqt import QtInteractor, MainWindow
@@ -26,36 +26,53 @@ from .update import Updater
 from typing import *
 from pathlib import Path
 
+from .pages.setting import SettingWidget
+from .pages.start import StartWidget
+from .pages.orbital import OrbitalWidget
+
 class Window(MainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setting=settingManager()
         self.ui:Ui_MainWindow=Ui_MainWindow()
         self.ui.setupUi(self)
-        self.canvas=Canvas(self.ui.canvasWidget)
-        self.ui.canvasLayout.addWidget(self.canvas.interactor)
+        
 
         self.commandLine=Command(self)
         self.ui.log.setFont(QFont('Courier New'))
-        self.ui.lineEdit.returnPressed.connect(self.command)
+        # self.ui.lineEdit.returnPressed.connect(self.command)
         
         self.init_menu()
 
-        self.ui.listWidget_files.itemClicked.connect(self.selectFile)
-        self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital) # 点击分子轨道名时触发的事件
+        # self.ui.listWidget_files.itemClicked.connect(self.selectFile)
+        # self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital) # 点击分子轨道名时触发的事件
         
         
         self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
 
         self.updater=Updater(self)
         self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
-        self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
-        self.ui.clearCloudBtn.clicked.connect(lambda:self.currentFile.canvas.clear('cloud'))
+        # self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
+        # self.ui.clearCloudBtn.clicked.connect(lambda:self.currentFile.canvas.clear('cloud'))
 
         self.files:Dict[str,FileItem]={}
-        # self.currentFile:FileItem=FileItem("",self,showMol=False) # 初始化一个啥都没有的文件
+        self.currentFile:FileItem=None # 初始化一个啥都没有的文件
         # self.ui.verticalLayout_canvas.addWidget(self.currentFile.widget) #第一次打开的时候添加组件，之后是替换组件
-    
+        
+        # self.canvasLayout.addWidget(StartWidget())
+        self.init_layout()
+        self.orbital=OrbitalWidget(self)
+        self.viewLaout.addWidget(self.orbital)
+
+    def init_layout(self):
+        """初始化布局"""
+        self.fileTab=QHBoxLayout()
+        self.ui.fileTab.setLayout(self.fileTab)
+        self.canvasLayout=QVBoxLayout()
+        self.ui.canvas.setLayout(self.canvasLayout)
+        self.viewLaout=QVBoxLayout()
+        self.ui.view.setLayout(self.viewLaout)
+
     def init_menu(self):
         """初始化菜单的命令"""
         self.ui.actionopen.triggered.connect(self.openFile)
@@ -119,17 +136,25 @@ class Window(MainWindow):
     def openFile(self):
         """打开log/out文件"""
         print('打开文件')
+        files=[]
         filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
         for filePath,fileType in zip(filePaths,fileTypes):
-            self.ui.listWidget_files.addItem(filePath)
-            self.files[filePath]=FileItem(filePath=filePath,app=self) # 添加一个文件
+            # self.ui.listWidget_files.addItem(filePath)
+            # self.files[filePath]=FileItem(filePath=filePath,app=self) # 添加一个文件
+            files.append(filePath)
             self.addLog(f'open {filePath}')
             self.setting.lastOpenFilePath=str(Path(filePath).parent)
-
-        name=list(self.files.keys())[-1] # 最后一个文件的名称
-        print(f'{name=}')
-        self.showMol(self.currentFile,self.files[name])
-        self.update()
+        if len(files)==0:return
+        name=files[-1] # 最后一个文件的名称
+        fileItem=FileItem(Path(files[-1]),app=self)
+        self.currentFile=fileItem
+        self.canvasLayout.addWidget(fileItem)
+        self.addTab(files[-1])
+        # self.showMol(self.currentFile,self.files[name])
+    
+    def addTab(self,text):
+        """在tabFrame添加一个标签"""
+        self.fileTab.addWidget(QLabel(text))
             
     def selectFile(self):
         """选择一个打开的文件,当选择文件名的时候，如果就是当前的文件，则不发生变化，如果不是则取代"""
@@ -178,25 +203,33 @@ class Window(MainWindow):
         for each in self.files.values():
             each.canvas.plotter.Finalize()
         return super().closeEvent(event)
+
+    def add_fileItem(self):
+        """模仿vscode,每一个可视化的分子文件为一个FileItem"""
             
 
 from .plotter.canvas import Mol as MolActor
-class FileItem:
-    """每个文件对象都对应一个分子对象"""
-    def __init__(self,filePath:str,app:Window,showMol:bool=True) -> None:
+from .plotter.canvas import Canvas
+
+
+class FileItem(QWidget):
+    """
+    应该是一个tab，里面可以包含各种组件
+    """
+    def __init__(self,filePath:Path,app:Window,showMol:bool=True) -> None:
+        QWidget.__init__(self,parent=None)
         self.app=app
         self.filePath=filePath
-        self.init_mol()
+        mol=get_reader(filePath).mol
+        orbitals=[str(o) for o in mol.orbital_symbols]
+        self.app.orbital.set_orbitals(orbitals)
+        self.layout=QVBoxLayout()
+
+        self.canvas=Canvas(self.app,mol,self)
+        self.layout.addWidget(self.canvas.interactor)
+        self.setLayout(self.layout)
+        # self.init_mol()
         
-    def init_mol(self):
-        self.mol=get_reader(self.filePath).mol
-        molActor=MolActor(self.app.canvas)
-        for atom in self.mol.atoms:
-            molActor.add_atom(atom.coord,atom.symbol,atom.idx)
-        for bond in self.mol.bonds:
-            a1,a2=bond.a1,bond.a2
-            molActor.add_bond(a1.coord,a2.coord,bond.idx)
-        self.app.canvas.mols.append(molActor)
     
     def hide_mol(self):
         """隐藏原子"""
@@ -206,3 +239,6 @@ class FileItem:
     def onClick(self):
         print('click')
 
+class viewItem(QWidget):
+    def __init__(self):
+        QWidget.__init__(self,parent=None)

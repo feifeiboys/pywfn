@@ -19,23 +19,25 @@ def p(c:float,a:float,w:ndarray,R:ndarray):
     c:收缩系数
     a:高斯指数
     w:坐标分量,x、y或z(向量形式表示)
-    R:x**2+y**2+z**2
+    R:x**2+y**2+z**2, [n]
     """
-    return c*(2*a/π)**(3/4)*2*sqrt(a)*w*e**(-1*a*R)
+    v=c*(2*a/π)**(3/4)*2*sqrt(a)*w*e**(-1*a*R)
+    return v
 
 def lgto(pos:ndarray,cs:List[float],as_:List[float],obType:str):
     """
-    计算一个收缩的(一层)原子轨道波函数
+    layer,计算一个收缩的(一层)原子轨道波函数
     pos,[n,3] 需要计算的点的坐标
     cs:收缩系数
     as_:高斯指数
     """
     x,y,z=pos.T
-    R=np.sum(pos**2,axis=1) # 每个点到中心点的距离[n,1]
+    R=np.sum(pos**2,axis=1) # 每个点到中心点的距离[n]
     vs=np.zeros(pos.shape[0])
     for a,c in zip(as_,cs):
-        if obType=='S':
-            v=s(c,a,R)
+        if obType=='S': # 2S和3S
+            # v=s(c,a,R)
+            v=0
         elif obType=='PX':
             v=p(c,a,x,R)
         elif obType=='PY':
@@ -47,9 +49,9 @@ def lgto(pos:ndarray,cs:List[float],as_:List[float],obType:str):
         vs+=v
     return vs
 
-def agto(pos,basi:Basi,OCi:ndarray,layers:List[str]):
+def agto(pos:ndarray,basi:Basi,OCi:ndarray,layers:List[str]):
     """
-    计算一个原子的轨道波函数(所有层的轨道波函数之和)
+    atom,计算一个原子的轨道波函数(所有层的轨道波函数之和)
     pos:要计算的点相对于原子(原子作为坐标原点)的坐标[n,3]
     basi:基组信息
     OCs:原子轨道组合系数信息
@@ -62,9 +64,9 @@ def agto(pos,basi:Basi,OCi:ndarray,layers:List[str]):
         lNum=int(l[0]) #所在的层数
         lbasi=lbasis[lNum-1][1]
         as_=lbasi[:,0] # 不管有几列，第一列都是高斯指数
-        if lbasi.shape[1]==2:
+        if lbasi.shape[1]==2: #没有p轨道的
             ...
-        elif lbasi.shape[1]==3: #如果有三列
+        elif lbasi.shape[1]==3: #如果有三列,对应的有两种情况,2S和2PXYZ
             css=lbasi[:,1] # s轨道
             cps=lbasi[:,2] # p轨道
             # vs+=C*lgto(pos,css,as_,'s') #不要s

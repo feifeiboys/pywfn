@@ -19,7 +19,6 @@ class Calculator:
         if self.mol.CM is None:
             print('没有重叠矩阵,无法计算')
             return 0
-        self.mol.create_bonds()
         self.mol.createAtomOrbitalRange()
         centerNormal=centerAtom.get_Normal()
         orbitals=self.mol.O_obts

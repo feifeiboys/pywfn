@@ -10,7 +10,6 @@ class Calculator:
         self.mol=mol
 
     def calculate(self,centerAtom:Atom,aroundAtom:Atom):
-        self.mol.create_bonds()
         orbitals=self.mol.O_obts
         As=self.mol.As[orbitals]
         piUnits=[judgeOrbital(centerAtom,aroundAtom,o,centerAtom.get_Normal()) for o in orbitals]

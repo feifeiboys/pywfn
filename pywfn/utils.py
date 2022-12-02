@@ -56,22 +56,7 @@ def get_aroundPoints(p,step): #
     step:步长
     '''
     return p+arounds*step
-def removePos(aroundPos,searched):
-    '''去除已经搜索过的点'''
-    idxs=[]
-    for i,each in enumerate(aroundPos.T):
-        x,y,z=each
-        key=f'{x:.6f}-{y:.6f}-{z:.6f}'
-        if key not in searched:
-            idxs.append(i)
-    return aroundPos[:,idxs]
-def addSearched(aroundPos,searched):
-    '''将已经搜索过的添加到搜索中'''
-    for i,each in enumerate(aroundPos.T):
-        x,y,z=each
-        key=f'{x:.6f}-{y:.6f}-{z:.6f}'
-        searched.append(key)
-    return searched
+
 
 from . import base
 def get_extraValue(atom:"base.Atom",obt:int,valueType='max'):
@@ -79,24 +64,26 @@ def get_extraValue(atom:"base.Atom",obt:int,valueType='max'):
     从指定位置开始,利用爬山算法寻找原子波函数极值
     maxPos:[3,]
     '''
-    p=p0=atom.coord #起始点
-    v0=0 # 计算原子坐标处的初始值
+    p=p0=atom.coord #起始点,p是原子坐标不变
+    v0=atom.get_cloud(np.zeros((1,3)),obt) # 计算原子坐标处的初始值
     # print(f'{v0=:.6f},{p0=}')
     step=0.1
     while True:
         aroundPs=get_aroundPoints(p0,step) # aroundPs:(n,3)
         aroundVs=atom.get_cloud(aroundPs-p,obt)
         if valueType=='max' and np.max(aroundVs)>v0:
-            v0=np.max(aroundVs)
-            maxID=np.argmax(aroundVs)
-            p0=aroundPs[maxID,:]
+            # v0=np.max(aroundVs)
+            maxID=np.argmax(aroundVs) #最大值的索引
+            p0=aroundPs[maxID] # 最大值坐标
+            v0=aroundVs[maxID] # 最大值
             # print(f'{v0=:.6f},{p0=}')
         elif valueType=='min' and np.min(aroundVs)<v0:
-            v0=np.min(aroundVs)
+            # v0=np.min(aroundVs)
             minID=np.argmin(aroundVs)
-            p0=aroundPs[minID,:]
+            p0=aroundPs[minID]
+            v0=aroundVs[minID]
         else:
-            if step<=1e-4:
+            if step<=1e-6:
                 return p0,v0 #
             else:
                 step/=10

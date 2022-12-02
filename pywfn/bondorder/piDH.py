@@ -10,7 +10,6 @@ from typing import *
 class Calculator:
     def __init__(self,mol:Mol) -> None:
         self.mol=mol
-        self.mol.create_bonds()
 
     def get_order(self, center:Atom, around:Atom, orbital:int, direction):  # 计算一个轨道的键级
         '''计算两个原子间每个轨道的键级
@@ -57,7 +56,6 @@ class Calculator:
         """指定一个键，计算该键的键级"""
         self.centerPIdx=[i for i,l in enumerate(centerAtom.layers) if 'P' in l] #原子的序数
         self.aroundPIdx=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
-        self.mol.create_bonds()
         O_obts=self.mol.O_obts
         normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量
         if len(centerAtom.neighbors)==3: # 如果原子有法向量(sp2)
@@ -76,7 +74,7 @@ class Calculator:
                 orbitalDirection=centerAtom.get_obtWay(o)
                 if np.linalg.norm(orbitalDirection)==0:
                     continue
-                bondDirection=self.mol.get_bond(centerAtom.idx, aroundAtom.idx).bondVector()
+                bondDirection=self.mol.bond(centerAtom.idx, aroundAtom.idx).bondVector()
                 if utils.vector_angle(orbitalDirection, bondDirection,trans=True)>0.4: # 夹角要很大
                     break
             if orbitalDirection is not None:

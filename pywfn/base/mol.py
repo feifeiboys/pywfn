@@ -59,12 +59,12 @@ class Mol:
         return self._atoms
     
     @cached_property
-    def coords(self):
+    def coords(self)->np.ndarray:
         """返回原子坐标矩阵[n,3]"""
         return np.array([atom.coord for atom in self.atoms])
 
     @cached_property
-    def orbital_symbols(self):
+    def orbital_symbols(self)->List[str]:
         n=len(self.orbitals)
         if self.isOpenShell:
             return [f'α{e+1}' if e<n/2 else f'β{int(e-n/2+1)}' for e in range(n)]
