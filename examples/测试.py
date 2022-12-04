@@ -8,8 +8,20 @@ import numpy as np
 from pywfn.readers import FchReader,LogReader
 from pywfn.bondorder import piDM
 
-path='examples/mols/CH2O.log'
-reader=LogReader(path)
-atom=reader.mol.atom(1)
-v=atom.get_cloud(np.zeros((1,3)),5)
-print(v)
+import basis_set_exchange as bse
+import json
+import re
+from pywfn.base.basis import Basis
+from pywfn.readers import LogReader
+
+# basis=Basis('6-31g*')
+# print(basis.get(6))
+
+reader=LogReader('examples/mols/CH2O.log')
+mol=reader.mol
+atom=mol.atom(2)
+# print(atom.pLayersTs(5))
+print(mol.basis.name)
+print(mol.basis.num(1))
+# print(mol.basis.get(1))
+mol.atom(2).cloud(2)

@@ -13,21 +13,8 @@
 各种基组的各个层之间的基组信息和原子轨道的名称到底是如何对应的?
 每一个层应该对应两个列表,基组与层名之间应该是一一对应的
 已知的层名有:
-1S
-2S
-2PX
-2PY
-2PZ
-3S
-3PX
-3PY
-3PZ
-4XX
-4YY
-4ZZ
-4XY
-4XZ
-4YZ
+
+!! 不从文件中读取信息啦, 而是根据基组名称直接获取信息
 """
 
 from typing import Dict, List, Tuple
@@ -51,48 +38,108 @@ class Layer:
     def __repr__(self) -> str:
         return f'{self.name},{len(self.data)}'
 
-class Basi:
-    """封装一个原子的基组信息"""
-    def __init__(self,symbol:str) -> None:
-        self.symbol=symbol
-        self.layers:List["Layer"]=[]
+# class Basi:
+#     """封装一个原子的基组信息"""
+#     def __init__(self,symbol:str) -> None:
+#         self.symbol=symbol
+#         self.layers:List["Layer"]=[]
     
-    def add_layer(self,name:str):
-        layer=Layer(name)
-        self.layers.append(layer)
-        return layer
+#     def add_layer(self,name:str):
+#         layer=Layer(name)
+#         self.layers.append(layer)
+#         return layer
     
-    def __repr__(self) -> str:
-        return f'Basi:{self.symbol}'
+#     def __repr__(self) -> str:
+#         return f'Basi:{self.symbol}'
 
-    def get(self) -> List[Tuple[str,np.ndarray]]:
-        """运算的时候获取某个原子的基组信息"""
-        return [(l.name,l.data) for l in self.layers]
+#     def get(self) -> List[Tuple[str,np.ndarray]]:
+#         """运算的时候获取某个原子的基组信息"""
+#         return [(l.name,l.data) for l in self.layers]
 
+
+# class Basis:
+#     """封装一个分子的基组信息"""
+#     def __init__(self):
+#         self.data:Dict[str:Basi]={}
+        
+#     def get(self,symbol:str)->"Basi":
+#         return self.data[symbol]
+    
+#     def new(self,symbol:str):
+#         if symbol in self.data.keys(): #如果这个元素的基组信息已经存在了，就不需要再读取了
+#             return False
+#         else:
+#             basi=Basi(symbol)
+#             self.data[symbol]=basi
+#             return True
+    
+#     def __repr__(self) -> str:
+#         basis=self.data.values()
+#         return ','.join([f'{e.symbol}' for e in basis])
+    
+
+
+import basis_set_exchange as bse
+from itertools import product
+from functools import cached_property,lru_cache
+
+"""
+一个原子的基组应该有一下层级
+
+不同价层
+    指数(一维数组)
+    系数(二维数组)
+不同角动量对应不同的mnl
+所有可能的m+n+l=角动量决定了基函数的数量
+
+"""
 
 class Basis:
-    """封装一个分子的基组信息"""
-    def __init__(self):
-        self.data:Dict[str:Basi]={}
-        
-    def get(self,symbol:str)->"Basi":
-        return self.data[symbol]
     
-    def new(self,symbol:str):
-        if symbol in self.data.keys(): #如果这个元素的基组信息已经存在了，就不需要再读取了
-            return False
-        else:
-            basi=Basi(symbol)
-            self.data[symbol]=basi
-            return True
+    def __init__(self,basiName:str) -> None:
+        # 基组名有时候需要翻译
+        transDict={
+            '6-31G(d)':'6-31G*'
+        }
+        if basiName in transDict.keys():
+            basiName=transDict[basiName]
+
+        self.name=basiName
+
+    @lru_cache
+    def lmn(self,ang:int)->list:
+        """
+        根据角动量获取l,m,n
+        基函数中包含 x^l.y^m.z^n
+        """
+        res=[]
+        Rs=range(ang+1)
+        for l,m,n in product(Rs,Rs,Rs):
+            if l+m+n==ang:res.append([l,m,n])
+        return res
     
-    def __repr__(self) -> str:
-        basis=self.data.values()
-        return ','.join([f'{e.symbol}' for e in basis])
+    @lru_cache
+    def get(self,atomic:int):
+        """根据原子系数获取基组信息"""
+        shells=bse.get_basis(self.name, elements=atomic)['elements'][f'{atomic}']['electron_shells']
+        res=[]
+        for shell in shells:
+            res.append({
+                'exp':np.array(shell['exponents'],dtype=np.float32),
+                'coe':np.array(shell['coefficients'],dtype=np.float32),
+                'ang':shell['angular_momentum'],
+            })
+        return res
     
-
-
-
+    def num(self,atomic:int):
+        """获取基组原子对应的基函数数量"""
+        shells=self.get(atomic)
+        number=0
+        for shell in shells:
+            for ang in shell['ang']:
+                lmn=self.lmn(ang)
+                number+=len(lmn)
+        return number
 
 
         

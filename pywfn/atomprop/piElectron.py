@@ -45,6 +45,8 @@ class Calculator:
         electrons=[]
         for atom in atoms:
             a_1,a_2=atom.obtMatrixRange
-            electrons.append(np.sum(PSS[a_1:a_2]))
+            electron=np.sum(PSS[a_1:a_2])
+            printer.res(f'{atom.idx:<2}{atom.symbol:>2}{electron:>15.8f}')
+            electrons.append(electron)
         return electrons
 

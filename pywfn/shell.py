@@ -83,8 +83,6 @@ class Shell:
                 atoms=mol.atoms
                 caler=piElectron.Calculator(mol)
                 res=caler.calculate()
-                resStr=[f'{atoms[i].idx:<2}{atoms[i].symbol:>2}{e:>15.8f}' for i,e in enumerate(res)]
-                printer.res('\n'.join(resStr))
                 printer.res(f'total:{sum(res)}')
                 
     def calerBondOrder(self):
@@ -125,11 +123,11 @@ class Shell:
             elif opt=='4':
                 print(Fore.BLUE+'piSM:轨道挑选法+Mayer键级公式计算π键键级')
                 from .bondorder import piSM
-                caler=piSM.Calculator()
+                caler=piSM.Calculator(mol)
             elif opt=='5':
                 print(Fore.BLUE+'传统的mayer键级计算方法,计算结果大致与两原子间的共用电子对数相等')
                 from .bondorder import mayer
-                caler=mayer.Caculater(mol)
+                caler=mayer.Calculator(mol)
             else:
                 print(Fore.RED + '选项不存在')
             if caler is not None:

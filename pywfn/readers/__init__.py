@@ -12,7 +12,7 @@ from pathlib import Path
 
 def get_reader(path:Path):
     """根据输入文件的类型自动判断应该使用哪个读取器"""
-    print(path)
+    # print(path)
     if not isinstance(path,Path):raise
     fileType=path.suffix
     if fileType=='.out':

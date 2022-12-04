@@ -20,9 +20,6 @@ class Calculator:
         PM=self.mol.PM
         # 获取重叠矩阵
         SM=self.mol.SM
-        if SM is None:
-            print(Fore.RED+'缺少重叠矩阵！')
-            return 'None'
         PS=PM@SM
 
         a1_1,a1_2=centerAtom.obtMatrixRange

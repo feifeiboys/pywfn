@@ -11,7 +11,7 @@ from typing import *
 titleMatch='^(.{40}) {3}(.{1})(.{5})(.{12})$'
 class FchReader:
     def __init__(self,path:str):
-        self.mol=Mol
+        self.mol=Mol()
         self.path=path
         self.contents:List[Content]=[]
         with open(self.path,'r',encoding='utf-8') as f:
@@ -46,9 +46,22 @@ class FchReader:
         """
         atoms=self.get_content('Atomic numbers')
         symbols=[elements[int(e)].symbol for e in atoms]
-        coords=self.get_content('Current cartesian coordinates').reshape(-1,3)*0.53
+        coords=self.get_content('Current cartesian coordinates').reshape(-1,3)*0.5291772083
+        ACMs=self.get_content('Alpha MO coefficients')
+        aeN=self.get_content('Number of alpha electrons') #alpha和beta电子数量
+        beN=self.get_content('Number of beta electrons')
+        basiN=self.get_content('Number of basis functions') # 基函数数量
+
         
-        print(atoms)
+        # print(atoms)
+        # print(symbols)
+        # print(coords)
+        for i,atomic in enumerate(atoms):
+            symbol=symbols[i]
+            coord=list(coords[i])
+            self.mol.add_atom(symbol=symbol,coord=coord)
+        self.mol.obtElcts=[1]*aeN+[0]*(basiN-aeN)+[1]*beN+[0]*(basiN-beN)
+        
 
 
 
@@ -75,9 +88,10 @@ class Content:
             'I':np.int8,
             'R':np.float32
         }
+        lineCount=5 if self.dataType=='R' else 6 #每一行的数据量
         if self.isArray:
-            lineNum=self.number//5+1
-            print(self.idx,lineNum)
+            lineNum=self.number//lineCount+1
+            # print(self.idx,lineNum)
             text='\n'.join(reader.lines[i] for i in range(self.idx,self.idx+lineNum))
             res=re.findall(ps[self.dataType], text)
             return np.array(res,dtype=ds[self.dataType])

@@ -1,5 +1,6 @@
 import numpy as np
 from typing import *
+from .gto import Gto
 
 def gridPos(range):
     """生成网格数据点,range:生成数据的范围"""

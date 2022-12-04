@@ -2,7 +2,7 @@
 轨道挑选法+HMO键级公式
 """
 from ..base import Mol,Atom
-from .utils import judgeOrbital
+from .utils import judgeOrbital,printOrders
 import numpy as np
 
 class Calculator:
@@ -16,4 +16,5 @@ class Calculator:
         centerRes=np.sum(centerAtom.OC[:,orbitals]**2,axis=0)/As
         aroundRes=np.sum(aroundAtom.OC[:,orbitals]**2,axis=0)/As
         orders=centerRes*aroundRes*piUnits
-        return orders
+        printOrders(orders,orbitals)
+        return sum(orders)

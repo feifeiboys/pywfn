@@ -119,12 +119,3 @@ def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
     for i in range(len(logs[0])):
         for log in logs:
             print(log[i])
-
-def progress(title,idx,total):
-    """打印进度条;idx:当前的进度;total:总任务数"""
-    percent=idx/total
-    num=int(percent*20)
-    end=''
-    if percent==1:
-        end='\n'
-    print(f'\r{title}:{"*"*num}{"-"*(20-num)}{idx}/{total}',end=end)

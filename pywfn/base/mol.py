@@ -27,6 +27,7 @@ import numpy as np
 from .. import setting
 from functools import cached_property, lru_cache
 from .. import printer
+from ..maths import gto
 
 class Mol:
     def __init__(self) -> None:
@@ -36,9 +37,11 @@ class Mol:
         self.orbitals:List[str]=[] # 存储所有轨道时占据还是非占据
         self.obtElcts:List[int]=[] # 存储每个分子轨道占据的电子数量(包含占据信息)
         self._heavyAtoms:List[Atom]=None
+        self._CM:np.ndarray=None # 系数矩阵
         self._SM:np.ndarray=None # 重叠矩阵
         self.reader=None
         self.basis:Basis=None
+        self.gto:"gto.Gto"=None
         
     
     def add_atom(self,symbol:str,coord:List[float]):
@@ -101,7 +104,7 @@ class Mol:
         """计算密度矩阵(其实可以读的,但是感觉读的没有计算的快,因为可以直接根据系数矩阵计算)"""
         A=(self.CM[:,self.O_obts].T)[:,:,np.newaxis]
         B=(self.CM[:,self.O_obts].T)[:,np.newaxis,:]
-        PM=np.sum(A@B,axis=0) # 重叠矩阵
+        PM=np.sum(A@B*self.oE,axis=0) # 重叠矩阵
         return PM
     
     @property

@@ -29,17 +29,19 @@ class Calculator:
             a_1,a_2=atom.obtMatrixRange
             for orbital in orbitals:
                 if judgeOrbital(centerAtom,aroundAtom,orbital,centerNormal): # 如果是π轨道
+                    # print(atom.idx,orbital)
                     CM_[a_1:a_2,orbital]=self.mol.CM[a_1:a_2,orbital]
-        pd.DataFrame(CM_).to_csv('CM_.csv')
+        # pd.DataFrame(CM_).to_csv('CM_.csv')
         oe=1 if self.mol.isOpenShell else 2
         n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
-        PM_=CM2PM(CM_,n)
+        PM_=CM2PM(CM_,orbitals,oe)
+        # pd.DataFrame(PM_).to_csv('PM_.csv')
         SM=self.mol.SM
         PS=PM_@SM
 
-        a1_1,a1_2=centerAtom.obtMatrixRange
-        a2_1,a2_2=aroundAtom.obtMatrixRange
-        order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
+        a1,a2=centerAtom.obtMatrixRange
+        b1,b2=aroundAtom.obtMatrixRange
+        order=np.sum(PS[a1:a2,b1:b2]**2)
         return order
 
         

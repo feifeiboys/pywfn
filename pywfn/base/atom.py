@@ -5,8 +5,8 @@ import re
 from numpy import ndarray
 from .. import utils
 from .. import setting
-from ..base.basis import Basi
-from ..maths.gto import agto
+from ..base.basis import Basis
+
 from functools import cached_property,lru_cache
 from .. import printer
 """
@@ -19,6 +19,7 @@ OCI为某一列的原子轨道系数,P:bool参数用来确定是否只要P轨道
 原子轨道系数OC:np.ndarray
 读取器直接设置这些属性
 """
+from ..data import elements
 class Atom:
     def __init__(self,symbol:str,coord:List[float],idx:int,mol:"Mol"): # 每个原子应该知道自己属于哪个分子
         self.symbol=symbol
@@ -33,6 +34,10 @@ class Atom:
         self.obtMatrixRange:List[int] # 需要在分子对象中调用函数产生这个属性值
         self._sContribution:Dict={}
         self.OC:ndarray=None
+    
+    @cached_property
+    def atomic(self)->int:
+        return elements[self.symbol].idx
     
 
     @cached_property
@@ -53,8 +58,7 @@ class Atom:
         以原子中心为原点
         pos[n,3]
         """
-        basi=self.mol.basis.get(self.symbol)
-        res=agto(pos,basi,self.OC[:,obt],self.layers)
+        res=self.mol.gto.agto(pos,self.OC[:,obt],self.atomic)
         return res
     
     @lru_cache
@@ -153,3 +157,7 @@ class Atoms(list):
     
 
 from .mol import Mol
+
+import basis_set_exchange as bse
+
+

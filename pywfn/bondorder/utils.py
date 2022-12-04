@@ -103,3 +103,25 @@ def judgeOrbital_(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)-> int:
         return 1
     else:
         return -1
+
+def printOrders(orders,orbitals):
+    """将轨道根据大小排序后输出"""
+    orders_=[f'{order:.4f}' for order in orders]
+    sortedRes=sorted(list(zip(orbitals,orders_)),key=lambda e:abs(float(e[1])),reverse=True)
+    sortedRes=[e for e in sortedRes if abs(float(e[1]))>=0.01]
+    sortedRes=list(zip(*sortedRes))    
+    formPrint(sortedRes,8,10)
+
+def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
+    """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
+    logs=[]
+    for content in contents:
+        logs.append([])
+        for i in range(0,len(content),lineNum):
+            text=''.join([f'{each}'.rjust(eachLength,' ') for each in content[i:i+lineNum]])
+            logs[-1].append(text)
+    if len(logs)==0:
+        return
+    for i in range(len(logs[0])):
+        for log in logs:
+            print(log[i])
