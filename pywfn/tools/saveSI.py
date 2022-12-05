@@ -9,7 +9,7 @@ from typing import *
 from pathlib import Path
 from ..readers import LogReader
 import re
-from .. import printer
+from ..utils import printer
 class Tool:
     def __init__(self,reader:LogReader) -> None:
         """

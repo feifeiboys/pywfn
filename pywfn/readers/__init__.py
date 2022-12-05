@@ -6,7 +6,7 @@ from .fch import FchReader
 from .log import LogReader
 from .xyz import XyzReader
 from .. import utils
-from .. import printer
+from ..utils import printer
 
 from pathlib import Path
 

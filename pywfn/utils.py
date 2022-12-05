@@ -223,3 +223,36 @@ def normalize(vector):
     if length==0:
         raise
     return vector/length
+
+from typing import *
+from colorama import Fore,init
+init(autoreset=True)
+class Printer:
+    def __init__(self) -> None:
+        self.ifDebug=setting.IF_DEBUG
+
+    def __call__(self,text,end='\n'):
+        if self.ifDebug:
+            print(text,end=end)
+
+    def warn(self,text):
+        self.__call__(Fore.YELLOW+f'{text}')
+
+    def info(self,text):
+        self.__call__(Fore.BLUE+f'{text}')
+
+    def wrong(self,text):
+        self.__call__(Fore.RED+f'{text}')
+    
+    def res(self,text):
+        self.__call__(Fore.GREEN+f'{text}')
+    
+    def print(self,text):
+        self.__call__(f'{text}')
+    
+    def multi(self,texts:List[str]):
+        for text in texts:
+            self.__call__(text,end='')
+        self.__call__('')
+
+printer=Printer()

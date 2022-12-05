@@ -8,12 +8,13 @@
 import re
 import numpy as np
 from typing import *
-from ..base import Mol, Basis
+from ..base import Mol
+from ..data import Basis
 from ..maths import Gto
 from .reader import Reader
 from colorama import Fore
 from .. import utils
-from .. import printer
+from ..utils import printer
 
 
 atomSymbols=[

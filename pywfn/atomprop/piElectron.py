@@ -6,7 +6,7 @@ from typing import *
 import numpy as np
 import pandas as pd
 from ..maths import CM2PM
-from .. import printer
+from ..utils import printer
 
 class Calculator:
     def __init__(self,mol:Mol) -> None:

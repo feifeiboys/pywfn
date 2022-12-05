@@ -4,7 +4,7 @@ xyz文件只包含原子坐标,所以很好读
 一个xyz文件可以包含多个分子的坐标,所以要生成多个分子对象
 """
 from typing import List
-from .. import elements
+from ..data import elements
 import re
 from ..base import Mol
 import numpy as np

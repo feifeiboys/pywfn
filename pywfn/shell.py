@@ -33,7 +33,7 @@ import sys
 init(autoreset=True)
 INPUT_COMMAND='input command option: '
 LINE='-'*40
-from . import printer
+from .utils import printer
 
 def inputBond():
     """将输入的字符串形式的键级转为整数形式"""
@@ -56,7 +56,8 @@ class Shell:
             self.inputFile()
         opts=[
             ['1','Mulliken电荷分布'],
-            ['2','pi电子分布']
+            ['2','pi电子分布'],
+            ['3','原子自由价']
         ]
         while True:
             print('-'*20)
@@ -84,10 +85,26 @@ class Shell:
                 caler=piElectron.Calculator(mol)
                 res=caler.calculate()
                 printer.res(f'total:{sum(res)}')
+            elif opt=='3':
+                from .atomprop import freeValence
+
+                file=self.paths[0]
+                reader=get_reader(file)
+                mol=reader.mol
+                atomidx=input('输入原子编号: ')
+                if not atomidx.isdigit():
+                    printer.warn('请输入正确原子编号!')
+                    break
+                atom=mol.atom(atomidx)
+                caler=freeValence.Calculator(mol)
+                order=caler.calculate(atom)
+                printer.res(f'{order}')
+
                 
     def calerBondOrder(self):
         """计算各种键级"""
         print(LINE)
+        
         if self.paths is None:
             self.inputFile()
         opts=[
@@ -109,23 +126,18 @@ class Shell:
             if opt=='':
                 break
             elif opt=='1': # 轨道分解法 + HMO键级公式计算π键级
-                print(Fore.BLUE+'piDH:轨道分解法+HMO键级公式计算π键键级')
                 from .bondorder import piDH
                 caler=piDH.Calculator(mol)
             elif opt=='2':
-                print(Fore.BLUE+'piSH:轨道挑选法+HMO键级公式计算π键键级')
                 from .bondorder import piSH
                 caler=piSH.Calculator(mol)
             elif opt=='3':
-                print(Fore.BLUE+'piDM:轨道分解法+Mayer键级公式计算π键键级')
                 from .bondorder import piDM
                 caler=piDM.Calculator(mol)
             elif opt=='4':
-                print(Fore.BLUE+'piSM:轨道挑选法+Mayer键级公式计算π键键级')
                 from .bondorder import piSM
                 caler=piSM.Calculator(mol)
             elif opt=='5':
-                print(Fore.BLUE+'传统的mayer键级计算方法,计算结果大致与两原子间的共用电子对数相等')
                 from .bondorder import mayer
                 caler=mayer.Calculator(mol)
             else:

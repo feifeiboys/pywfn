@@ -4,11 +4,12 @@ import pandas as pd
 import re
 from numpy import ndarray
 from .. import utils
+
 from .. import setting
-from ..base.basis import Basis
+from .. import base
 
 from functools import cached_property,lru_cache
-from .. import printer
+
 """
 一个原子的轨道组合系数就是一个矩阵，行数是基函数的数量，列数是分子轨道的数量
 与轨道系数相关的太多了,尽量精简
@@ -21,13 +22,13 @@ OCI为某一列的原子轨道系数,P:bool参数用来确定是否只要P轨道
 """
 from ..data import elements
 class Atom:
-    def __init__(self,symbol:str,coord:List[float],idx:int,mol:"Mol"): # 每个原子应该知道自己属于哪个分子
+    def __init__(self,symbol:str,coord:List[float],idx:int,mol:"base.Mol"): # 每个原子应该知道自己属于哪个分子
         self.symbol=symbol
         self.coord=np.array(coord)
         self._layersData={}
         self.layers:List[str]=None
         self._squareSum=None
-        self.mol:"Mol"=mol
+        self.mol:"base.Mol"=mol
         self.idx=idx
         self.obtWays={} #存储所有分子轨道里原子轨道的方向
 
@@ -154,10 +155,3 @@ class Atoms(list):
         return f'Atoms:{len(self.atoms)}'
     
     
-    
-
-from .mol import Mol
-
-import basis_set_exchange as bse
-
-

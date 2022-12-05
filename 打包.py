@@ -59,10 +59,11 @@ lines=[]
 for opt in opts:
     get(Path(opt))
 zip(files,'pywfn')
+count(files)
+
 
 files=[]
 opts.append('env')
 for opt in opts:
     get(Path(opt))
-zip(files,'pywfn_env')
-# count(files)
+# zip(files,'pywfn_env')

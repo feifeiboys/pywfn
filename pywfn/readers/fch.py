@@ -5,7 +5,7 @@ fchk文件中有哪些属性是可以用到的？
 import re
 import numpy as np
 from ..base import Mol
-from .. import elements
+from ..data import elements
 from typing import *
 
 titleMatch='^(.{40}) {3}(.{1})(.{5})(.{12})$'

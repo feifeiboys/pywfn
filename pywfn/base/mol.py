@@ -22,11 +22,12 @@ from typing import *
 from pywfn.utils import vector_angle
 from .atom import Atom,Atoms
 from .bond import Bond
-from .basis import Basis
+# from .basis import Basis
+from ..data import Basis
 import numpy as np
 from .. import setting
 from functools import cached_property, lru_cache
-from .. import printer
+from ..utils import printer
 from ..maths import gto
 
 class Mol:

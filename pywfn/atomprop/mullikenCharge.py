@@ -3,7 +3,7 @@ from typing import *
 import numpy as np
 from ..data import Elements
 elements=Elements()
-from .. import printer
+from ..utils import printer
 class Calculator:
     def __init__(self,mol:"Mol"):
         self.mol=mol
