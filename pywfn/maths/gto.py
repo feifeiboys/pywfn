@@ -40,15 +40,16 @@ def lgto(pos:ndarray,cs:List[float],as_:List[float],lmn):
         vs+=v
     return vs
 
-from .. import base
+from .. import data
 class Gto:
-    def __init__(self,basis:"base.Basis"):
+    def __init__(self,basis:"data.Basis"):
         self.basis=basis
-    def agto(self,pos:ndarray,OCi:ndarray,atomic:int):
+    def agto(self,pos:ndarray,OCi:ndarray,atomic:int,angs=[1]):
         """
         atom,计算一个原子的轨道波函数(所有层的轨道波函数之和)
         pos:要计算的点相对于原子(原子作为坐标原点)的坐标[n,3]
         OCs:原子轨道组合系数信息
+        angs:要显示轨道的角动量,默认只计算p轨道
 
         1. 对每一个价层循环
         2. 对每个角动量循环
@@ -60,11 +61,14 @@ class Gto:
         for i,shell in enumerate(base): # 首先对shell循环
             exps=shell['exp']
             for j,ang in enumerate(shell['ang']): # 然后对角动量循环
+                show = 1 if ang in angs else 0
                 coes=shell['coe'][j] #收缩系数是二维数组
                 for k,lmn in enumerate(self.basis.lmn(ang)):
                     Ci=OCi[idx]
-                    vs+=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
+                    if show:vs+=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
+                    # print(f'{idx:<4}{Ci:<10}shell={i:<4}{ang=} {lmn} {show=}')
                     idx+=1
+                    
         return vs
 
 if __name__=='__main__':

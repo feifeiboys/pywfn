@@ -223,7 +223,7 @@ class FileItem(QWidget):
         mol=get_reader(filePath).mol
         orbitals=[str(o) for o in mol.orbital_symbols]
         self.app.orbital.set_orbitals(orbitals)
-        self.layout=QVBoxLayout()
+        self.layout=QHBoxLayout()
 
         self.canvas=Canvas(self.app,mol,self)
         self.layout.addWidget(self.canvas.interactor)

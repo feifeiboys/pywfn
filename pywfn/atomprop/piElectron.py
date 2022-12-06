@@ -4,7 +4,6 @@
 from ..base import Mol,Atom
 from typing import *
 import numpy as np
-import pandas as pd
 from ..maths import CM2PM
 from ..utils import printer
 

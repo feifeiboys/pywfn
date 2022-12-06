@@ -1,6 +1,17 @@
 from typing import *
 from pathlib import Path
-import pandas as pd
+import json
+
+def read_csv(path):
+    """将csv文件保存为二维数组"""
+    with open(path,'r',encoding='utf-8') as f:
+        content=f.read()
+    lines=content.splitlines(keepends=False)
+    csv=[]
+    for line in lines:
+        csv.append(line.split(','))
+    return csv[1:]
+
 class Element:
     def __init__(self,idx,symbol,color,radius):
         self.idx=int(idx)
@@ -14,11 +25,11 @@ class Elements:
         self.elements=[] #原子列表，一定是按照顺序排列的
         self.sym2idx:Dict[str,int]={} #构建一个原子符号到原子序数的对应表
         self.scriptPath=Path(__file__) #当前脚本所在的路径
-        self.data=pd.read_csv(self.scriptPath.parent / 'elements.csv')
+        self.data=read_csv(self.scriptPath.parent / 'elements.csv')
         for i in range(len(self.data)):
-            idx,symbol,color,radius=self.data.iloc[i,:]
+            idx,symbol,color,radius=self.data[i]
             self.elements.append(Element(idx,symbol,color,radius))
-            self.sym2idx[symbol]=idx
+            self.sym2idx[symbol]=int(idx)
 
     def get_element_by_idx(self,idx:int)->Element:
         return self.elements[idx-1]

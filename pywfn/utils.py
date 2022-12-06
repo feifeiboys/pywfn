@@ -1,10 +1,9 @@
 # 将需要的每个模块共同需要的计算都放在这里面
 import re
-import pandas as pd
 import numpy as np
 import math
 import time
-from numba import jit
+
 from . import setting
 def get_nums(string):
     res = []
@@ -91,7 +90,7 @@ def get_extraValue(atom:"base.Atom",obt:int,valueType='max'):
 def differ_function(posan1,posan2): #计算电子分布差值图
     return (posan1+posan2)**2-(posan1**2+posan2**2)/2
 
-@jit(nopython=True)
+
 def get_gridPoints(range,step,ball=False): 
     '''获取空间格点[3,n]'''
     points=[]

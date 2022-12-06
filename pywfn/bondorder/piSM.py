@@ -6,7 +6,6 @@ from ..base import Mol,Atom
 from ..utils import vector_angle
 from .utils import CM2PM,judgeOrbital
 import numpy as np
-import pandas as pd
 
 
 class Calculator:
@@ -31,11 +30,9 @@ class Calculator:
                 if judgeOrbital(centerAtom,aroundAtom,orbital,centerNormal): # 如果是π轨道
                     # print(atom.idx,orbital)
                     CM_[a_1:a_2,orbital]=self.mol.CM[a_1:a_2,orbital]
-        # pd.DataFrame(CM_).to_csv('CM_.csv')
         oe=1 if self.mol.isOpenShell else 2
         n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
         PM_=CM2PM(CM_,orbitals,oe)
-        # pd.DataFrame(PM_).to_csv('PM_.csv')
         SM=self.mol.SM
         PS=PM_@SM
 

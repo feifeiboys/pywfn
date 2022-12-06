@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
-hfvPath=Path(__file__).parent.parent
-sys.path.append(str(hfvPath))
+print(Path.cwd())
+sys.path.append(str(Path.cwd()))
 # 设定好执行库所必须的文件
 import importlib
 import os
@@ -35,7 +35,7 @@ for pkg in pkgs:chkPkgs(pkg)
 def run(opt):
     if opt=='1':
         import pywfn
-        pywfn.setting.IF_DEBUG=False
+        # pywfn.setting.IF_DEBUG=False
         pywfn.run()
     elif opt=='2':
         import app

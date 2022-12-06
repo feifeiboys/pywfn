@@ -1,6 +1,5 @@
 from typing import *
 import numpy as np
-import pandas as pd
 import re
 from numpy import ndarray
 from .. import utils

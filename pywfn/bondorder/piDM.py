@@ -10,7 +10,6 @@ from typing import *
 import numpy as np
 from.utils import CM2PM,CM2PMs
 from colorama import Fore
-from numba import jit
 import multiprocessing as mp
 from tqdm import tqdm
 

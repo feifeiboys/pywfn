@@ -4,7 +4,6 @@ mayer键级计算公式为:
 $\sum_{a\in A}\sum_{b\in B}PS$
 """
 import numpy as np
-import pandas as pd
 from colorama import Fore
 from typing import *
 from ..base import Atom,Mol

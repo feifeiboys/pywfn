@@ -6,7 +6,6 @@ from pathlib import Path
 import sys
 hfvPath=Path(__file__).parent.parent
 sys.path.append(str(hfvPath))
-import pandas as pd
 import numpy as np
 
 from pywfn.readers import FchReader,LogReader
@@ -26,19 +25,25 @@ for each in bse.get_all_basis_names():
     if bse.get_basis_family(each) not in famis:continue
     elements=base['elements']
     name=base['name']
-    baseData=[]
+    baseData={}
     print(name,len(elements))
     for element in elements:
         # print(element)
-        baseData.append({})
+        baseData[element]=[]
+        
         shells=elements[element]['electron_shells']
         for shell in shells:
             ang=shell['angular_momentum']
             exp=shell['exponents']
             coe=shell['coefficients']
-            baseData[-1]['ang']=ang
-            baseData[-1]['exp']=exp
-            baseData[-1]['coe']=coe
+            exp=[float(e) for e in exp]
+            coe=[[float(e) for e in line] for line in coe]
+
+            baseData[element].append({
+                'ang':ang,
+                'exp':exp,
+                'coe':coe
+            })
     allBaseData[name]=baseData
 with open(f'pywfn/data/basis.json','w',encoding='utf-8') as f:
     f.write(json.dumps(allBaseData))

@@ -36,9 +36,9 @@ class Canvas(QtInteractor):
             a1,a2=bond.a1,bond.a2
             self.add_bond(a1.coord,a2.coord,bond.idx)
     
-    def onClick(self,mesh):
-        for mol in self.mols:
-            mol.onClick(mesh)
+    # def onClick(self,mesh):
+    #     for mol in self.mols:
+    #         mol.onClick(mesh)
         
     
     def add_atom(self,coord,symbol:str,idx:int):
@@ -55,6 +55,24 @@ class Canvas(QtInteractor):
         actor=self.plotter.add_mesh(poly,name=name,pickable=False)
         self.actors.append(actor)
 
+    def hide_cloud(self,names):
+        """
+        将非指定点云全部隐藏
+        并返回指定的点云是否已经存在
+        """
+        render=self.plotter.renderer
+        actors=render.actors
+        exist=False
+        for key in actors:
+            if key.split('-')[0]=='cloud':
+                if key in names:
+                    actors[key].visibility=True
+                    exist=True
+                else:
+                    actors[key].visibility=False
+
+        return exist
+
     def show_cloud(self,obt:int):
         """
         显示指定原子的轨道
@@ -62,31 +80,65 @@ class Canvas(QtInteractor):
         if len(self.selectedAtoms)==0:
             print('尚未选择原子')
             return
+        
         # 根据原子计算点云应该存在的位置
         print(self.selectedAtoms)
         atoms=[int(a.split('-')[1])-1 for a in self.selectedAtoms]
         atoms.sort()
         atomStr=','.join([str(a) for a in atoms])
         name=f'{atomStr}-{obt}'
+        exist=self.hide_cloud([f'cloud-N-{name}',f'cloud-P-{name}'])
+        if exist:return # 如果已经存在的话就没必要再添加了
+        
         coords=self.mol.coords[atoms,:]
         minX,minY,minZ=np.min(coords,axis=0)
         maxX,maxY,maxZ=np.max(coords,axis=0)
         step=0.1
-        pos=[]
-        for x in np.arange(minX-1,maxX+1,step):
-            for y in np.arange(minY-1,maxY+1,step):
-                for z in np.arange(minZ-1,maxZ+1,step):
-                    pos.append([x,y,z])
-        pos=np.array(pos)
+
+        Rx=np.arange(minX-2,maxX+2.1,step)
+        Ry=np.arange(minY-2,maxY+2.1,step)
+        Rz=np.arange(minZ-2,maxZ+2.1,step)
+        Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
+        X,Y,Z=np.meshgrid(Rx,Ry,Rz)
+        pos=np.array([X.flatten(),Y.flatten(),Z.flatten()]).T
+
         values=np.zeros(len(pos))
         print(values.shape,pos.shape)
         for i in atoms:
             atom=self.mol.atoms[i]
             values+=atom.get_cloud(pos-atom.coord,obt)
         # P:positive，N:negative
-        print('values范围',values.min(),values.max())
-        idxsP=np.argwhere(values>0.2).flatten()
-        idxsN=np.argwhere(values<-0.2).flatten()
+        values=values.reshape(Lx,Ly,Lz) # 转成三位数组
+        valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
+        values=np.where((values>0.2) | (values<-0.2),1.,0.)
+        values[[0,-1],:,:]=0
+        values[:,[0,-1],:]=0
+        values[:,:,[0,-1]]=0
+
+        valuesX0=np.zeros_like(values)
+        valuesX1=np.zeros_like(values)
+        valuesY0=np.zeros_like(values)
+        valuesY1=np.zeros_like(values)
+        valuesZ0=np.zeros_like(values)
+        valuesZ1=np.zeros_like(values)
+
+        valuesX0[1:,:,:]=values[:-1,:,:]
+        valuesX1[:-1,:,:]=values[1:,:,:]
+
+        valuesY0[:,1:,:]=values[:,:-1,:]
+        valuesY1[:,:-1,:]=values[:,1:,:]
+
+        valuesZ0[1:,:,:]=values[:-1,:,:]
+        valuesZ1[:,:,:-1]=values[:,:,1:]
+
+        valuesR=values+valuesX0+valuesX1+valuesY0+valuesY1+valuesZ0+valuesZ1
+
+        valuesR=np.where((valuesR==0)|(valuesR==7),0.,1.)
+        valuesR*=valuesUnits
+        valuesR=valuesR.flatten() #拉平
+
+        idxsP=np.argwhere(valuesR>0).flatten()
+        idxsN=np.argwhere(valuesR<0).flatten()
         posP=pos.copy()[idxsP]
         posN=pos.copy()[idxsN]
         self.add_cloud(posP,'red',f'cloud-P-{name}')
