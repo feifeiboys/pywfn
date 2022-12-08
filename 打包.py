@@ -40,6 +40,13 @@ def count(files):
         total+=lineNum
     print(f'{"total":<40}{total}')
 
+def save(files):
+    contents=[]
+    for each in files:
+        with open(each,'r',encoding='utf-8') as f:
+            contents.append(f.read())
+    with open('源代码.txt','w',encoding='utf-8') as f:
+        f.write('\n'.join(contents))
 
 opts=[
     'pywfn',
@@ -51,7 +58,9 @@ opts=[
 rms=[
     '__pycache__',
     '.pyc',
-    '.ui'
+    '.ui',
+    # '.json',
+    # '.csv'
 ]
 
 files=[]
@@ -59,7 +68,8 @@ lines=[]
 for opt in opts:
     get(Path(opt))
 zip(files,'pywfn')
-count(files)
+# count(files)
+# save(files)
 
 
 files=[]

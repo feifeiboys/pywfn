@@ -5,6 +5,7 @@
 """
 from ..bondorder import piDH
 from ..base import Mol,Atom
+from ..utils import printer
 
 class Calculator:
     def __init__(self,mol:Mol) -> None:
@@ -18,4 +19,6 @@ class Calculator:
             if res['type']==0:
                 order=res['data']['order']
                 orders.append(order)
-        return orders,1.6494416218465484-sum(orders)
+                printer.res(f'{centerAtom.idx}-{aroundAtom.idx}:{order}')
+                
+        return 1.6494416218465484-sum(orders)

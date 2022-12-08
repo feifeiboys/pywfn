@@ -76,26 +76,8 @@ def judgeOrbital_(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)-> int:
     
     centerScont=centerAtom.get_sCont(orbital)
     aroundScont=aroundAtom.get_sCont(orbital)
-    # print(orbital,centerScont,aroundScont)
     if centerScont>0.001 or aroundScont>0.001:
         return 0 # s贡献太大的不是
-
-    # centerNormal=centerAtom.get_Normal(aroundAtom) #法向量方向
-    # if len(aroundAtom.neighbors)==3:
-    #     aroundNormal=aroundAtom.get_Normal(centerAtom)
-    # else:
-    #     aroundNormal=centerNormal
-    # if utils.vector_angle(centerNormal,aroundNormal,trans=True)>0.5:
-    #     aroundNormal*=-1
-
-    # centerOrbitalDirection=centerAtom.get_obtWay(orbital) #原子轨道方向
-    # aroundOrbitalDirection=aroundAtom.get_obtWay(orbital)
-    # if np.linalg.norm(centerOrbitalDirection)==0 or np.linalg.norm(aroundOrbitalDirection)==0:
-    #     return 0
-    # centerAngle=utils.vector_angle(centerNormal,centerOrbitalDirection,trans=True)
-    # aroundAngle=utils.vector_angle(centerNormal,aroundOrbitalDirection,trans=True)
-
-    # if centerAngle<0.2 and aroundAngle<0.2:
 
     if centerRatio<=0.1 or aroundRatio<=0.1:
         return 0

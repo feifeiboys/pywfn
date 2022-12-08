@@ -51,7 +51,6 @@ class Shell:
         
     def calerAtomProp(self):
         """计算原子属性"""
-        print(LINE)
         if self.paths is None:
             self.inputFile()
         opts=[
@@ -60,7 +59,6 @@ class Shell:
             ['3','原子自由价']
         ]
         while True:
-            print('-'*20)
             for i,opt in opts:
                 print(f'{i}.{opt}')
             opt=input('input option: ')
@@ -95,7 +93,7 @@ class Shell:
                 if not atomidx.isdigit():
                     printer.warn('请输入正确原子编号!')
                     break
-                atom=mol.atom(atomidx)
+                atom=mol.atom(int(atomidx))
                 caler=freeValence.Calculator(mol)
                 order=caler.calculate(atom)
                 printer.res(f'{order}')
@@ -103,7 +101,6 @@ class Shell:
                 
     def calerBondOrder(self):
         """计算各种键级"""
-        print(LINE)
         
         if self.paths is None:
             self.inputFile()
@@ -163,7 +160,6 @@ class Shell:
 
     def toolsPage(self):
         """进入实用工具页面"""
-        print(LINE)
         if self.paths is None:self.inputFile()
         opts=[
             ['1','导出SI信息'],
@@ -188,7 +184,7 @@ class Shell:
         elif opt=='2': # 根据模板文件批量生成gif文件
             for i,path in tqdm(enumerate(self.paths)):
                 reader=get_reader(path)
-                tool=tools.SaveGif(reader)
+                tool=tools.SaveGjf(reader)
                 tool.save()
             printer.res('文件生成完成 >_<')
         elif opt=='3':
@@ -206,7 +202,6 @@ class Shell:
         while True:
             self.inputFile()
             while True:
-                print(LINE)
                 for key,opt in opts:
                     print(f'{key}.{opt}')
                 opt=input('input command option: ')

@@ -157,15 +157,33 @@ background-color:gray;
     <property name="title">
      <string>compute</string>
     </property>
-    <addaction name="actionpiBondOrder"/>
-    <addaction name="actionpiSelectOrder"/>
-    <addaction name="actionsigmaBondOrder"/>
+    <widget class="QMenu" name="menubondOrder">
+     <property name="title">
+      <string>bondOrder</string>
+     </property>
+     <addaction name="actionpiDM"/>
+     <addaction name="actionpiSH"/>
+     <addaction name="actionpiDH"/>
+     <addaction name="actionpiSM"/>
+     <addaction name="actionMayer"/>
+    </widget>
+    <widget class="QMenu" name="menuatomProp">
+     <property name="title">
+      <string>atomProp</string>
+     </property>
+     <addaction name="actionMullikenCharge"/>
+     <addaction name="actionpiElectron"/>
+     <addaction name="actionfreeValence"/>
+    </widget>
+    <addaction name="menubondOrder"/>
+    <addaction name="menuatomProp"/>
    </widget>
    <widget class="QMenu" name="menuview">
     <property name="title">
      <string>view</string>
     </property>
     <addaction name="actionlabel"/>
+    <addaction name="actionclearCloud"/>
    </widget>
    <widget class="QMenu" name="menuselect">
     <property name="title">
@@ -196,16 +214,6 @@ background-color:gray;
     <string>open</string>
    </property>
   </action>
-  <action name="actionpiBondOrder">
-   <property name="text">
-    <string>piBondOrder</string>
-   </property>
-  </action>
-  <action name="actionpiSelectOrder">
-   <property name="text">
-    <string>piSelectOrder</string>
-   </property>
-  </action>
   <action name="actionlabel">
    <property name="text">
     <string>label</string>
@@ -219,6 +227,51 @@ background-color:gray;
   <action name="actionsigmaBondOrder">
    <property name="text">
     <string>sigmaBondOrder</string>
+   </property>
+  </action>
+  <action name="actionclearCloud">
+   <property name="text">
+    <string>clearCloud</string>
+   </property>
+  </action>
+  <action name="actionpiDM">
+   <property name="text">
+    <string>piDH</string>
+   </property>
+  </action>
+  <action name="actionpiSH">
+   <property name="text">
+    <string>piSH</string>
+   </property>
+  </action>
+  <action name="actionpiDH">
+   <property name="text">
+    <string>piDM</string>
+   </property>
+  </action>
+  <action name="actionpiSM">
+   <property name="text">
+    <string>piSM</string>
+   </property>
+  </action>
+  <action name="actionMayer">
+   <property name="text">
+    <string>Mayer</string>
+   </property>
+  </action>
+  <action name="actionMullikenCharge">
+   <property name="text">
+    <string>MullikenCharge</string>
+   </property>
+  </action>
+  <action name="actionpiElectron">
+   <property name="text">
+    <string>piElectron</string>
+   </property>
+  </action>
+  <action name="actionfreeValence">
+   <property name="text">
+    <string>freeValence</string>
    </property>
   </action>
  </widget>

@@ -52,10 +52,6 @@ class FchReader:
         beN=self.get_content('Number of beta electrons')
         basiN=self.get_content('Number of basis functions') # 基函数数量
 
-        
-        # print(atoms)
-        # print(symbols)
-        # print(coords)
         for i,atomic in enumerate(atoms):
             symbol=symbols[i]
             coord=list(coords[i])
@@ -91,7 +87,6 @@ class Content:
         lineCount=5 if self.dataType=='R' else 6 #每一行的数据量
         if self.isArray:
             lineNum=self.number//lineCount+1
-            # print(self.idx,lineNum)
             text='\n'.join(reader.lines[i] for i in range(self.idx,self.idx+lineNum))
             res=re.findall(ps[self.dataType], text)
             return np.array(res,dtype=ds[self.dataType])

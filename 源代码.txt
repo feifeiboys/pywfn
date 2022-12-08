@@ -1,0 +1,4777 @@
+"""
+计算原子自由价
+原子自由价=最大键级-该原子键级之和
+这里的键级就先用DH
+"""
+from ..bondorder import piDH
+from ..base import Mol,Atom
+
+class Calculator:
+    def __init__(self,mol:Mol) -> None:
+        self.mol=mol
+        self.caler=piDH.Calculator(self.mol)
+    
+    def calculate(self,centerAtom:Atom):
+        orders=[]
+        for aroundAtom in centerAtom.neighbors:
+            res=self.caler.calculate(centerAtom,aroundAtom)
+            if res['type']==0:
+                order=res['data']['order']
+                orders.append(order)
+        return orders,1.6494416218465484-sum(orders)
+
+from ..base import Mol,Atom
+from typing import *
+import numpy as np
+from ..data import Elements
+elements=Elements()
+from ..utils import printer
+class Calculator:
+    def __init__(self,mol:"Mol"):
+        self.mol=mol
+    
+    def calculate(self,atoms:List[Atom]):
+        self.mol.createAtomOrbitalRange()
+        PM=self.mol.PM
+        SM=self.mol.SM
+        PS=PM*SM
+        PS_=np.sum(PS,axis=0)
+        if SM is None:
+            return 0
+        charges=[]
+        for atom in atoms:
+            a_1,a_2=atom.obtMatrixRange
+            charge=PS_[a_1:a_2]
+            symbol=atom.symbol
+            charges.append(elements[symbol].charge-charge.sum())
+        return charges
+            
+            
+
+"""
+该脚本计算指定原子的pi电子数
+"""
+from ..base import Mol,Atom
+from typing import *
+import numpy as np
+from ..maths import CM2PM
+from ..utils import printer
+
+class Calculator:
+    def __init__(self,mol:Mol) -> None:
+        self.mol=mol
+
+        
+    def calculate(self,atoms:List[Atom]=None):
+        """计算π电子数量,如果不指定则计算所有的π电子"""
+        SM=self.mol.SM #重叠矩阵
+        if SM is None:
+            return 0
+        # 重构系数矩阵
+        CM_=np.zeros_like(self.mol.CM,dtype=np.float32)
+        if atoms is None:
+            atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
+        
+        self.mol.createAtomOrbitalRange()
+        orbitals=self.mol.O_obts
+        for atom in atoms:
+            if atom.symbol=='H': #氢原子没有p轨道所以没有π电子
+                continue
+            normal=atom.get_Normal()
+             # 占据轨道
+            a_1,a_2=atom.obtMatrixRange
+            pIndex=[i for i,l in enumerate(atom.layers) if 'P' in l]
+            for i,orbital in enumerate(orbitals):
+                Cop=atom.get_pProj(normal,orbital)
+                Co=np.zeros(len(atom.layers))
+                Co[pIndex]=np.concatenate(Cop)
+                CM_[a_1:a_2,orbital]=Co
+
+        # 计算密度矩阵
+        PM_=CM2PM(CM_,orbitals,self.mol.oE)
+        PS=PM_*SM
+        PSS=PS.sum(axis=0)
+        electrons=[]
+        for atom in atoms:
+            a_1,a_2=atom.obtMatrixRange
+            electron=np.sum(PSS[a_1:a_2])
+            printer.res(f'{atom.idx:<2}{atom.symbol:>2}{electron:>15.8f}')
+            electrons.append(electron)
+        return electrons
+
+
+"""
+该模块用来计算原子属性
+Mulliken电荷
+"""
+from typing import *
+import numpy as np
+import re
+from numpy import ndarray
+from .. import utils
+
+from .. import setting
+from .. import base
+
+from functools import cached_property,lru_cache
+
+"""
+一个原子的轨道组合系数就是一个矩阵，行数是基函数的数量，列数是分子轨道的数量
+与轨道系数相关的太多了,尽量精简
+OC是该原子的轨道系数
+OCI为某一列的原子轨道系数,P:bool参数用来确定是否只要P轨道的系数
+一个人原子的属性应该是标准的
+原子轨道layer:List[str]
+原子轨道系数OC:np.ndarray
+读取器直接设置这些属性
+"""
+from ..data import elements
+class Atom:
+    def __init__(self,symbol:str,coord:List[float],idx:int,mol:"base.Mol"): # 每个原子应该知道自己属于哪个分子
+        self.symbol=symbol
+        self.coord=np.array(coord)
+        self._layersData={}
+        self.layers:List[str]=None
+        self._squareSum=None
+        self.mol:"base.Mol"=mol
+        self.idx=idx
+        self.obtWays={} #存储所有分子轨道里原子轨道的方向
+
+        self.obtMatrixRange:List[int] # 需要在分子对象中调用函数产生这个属性值
+        self._sContribution:Dict={}
+        self.OC:ndarray=None
+    
+    @cached_property
+    def atomic(self)->int:
+        return elements[self.symbol].idx
+    
+
+    @cached_property
+    def neighbors(self)->List["Atom"]:
+        """每个原子相邻的原子有哪些，根据分子的键来判断"""
+        idxs=[]
+        bonds=self.mol.bonds
+        for bond in bonds:
+            idx1,idx2=bond.idx.split('-')
+            idx1,idx2=int(idx1),int(idx2) # 键的两个原子
+            if idx1==self.idx:idxs.append(idx2) # 添加不是该原子的键上的原子
+            if idx2==self.idx:idxs.append(idx1)
+        return [self.mol.atom(idx) for idx in set(idxs)]
+    
+    def get_cloud(self,pos:ndarray,obt:int)->ndarray:
+        """
+        获取波函数的点云数据
+        以原子中心为原点
+        pos[n,3]
+        """
+        res=self.mol.gto.agto(pos,self.OC[:,obt],self.atomic)
+        return res
+    
+    @lru_cache
+    def cloud(self,obt:int):
+        """大多数情况下,原子的点云在一定范围内是相同的"""
+        pos=np.random.rand(1000,3)
+        return self.get_cloud(pos,obt)
+
+    @lru_cache
+    def pLayersTs(self,orbital:int):
+        '''获取原子某一轨道的p层数据'''
+        pIndex=[i for i,l in enumerate(self.layers) if 'P' in l]
+        return self.OC[pIndex,orbital]
+    
+    def get_pProj(self,direction,orbital:int):
+        """计算原子p系数在某个方向上的投影,返回n个三维向量"""
+        if direction is None:
+            raise
+        ts=self.pLayersTs(orbital) # p轨道的系数
+        if np.linalg.norm(direction)==0 :
+            raise
+        direction=direction/np.linalg.norm(direction) # 投影向量归一化
+        ps=[np.array(ts[i:i+3]) for i in range(0,len(ts),3)] #每一项都是长度为3的数组
+        ps_=[np.dot(p, direction)*direction for p in ps] # 轨道向量在法向量方向上的投影
+        return ps_
+    
+    @lru_cache
+    def get_Normal(self,aroundIdx:int=None,main:bool=True): # 一个原子应该知道自己的法向量是多少
+        """
+        mian:代表是否为主动调用(防止递归)
+        获取原子的法向量,垂直于键轴,如果不传入另一个原子,则垂直于三个原子确定的平面\n
+        1.如果该原子连接两个原子
+            1.1 如果两个原子不在一条直线上,有法向量，直接返回\n
+            2.2 如果两个原子在一条之下上则没有法向量
+        2.如果该原子没有法向量\n
+            2.1 如果相邻的原子有法向量,返回邻原子的法向量\n
+            2.2 如果相邻原子没有法向量,返回None
+        """
+        locNum=0.001
+        neighbors=self.neighbors
+        normal=None
+        if len(neighbors)==3:
+            if aroundIdx is None: #如果传入的没有相邻原子的序号
+                #获取中心原子到三个相邻原子的法向量
+                p1,p2,p3=[(each.coord-self.coord) for each in neighbors] 
+            else:
+                p1,p2,p3=[(each.coord-self.coord)*(1 if each.idx==aroundIdx else locNum) for each in neighbors] 
+            normal=utils.get_normalVector(p1,p2,p3)
+        elif len(neighbors)==2:
+            p2=self.coord
+            p1,p3=neighbors[0].coord,neighbors[1].coord
+            angle=utils.vector_angle(p1-p2,p3-p2)
+            if angle>=0.01:
+                normal=utils.get_normalVector(p1,p2,p3)
+            else:return None
+        elif main: #如果是在递归中调用本函数的话就不要再次递归了
+            for each in neighbors:
+                normal_=each.get_Normal(self.idx,main=False)
+                if normal_ is not None:
+                    normal=normal_
+                    return normal
+                return None #如果周围原子也没有法向量的话，返回None
+        return normal
+    
+    @lru_cache
+    def get_obtWay(self,obt:int):
+        """获得原子某一轨道的方向"""
+        atomPos=self.coord
+        maxPos,maxValue=utils.get_extraValue(self,obt)
+        way=maxPos-atomPos # 如果两者相同说明完全没有电子云、这显然不对啊
+        if np.linalg.norm(way)==0:
+            raise
+        return way/np.linalg.norm(way)
+
+    def __repr__(self) -> str:
+        x,y,z=self.coord
+        return f'{self.symbol} ({x:.4f},{y:.4f},{z:.4f})'
+
+    @lru_cache
+    def get_sCont(self,orbital:int):
+        """获取某个原子轨道的贡献"""
+        s=self.OC[0,orbital]
+        contribution=s**2/self.mol.As[orbital]
+        return contribution
+
+
+class Atoms(list):
+    def __init__(self) -> None:
+        list.__init__([])
+        self.atoms=[]
+    
+    def __repr__(self) -> str:
+        return f'Atoms:{len(self.atoms)}'
+    
+    
+from .atom import Atom
+import numpy as np
+# 如何获取一个键？
+# Mol.getBond(a1,a2)
+# Mol应该有bonds属性，是一个字典，索引是'a1-a2'和'a2-a1'都指向该键
+from functools import cached_property
+class Bond:
+    def __init__(self,a1:Atom,a2:Atom) -> None:
+        self.a1=a1
+        self.a2=a2
+        self._length:float=None
+        self.idx=f'{a1.idx}-{a2.idx}'
+    
+    @cached_property
+    def length(self):
+        """获取键长"""
+        return np.linalg.norm(self.a2.coord-self.a1.coord)
+
+    @cached_property
+    def vector(self):
+        """获取键向"""
+        return self.a2.coord-self.a1.coord
+    
+    def __repr__(self) -> str:
+        return f'length={self.length}'
+# 根据reader从文件中读取到的信息构建分子对象
+from ..readers import logReader as Reader
+from .mol import Mol
+import numpy as np
+class File:
+    def __init__(self,path:str) -> None:
+        self.reader=Reader(path)
+        self.mol=Mol()
+        self.read_coords()
+        self.read_standardBasis()
+        self.read_orbitalCoefficients()
+        self.mol.trans()
+
+    def read_coords(self):
+        coords=self.reader.read_Coords()
+        self.coords=coords
+        for each in coords:
+            self.mol.add_atom(symbol=each['symbol'],coord=each['coord'])
+
+    def read_standardBasis(self):
+        basis=self.reader.read_standardBasis()
+        for i,each in enumerate(basis):
+            self.mol.atoms[i+1].standardBasis=np.array(each)
+
+    def read_orbitalCoefficients(self):
+        self.reader.read_orbitalCoefficients('  Molecular Orbital Coefficients',self.mol)
+        self.reader.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients',self.mol)
+        self.reader.read_orbitalCoefficients('Beta Molecular Orbital Coefficients',self.mol)   
+"""
+基础的分子对象，其属性应该是标准的，已知的
+一个分子对象应该有哪些属性？基本属性(必须属性),计算属性(需要计算才能的到的属性)
+结构相关
+- 原子
+- 键
+- 法向量
+- 重原子
+
+分子轨道相关
+轨道数量
+轨道类型
+是否分为α和β
+占据轨道序数
+非占据轨道序数
+重叠矩阵
+
+读取器
+"""
+
+from typing import *
+from pywfn.utils import vector_angle
+from .atom import Atom,Atoms
+from .bond import Bond
+# from .basis import Basis
+from ..data import Basis
+import numpy as np
+from .. import setting
+from functools import cached_property, lru_cache
+from ..utils import printer
+from ..maths import gto
+
+class Mol:
+    def __init__(self) -> None:
+        self._atoms:Atoms=Atoms()
+        self.Eigenvalues:List[float]=[]
+        self.isOpenShell:bool=None #轨道是否为开壳层，值为0或1
+        self.orbitals:List[str]=[] # 存储所有轨道时占据还是非占据
+        self.obtElcts:List[int]=[] # 存储每个分子轨道占据的电子数量(包含占据信息)
+        self._heavyAtoms:List[Atom]=None
+        self._CM:np.ndarray=None # 系数矩阵
+        self._SM:np.ndarray=None # 重叠矩阵
+        self.reader=None
+        self.basis:Basis=None
+        self.gto:"gto.Gto"=None
+        
+    
+    def add_atom(self,symbol:str,coord:List[float]):
+        """添加一个原子"""
+        idx=len(self._atoms)+1
+        atom=Atom(symbol,coord,idx,self)
+        # print(type(self._atoms),self._atoms,dir(self._atoms))
+        self._atoms.append(atom)
+    
+    def atom(self,idx:int)->Atom:
+        """根据原子编号获取一个原子,从1开始"""
+        if not isinstance(idx,int):raise
+        return self._atoms[idx-1]
+    
+    @property
+    def atoms(self)->List[Atom]:
+        """获取所有原子"""
+        return self._atoms
+    
+    @cached_property
+    def coords(self)->np.ndarray:
+        """返回原子坐标矩阵[n,3]"""
+        return np.array([atom.coord for atom in self.atoms])
+
+    @cached_property
+    def orbital_symbols(self)->List[str]:
+        n=len(self.orbitals)
+        if self.isOpenShell:
+            return [f'α{e+1}' if e<n/2 else f'β{int(e-n/2+1)}' for e in range(n)]
+        else:
+            return [f'{e+1}' for e in range(n)]
+
+    @cached_property
+    def O_obts(self)->List[int]:
+        return [i for i,s in enumerate(self.orbitals) if s[-1]=='O']
+    
+    @cached_property
+    def V_obts(self)->List[int]:
+        return [i for i,s in enumerate(self.orbitals) if s[-1]=='V']
+    
+    @cached_property
+    def heavyAtoms(self):
+        return [atom for atom in self.atoms if atom.symbol!='H']
+
+    @cached_property
+    def CM(self)->np.ndarray:
+        """分子轨道系数矩阵"""
+        return np.concatenate([atom.OC for atom in self.atoms],axis=0)
+    
+    @property
+    def SM(self):
+        """重叠矩阵"""
+        if self._SM is None:
+            printer.wrong('没有重叠矩阵,将使用单位矩阵作为重叠矩阵!!!')
+            self._SM=np.eye(self.CM.shape[0])
+        return self._SM
+
+    @cached_property
+    def PM(self):
+        """计算密度矩阵(其实可以读的,但是感觉读的没有计算的快,因为可以直接根据系数矩阵计算)"""
+        A=(self.CM[:,self.O_obts].T)[:,:,np.newaxis]
+        B=(self.CM[:,self.O_obts].T)[:,np.newaxis,:]
+        PM=np.sum(A@B*self.oE,axis=0) # 重叠矩阵
+        return PM
+    
+    @property
+    def oE(self):
+        """轨道电子数"""
+        return 1 if self.isOpenShell else 2
+
+    @cached_property
+    def As(self):
+        """所有原子所有轨道的平方和再开根号"""
+        CM=self.CM.copy() #分子轨道矩阵
+        return np.sqrt(np.sum(CM**2,axis=0)) #平方和再开根号
+
+    @cached_property
+    def bonds(self)->List[Bond]:
+        atomNum=len(self.atoms)
+        bonds=[]
+        idxs=[(i+1,j+1) for i in range(atomNum) for j in range(atomNum) if i<j]
+        for idx1,idx2 in idxs:
+            r=np.linalg.norm(self.atom(idx2).coord-self.atom(idx1).coord)
+            if r<1.7:
+                bonds.append(self.bond(idx1,idx2))
+        return bonds
+    
+    @lru_cache
+    def bond(self,idx1:int,idx2:int)->Bond:
+        """第一次调用是生成键,第二次调用时直接返回,秒啊"""
+        if idx2<idx1:idx1,idx2=idx2,idx1
+        return Bond(self.atom(idx1), self.atom(idx2))
+
+    def createAtomOrbitalRange(self):
+        """令每个原子生成其在轨道矩阵中的范围"""
+        total=0
+        for atom in self.atoms:
+            atom.obtMatrixRange=[total,total+len(atom.OC)]
+            total+=len(atom.OC)
+    
+    def get_dihedralAngle(self,idx1:int,idx2:int,idx3:int,idx4:int):
+        """计算二面角"""
+        a,b,c,d=self.atom(idx1),self.atom(idx2),self.atom(idx3),self.atom(idx4)
+        vba=a.coord-b.coord
+        vbc=c.coord-b.coord
+        vcd=d.coord-c.coord
+        vcb=b.coord-c.coord
+        vi=np.cross(vba,vbc)
+        vj=np.cross(vcb,vcd)
+        angle=vector_angle(vi,vj)
+        return angle
+    def __repr__(self):
+        return f'atom number: {len(self.atoms)}'
+    
+from .atom import Atom
+from .bond import Bond
+from .mol import Mol
+"""
+计算mayer键级
+mayer键级计算公式为: 
+$\sum_{a\in A}\sum_{b\in B}PS$
+"""
+import numpy as np
+from colorama import Fore
+from typing import *
+from ..base import Atom,Mol
+
+class Calculator:
+    def __init__(self,mol:"Mol"):
+        self.mol=mol
+
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
+        """计算两原子之间的mayer键级"""
+        self.mol.createAtomOrbitalRange() # 为每个原子分配其在轨道矩阵中的序数范围
+        # 获取密度矩阵 P
+        PM=self.mol.PM
+        # 获取重叠矩阵
+        SM=self.mol.SM
+        PS=PM@SM
+
+        a1_1,a1_2=centerAtom.obtMatrixRange
+        a2_1,a2_2=aroundAtom.obtMatrixRange
+        order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
+
+        return order
+"""
+轨道分解法+HMO计算π键级
+"""
+from ..base import Mol,Atom,Bond
+import numpy as np
+from .. import utils
+from typing import *
+
+
+class Calculator:
+    def __init__(self,mol:Mol) -> None:
+        self.mol=mol
+
+    def get_order(self, center:Atom, around:Atom, orbital:int, direction):  # 计算一个轨道的键级
+        '''计算两个原子间每个轨道的键级
+        中心原子，相邻原子，轨道，方向'''
+        if around.symbol=='H':
+            return 0
+        if np.linalg.norm(direction)==0:
+            return 0
+        As=self.mol.As[orbital]
+
+        centerPos=center.coord
+        aroundPos=around.coord
+        bondVector=aroundPos-centerPos
+        crossVector=np.cross(utils.normalize(bondVector),utils.normalize(direction))
+        
+
+        centerTs=center.OC[:,orbital].copy()
+        aroundTs=around.OC[:,orbital].copy()
+        if np.linalg.norm(centerTs)==0 or np.linalg.norm(aroundTs)==0:
+            return 0
+        
+        centerPsProj=center.get_pProj(direction, orbital) # 先计算投影
+        aroundPsProj=around.get_pProj(direction, orbital)
+
+        nx=bondVector
+        ny=crossVector
+        nz=direction
+        centerRes=utils.coordTrans(nx,ny,nz, centerPsProj)
+        aroundRes=utils.coordTrans(nx,ny,nz, aroundPsProj)
+
+        centerPZs=[each[-1] for each in centerRes]
+        aroundPZs=[each[-1] for each in aroundRes]
+
+        pOrder=sum([cpz*apz/As for cpz,apz in zip(centerPZs,aroundPZs)])*self.mol.oE
+        return pOrder
+        # return order
+
+    def get_orders(self,center:Atom,around:Atom,orbitals:List[int],direction):
+        """计算每两个原子之间的键级"""
+        orders=[self.get_order(center,around,orbital,direction) for orbital in orbitals] # 所有的占据轨道都计算键级
+        return orders
+
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom) -> dict:
+        """指定一个键，计算该键的键级"""
+        self.centerPIdx=[i for i,l in enumerate(centerAtom.layers) if 'P' in l] #原子的序数
+        self.aroundPIdx=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
+        O_obts=self.mol.O_obts
+        normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量
+        if len(centerAtom.neighbors)==3: # 如果原子有法向量(sp2)
+            orders=self.get_orders(centerAtom,aroundAtom,O_obts,normal)
+            return {
+                "type":0,
+                "data":{
+                    "orders":orders,
+                    "order":sum(orders)
+                }
+            }
+        else: # 如果没有法向量的话，则需要找轨道方向作为基础方向
+            # 从高到低计算轨道方向，遇到有垂直于键轴的则作为轨道方向
+            orbitalDirection=None
+            for o in O_obts[::-1]:
+                orbitalDirection=centerAtom.get_obtWay(o)
+                if np.linalg.norm(orbitalDirection)==0:
+                    continue
+                bondDirection=self.mol.bond(centerAtom.idx, aroundAtom.idx).bondVector()
+                if utils.vector_angle(orbitalDirection, bondDirection,trans=True)>0.4: # 夹角要很大
+                    break
+            if orbitalDirection is not None:
+                orders1=self.get_orders(centerAtom,aroundAtom,O_obts,orbitalDirection)
+                crossDirection=np.cross(orbitalDirection, bondDirection)
+                orders2=self.get_orders(centerAtom,aroundAtom,O_obts,crossDirection)
+                return {
+                    "type":1,
+                    "data":{
+                        "orders":[orders1,orders2],
+                        "order":[sum(orders1),sum(orders2)]
+                    }
+                }
+"""
+轨道分解法+Mayer计算π键级
+根据投影计算新的分子轨道系数矩阵,然后重构密度矩阵
+"""
+from pywfn import setting
+
+from pywfn.utils import vector_angle
+from ..base import Mol,Atom
+from typing import *
+import numpy as np
+from.utils import CM2PM,CM2PMs
+from colorama import Fore
+import multiprocessing as mp
+from tqdm import tqdm
+
+class Calculator:
+    def __init__(self,mol:Mol) -> None:
+        self.mol=mol
+
+    
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
+        if centerAtom.symbol=='H' or aroundAtom.symbol=='H':
+            print(Fore.YELLOW+'不能计算含有H的键')
+            return 0
+        self.mol.createAtomOrbitalRange()
+        CM_=np.zeros_like(self.mol.CM,dtype=np.float32) #新的系数矩阵
+        orbitals=self.mol.O_obts #占据轨道的索引
+
+        normal=centerAtom.get_Normal(aroundAtom.idx)
+        if normal is None:
+            print(Fore.RED+'中心原子没有法向量')
+            for orbital in orbitals[::-1]:
+                direction=centerAtom.get_obtWay(orbital)
+                if vector_angle(direction,aroundAtom.coord-centerAtom.coord,trans=True)<0.1:
+                    normal=direction
+                    break
+
+        a1_1,a1_2=centerAtom.obtMatrixRange
+        a2_1,a2_2=aroundAtom.obtMatrixRange
+        centerPIndex=[i for i,l in enumerate(centerAtom.layers) if 'P' in l]
+        aroundPIndex=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
+        for i,orbital in tqdm(enumerate(orbitals),total=len(orbitals),desc='重构密度矩阵'):
+            C1op=centerAtom.get_pProj(normal,orbital)
+            C2op=aroundAtom.get_pProj(normal,orbital)
+            C1o=np.zeros(len(centerAtom.layers))
+            C2o=np.zeros(len(aroundAtom.layers))
+            C1o[centerPIndex]=np.concatenate(C1op)
+            C2o[aroundPIndex]=np.concatenate(C2op)
+            CM_[a1_1:a1_2,orbital]=C1o
+            CM_[a2_1:a2_2,orbital]=C2o
+            # progress('重构密度矩阵',i+1,len(orbitals))
+        oe=1 if self.mol.isOpenShell else 2
+        n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
+        SM=self.mol.SM
+        
+
+        self.centerAtom=centerAtom
+        self.aroundAtom=aroundAtom
+        self.obtNum=obtNum=len(orbitals)
+        
+        if setting.IF_ORBITAL_ORDER: # 是否拆分轨道键级成分
+            self.PMs_=CM2PMs(CM_,orbitals,oe) #三维数组
+            self.PSs=self.PMs_@SM
+            OM=self.get_OM() # 键级矩阵
+            orders=OM.sum(axis=0)
+            order=np.sqrt(np.abs(np.sum(orders)))
+            ratios=orders/np.sum(orders)*order
+            printOrders(ratios,self.mol.orbital_symbols)
+            return order
+        else:
+            PM_=CM2PM(CM_,orbitals,oe)
+            PS=PM_@SM
+            order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
+            return np.sqrt(np.abs(order))
+
+    def get_OMi(self,idx): #计算一个矩阵元
+        i,j=idx
+        a1,a2=self.centerAtom.obtMatrixRange
+        b1,b2=self.aroundAtom.obtMatrixRange
+        PSi=self.PSs[i,:,:]
+        PSj=self.PSs[j,:,:]
+        res=np.sum(PSi[a1:a2,b1:b2]*PSj[b1:b2,a1:a2].T)
+        return res
+
+    def get_OM(self): # 计算键级矩阵,每两个原子轨道之间有一个键级
+        obtNum=self.obtNum # 占据轨道的数量
+        OM=np.zeros(shape=(obtNum,obtNum)) # 轨道键级矩阵，是一个对称矩阵
+        idxs=get_idxs(obtNum)
+        for i,j in tqdm(idxs,total=len(idxs),desc='构建键级矩阵'):
+            v=self.get_OMi((i,j))
+            OM[i,j]=v
+        # OM是一个下三角矩阵,将其转为对角矩阵
+        OM+=np.tril(OM.T,-1)
+        return OM
+
+def get_idxs(n):
+    """返回下三角矩阵的索引"""
+    return [[i,j] for j in range(n) for i in range(n) if j<=i]
+
+def printOrders(orders,orbitals):
+    """将轨道根据大小排序后输出"""
+    orders_=[f'{order:.4f}' for order in orders]
+    sortedRes=sorted(list(zip(orbitals,orders_)),key=lambda e:abs(float(e[1])),reverse=True)
+    sortedRes=[e for e in sortedRes if abs(float(e[1]))>=0.01]
+    sortedRes=list(zip(*sortedRes))    
+    formPrint(sortedRes,8,10)
+
+def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
+    """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
+    logs=[]
+    for content in contents:
+        logs.append([])
+        for i in range(0,len(content),lineNum):
+            text=''.join([f'{each}'.rjust(eachLength,' ') for each in content[i:i+lineNum]])
+            logs[-1].append(text)
+    if len(logs)==0:
+        return
+    for i in range(len(logs[0])):
+        for log in logs:
+            print(log[i])
+
+"""
+轨道挑选法+HMO键级公式
+"""
+from ..base import Mol,Atom
+from .utils import judgeOrbital,printOrders
+import numpy as np
+
+class Calculator:
+    def __init__(self,mol:Mol) -> None:
+        self.mol=mol
+
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
+        orbitals=self.mol.O_obts
+        As=self.mol.As[orbitals]
+        piUnits=[judgeOrbital(centerAtom,aroundAtom,o,centerAtom.get_Normal()) for o in orbitals]
+        centerRes=np.sum(centerAtom.OC[:,orbitals]**2,axis=0)/As
+        aroundRes=np.sum(aroundAtom.OC[:,orbitals]**2,axis=0)/As
+        orders=centerRes*aroundRes*piUnits
+        printOrders(orders,orbitals)
+        return sum(orders)
+
+"""
+轨道挑选法+mayer键级公式
+mayer键级需要重叠矩阵,可一次性计算所有键级(此时原子的法向量由三个原子决定,而不是垂直于键轴)
+"""
+from ..base import Mol,Atom
+from ..utils import vector_angle
+from .utils import CM2PM,judgeOrbital
+import numpy as np
+
+
+class Calculator:
+    def __init__(self,mol:Mol) -> None:
+        self.mol=mol
+
+
+    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
+        """指定两个原子,计算π键键级"""
+        if self.mol.CM is None:
+            print('没有重叠矩阵,无法计算')
+            return 0
+        self.mol.createAtomOrbitalRange()
+        centerNormal=centerAtom.get_Normal()
+        orbitals=self.mol.O_obts
+        CM_=np.zeros_like(self.mol.CM) # 拷贝一份，然后将不是π轨道的那些变成0
+        atoms=[centerAtom,aroundAtom]
+        for atom in atoms: # 修改每个原子对应的系数矩阵
+            if atom.symbol=='H':continue
+            a_1,a_2=atom.obtMatrixRange
+            for orbital in orbitals:
+                if judgeOrbital(centerAtom,aroundAtom,orbital,centerNormal): # 如果是π轨道
+                    # print(atom.idx,orbital)
+                    CM_[a_1:a_2,orbital]=self.mol.CM[a_1:a_2,orbital]
+        oe=1 if self.mol.isOpenShell else 2
+        n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
+        PM_=CM2PM(CM_,orbitals,oe)
+        SM=self.mol.SM
+        PS=PM_@SM
+
+        a1,a2=centerAtom.obtMatrixRange
+        b1,b2=aroundAtom.obtMatrixRange
+        order=np.sum(PS[a1:a2,b1:b2]**2)
+        return order
+
+        
+                    
+
+# π键级的计算
+- 根据轨道来源可以分为`挑选法`和`分解法`
+- 根据计算方法可以分为`mayer`和`HMO`
+> 计算方法只是套用别人的公式，实际上可以有更多
+
+排列组合下来可以有四种方法其中:
+
+轨道分解法是自己提出的方法，可以分别结合两种键级计算公式
+
+| 键级\轨道 | 挑选法S | 分解法D | 
+| --- | --- | --- |
+| Mayer M | SM | DM |
+| HMO   H | SH | `DH` |
+
+其实轨道挑选法也是对系数矩阵进行了修改，相当于把不是π轨道的都变成了0
+用户计算时指定两个原子,系统会计算这两个原子之间的键级(虽然对于需要重构密度矩阵的这种方法效果不好)
+以HMO作为计算公式的方法,会返回一个与占据轨道数量相同的数组,对应于每一个轨道对键级的贡献
+对于以mayer作为计算公式的方法,只会返回一个键级数据(与轨道无关)
+
+
+"""
+公用的工具函数
+"""
+import numpy as np
+from typing import *
+from ..base import Atom
+from ..utils import vector_angle
+import numpy as np
+import time
+def CM2PM(CM,orbital:List[int],oe:int):
+    """
+    根据系数矩阵构建密度矩阵
+    CM:系数矩阵,如果是开壳层的话,列数是行数的两倍[n,n]/[n,2n]
+    n:分子轨道占据电子数
+    """
+    PMs=CM2PMs(CM,orbital,oe)
+    return np.sum(PMs,axis=0)
+
+def CM2PMs(CM,orbital:List[int],oe:int):
+    """
+    构建三维密度矩阵，不要空轨道，形状为[占据轨道数,原子轨道数,原子轨道数]
+    """
+    A=(CM[:,orbital].T)[:,:,np.newaxis]
+    B=(CM[:,orbital].T)[:,np.newaxis,:]
+    return A@B*oe #用矩阵乘法的形式直接构建矩阵可比逐元素计算多了
+
+def judgeOrbital(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)->int:
+    """
+    判断一个轨道是否为π轨道,几何方法
+    centerAtom,aroundAtom:原子对象
+    orbital:分子轨道序数
+    normal:原子法向量[其实可以是任意方向]
+    """
+    if aroundAtom.symbol=='H' or centerAtom.symbol=='H':
+        return 0
+    # 1. 根据s轨道和p轨道的贡献
+    sContCenter=centerAtom.get_sCont(orbital)
+    sContAround=aroundAtom.get_sCont(orbital)
+    if sContCenter>0.01 or sContAround>0.01:
+        return 0
+    # 2. p轨道的方向要处在垂直分子平面方向
+    cenDir=centerAtom.get_obtWay(orbital) #中心原子的p轨道方向
+    aroDir=aroundAtom.get_obtWay(orbital)
+    centerAngle=vector_angle(cenDir,normal)
+    aroundAngle=vector_angle(aroDir,normal)
+    if abs(0.5-centerAngle)>0.2 or abs(0.5-aroundAngle)>0.2:
+        return 0
+    # 以上两个条件都满足的可以认为是π轨道
+    if (0.5-centerAngle)*(0.5-aroundAngle)>0:
+        return 1
+    else:
+        return -1
+
+def judgeOrbital_(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)-> int:
+    """判断某一个键的分子轨道是不是π轨道,成键返回1，反键返回-1，否则返回0"""
+    
+
+    centerTs=centerAtom.pLayersTs(orbital)
+    aroundTs=aroundAtom.pLayersTs(orbital)
+    centerPs=[np.array(centerTs[i:i+3]) for i in range(0,len(centerTs),3)]
+    aroundPs=[np.array(aroundTs[i:i+3]) for i in range(0,len(aroundTs),3)]
+    normal=centerAtom.get_Normal(aroundAtom)
+    centerPs_=centerAtom.get_pProj(normal, orbital) # 先计算投影
+    aroundPs_=aroundAtom.get_pProj(normal, orbital)
+    centerPs,centerPs_=np.array(centerPs),np.array(centerPs_) # 将系数转为数组
+    aroundPs,aroundPs_=np.array(aroundPs),np.array(aroundPs_)
+    centerPs,centerPs_=centerPs.sum(axis=0),centerPs_.sum(axis=0) # 将不同组的p求和
+    aroundPs,aroundPs_=aroundPs.sum(axis=0),aroundPs_.sum(axis=0)
+    centerL,centerL_=np.linalg.norm(centerPs),np.linalg.norm(centerPs_) #p轨道系数组成向量的长度
+    aroundL,aroundL_=np.linalg.norm(aroundPs),np.linalg.norm(aroundPs_)
+    # centerRatio=np.linalg.norm(centerPs_)/np.linalg.norm(centerPs) # 投影后与投影前的比例
+    # aroundRatio=np.linalg.norm(aroundPs_)/np.linalg.norm(aroundPs) 
+    centerRatio=np.divide(centerL_,centerL,out=np.zeros_like(centerL),where=centerL!=0)
+    aroundRatio=np.divide(aroundL_,aroundL,out=np.zeros_like(aroundL),where=aroundL!=0)
+
+    
+    centerScont=centerAtom.get_sCont(orbital)
+    aroundScont=aroundAtom.get_sCont(orbital)
+    # print(orbital,centerScont,aroundScont)
+    if centerScont>0.001 or aroundScont>0.001:
+        return 0 # s贡献太大的不是
+
+    # centerNormal=centerAtom.get_Normal(aroundAtom) #法向量方向
+    # if len(aroundAtom.neighbors)==3:
+    #     aroundNormal=aroundAtom.get_Normal(centerAtom)
+    # else:
+    #     aroundNormal=centerNormal
+    # if utils.vector_angle(centerNormal,aroundNormal,trans=True)>0.5:
+    #     aroundNormal*=-1
+
+    # centerOrbitalDirection=centerAtom.get_obtWay(orbital) #原子轨道方向
+    # aroundOrbitalDirection=aroundAtom.get_obtWay(orbital)
+    # if np.linalg.norm(centerOrbitalDirection)==0 or np.linalg.norm(aroundOrbitalDirection)==0:
+    #     return 0
+    # centerAngle=utils.vector_angle(centerNormal,centerOrbitalDirection,trans=True)
+    # aroundAngle=utils.vector_angle(centerNormal,aroundOrbitalDirection,trans=True)
+
+    # if centerAngle<0.2 and aroundAngle<0.2:
+
+    if centerRatio<=0.1 or aroundRatio<=0.1:
+        return 0
+    if vector_angle(centerPs_,aroundPs_)<=0.5:
+        return 1
+    else:
+        return -1
+
+def printOrders(orders,orbitals):
+    """将轨道根据大小排序后输出"""
+    orders_=[f'{order:.4f}' for order in orders]
+    sortedRes=sorted(list(zip(orbitals,orders_)),key=lambda e:abs(float(e[1])),reverse=True)
+    sortedRes=[e for e in sortedRes if abs(float(e[1]))>=0.01]
+    sortedRes=list(zip(*sortedRes))    
+    formPrint(sortedRes,8,10)
+
+def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
+    """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
+    logs=[]
+    for content in contents:
+        logs.append([])
+        for i in range(0,len(content),lineNum):
+            text=''.join([f'{each}'.rjust(eachLength,' ') for each in content[i:i+lineNum]])
+            logs[-1].append(text)
+    if len(logs)==0:
+        return
+    for i in range(len(logs[0])):
+        for log in logs:
+            print(log[i])
+
+"""
+一个原子的基组应该有一下层级
+
+不同价层
+    指数(一维数组)
+    系数(二维数组)
+不同角动量对应不同的mnl
+所有可能的m+n+l=角动量决定了基函数的数量
+
+"""
+# from ..utils import printer
+from .. import utils
+printer=utils.Printer()
+import json
+from functools import lru_cache
+from itertools import product
+from typing import *
+from pathlib import Path
+class Basis:
+    """
+    所有提前准备的基组数据
+    """
+    def __init__(self,name:str) -> None:
+        """根据基组名实例化基组信息"""
+        with open(Path(__file__).parent/'basis.json','r') as f:
+            self.allBasis:dict=json.loads(f.read())
+        
+        self.names=list(self.allBasis.keys())
+        transDict={
+            '6-31G(d)':'6-31G*'
+        }
+        if name in transDict.keys():name=transDict[name]
+        if name not in self.names:
+            printer.wrong(f'不支持的基组{name}!!')
+        self.basis=self.allBasis[name] #获取基组名的所有层
+    
+    @lru_cache
+    def get(self,atomic)->List:
+        """根据原子序号获得基组"""
+        return self.basis[str(atomic)]
+    
+    @lru_cache
+    def lmn(self,ang:int)->list:
+        """
+        根据角动量获取l,m,n
+        基函数中包含 x^l.y^m.z^n
+        """
+        res=[]
+        Rs=range(ang+1)
+        for l,m,n in product(Rs,Rs,Rs):
+            if l+m+n==ang:res.append([l,m,n])
+        return res
+
+    def num(self,atomic:int):
+        """获取基组原子对应的基函数数量"""
+        shells=self.get(atomic)
+        number=0
+        for shell in shells:
+            for ang in shell['ang']:
+                lmn=self.lmn(ang)
+                number+=len(lmn)
+        return number
+from typing import *
+from pathlib import Path
+import json
+
+def read_csv(path):
+    """将csv文件保存为二维数组"""
+    with open(path,'r',encoding='utf-8') as f:
+        content=f.read()
+    lines=content.splitlines(keepends=False)
+    csv=[]
+    for line in lines:
+        csv.append(line.split(','))
+    return csv[1:]
+
+class Element:
+    def __init__(self,idx,symbol,color,radius):
+        self.idx=int(idx)
+        self.charge=self.idx
+        self.symbol=symbol
+        self.color=color
+        self.radius=radius
+
+class Elements:
+    def __init__(self) -> None:
+        self.elements=[] #原子列表，一定是按照顺序排列的
+        self.sym2idx:Dict[str,int]={} #构建一个原子符号到原子序数的对应表
+        self.scriptPath=Path(__file__) #当前脚本所在的路径
+        self.data=read_csv(self.scriptPath.parent / 'elements.csv')
+        for i in range(len(self.data)):
+            idx,symbol,color,radius=self.data[i]
+            self.elements.append(Element(idx,symbol,color,radius))
+            self.sym2idx[symbol]=int(idx)
+
+    def get_element_by_idx(self,idx:int)->Element:
+        return self.elements[idx-1]
+
+    def get_element_by_symbol(self,symbol:str)->Element:
+        idx=self.sym2idx[symbol]
+        return self.get_element_by_idx(idx)
+
+
+    def __getitem__(self,key) -> Element:
+        if isinstance(key,int):
+            return self.get_element_by_idx(key)
+        elif isinstance(key,str):
+            return self.get_element_by_symbol(key)
+        else:
+            print(type(key))
+            raise
+
+x=Elements()
+欢迎使用pywfn，详情信息可访问 https://feifeiboys.github.io/pywfn/ 查看
+按 q 即可退出程序，如无特殊提示，按 Enter 可返回上一级
+按照提示输入编号即可使用程序
+%chk=CHK.chk
+# b3lyp/6-31g(d) pop=full gfinput iop(3/33=1)
+
+Title Card Required
+
+0 1
+COORD
+
+
+import json
+from typing import *
+from pathlib import Path
+import json
+from functools import lru_cache,cached_property
+
+from itertools import product
+from .basis import Basis
+from .elements import Elements
+
+elements=Elements()
+struct Layer
+    name::String
+end
+e=3.14
+π=3.14
+function s(c::Float32,a::Float32,R)
+    return c(2a/π)^(3/4)*2a^0.5e^(-1)
+end
+"""
+传入一堆位置点，计算在这些位置的各种函数数值
+传入的数组大小为[n,3],一行分别是x,y,z
+基组的种类是有限的吗？有没有通用的表达形式？为每一个基组都定义不同的计算类型
+"""
+import numpy as np
+from numpy import sqrt,ndarray
+from typing import *
+
+π=np.pi
+e=np.e
+
+
+
+def gto(c:float,a:float,R:ndarray,pos:ndarray,lmn:Tuple[int]):
+    """
+    计算一系列gto函数的值
+    c:收缩系数
+    a:高斯指数
+    pos:坐标
+    R:坐标到原点距离平方
+    mln:角动量决定的x,y,z指数
+    """
+    l,m,n=lmn
+    x,y,z=pos.T
+    v=c*(2*a/π)**(3/4)*2*sqrt(a)* x**l * y**m * z**n *e**(-1*a*R)
+    return v
+
+def lgto(pos:ndarray,cs:List[float],as_:List[float],lmn):
+    """
+    layer,计算一个收缩的(一层)原子轨道波函数
+    pos,[n,3] 需要计算的点的坐标
+    cs:收缩系数
+    as_:高斯指数
+    """
+    R=np.sum(pos**2,axis=1) # 每个点到中心点的距离[n]
+    vs=np.zeros(pos.shape[0])
+    for a,c in zip(as_,cs):
+        v=gto(c,a,R,pos,lmn)
+        vs+=v
+    return vs
+
+from .. import data
+class Gto:
+    def __init__(self,basis:"data.Basis"):
+        self.basis=basis
+    def agto(self,pos:ndarray,OCi:ndarray,atomic:int,angs=[1]):
+        """
+        atom,计算一个原子的轨道波函数(所有层的轨道波函数之和)
+        pos:要计算的点相对于原子(原子作为坐标原点)的坐标[n,3]
+        OCs:原子轨道组合系数信息
+        angs:要显示轨道的角动量,默认只计算p轨道
+
+        1. 对每一个价层循环
+        2. 对每个角动量循环
+        3. 对角动量对应的lmn循环
+        """
+        base=self.basis.get(atomic)
+        vs=np.zeros(len(pos))
+        idx=0
+        for i,shell in enumerate(base): # 首先对shell循环
+            exps=shell['exp']
+            for j,ang in enumerate(shell['ang']): # 然后对角动量循环
+                show = 1 if ang in angs else 0
+                coes=shell['coe'][j] #收缩系数是二维数组
+                for k,lmn in enumerate(self.basis.lmn(ang)):
+                    Ci=OCi[idx]
+                    if show:vs+=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
+                    # print(f'{idx:<4}{Ci:<10}shell={i:<4}{ang=} {lmn} {show=}')
+                    idx+=1
+                    
+        return vs
+
+if __name__=='__main__':
+    pos=np.random.rand(100,3)
+    cs=[1.,2.,3.]
+    res=lgto(pos,cs)
+    print(res)
+保存一些常用的数学公式
+
+gto的计算量是很大的，所以可以尝试多种加速计算的方法
+- 常规的numpy
+- taichi
+- julia
+import numpy as np
+from typing import *
+from .gto import Gto
+
+def gridPos(range):
+    """生成网格数据点,range:生成数据的范围"""
+    ...
+
+def CM2PM(CM,orbital:List[int],oe:int):
+    """
+    根据系数矩阵构建密度矩阵
+    CM:系数矩阵,如果是开壳层的话,列数是行数的两倍[n,n]/[n,2n]
+    n:分子轨道占据电子数
+    """
+    PMs=CM2PMs(CM,orbital,oe)
+    return np.sum(PMs,axis=0)
+
+def CM2PMs(CM,orbital:List[int],oe:int):
+    """
+    构建三维密度矩阵，不要空轨道，形状为[占据轨道数,原子轨道数,原子轨道数]
+    """
+    A=(CM[:,orbital].T)[:,:,np.newaxis]
+    B=(CM[:,orbital].T)[:,np.newaxis,:]
+    return A@B*oe #用矩阵乘法的形式直接构建矩阵可比逐元素计算多了
+"""
+此脚本用来读取fchk文件
+fchk文件中有哪些属性是可以用到的？
+"""
+import re
+import numpy as np
+from ..base import Mol
+from ..data import elements
+from typing import *
+
+titleMatch='^(.{40}) {3}(.{1})(.{5})(.{12})$'
+class FchReader:
+    def __init__(self,path:str):
+        self.mol=Mol()
+        self.path=path
+        self.contents:List[Content]=[]
+        with open(self.path,'r',encoding='utf-8') as f:
+            self.text=f.read()
+            self.lines=self.text.split('\n')
+        self.jobTitle:str=self.lines[0]
+        self.jobType,self.jobMethod,self.jobBasis=re.match(r'(.{10})(.{30})(.{30})',self.lines[1]).groups()
+        # 正式的数据从第十行开始
+        for idx in range(10,len(self.lines)):
+            line=self.lines[idx]
+            if re.match(titleMatch, line) is not None:
+                self.contents.append(Content(idx+1, line))
+        
+        self.get_all()
+    
+    def get_content(self,title:str):
+        title=title.ljust(40,' ')
+        for each in self.contents:
+            if each.title==title:
+                return each.get(self)
+        else:
+            return None
+    
+    def get_all(self):
+        """
+        获取所有数据
+        1. 原子符号
+        2. 原子坐标(fch中的原子坐标单位是Bohr,1Bohr=0.53A)
+        3. 轨道能量(根据是否含有alpha判断是否为开壳层)
+        4. 系数矩阵
+        5. 重叠矩阵
+        """
+        atoms=self.get_content('Atomic numbers')
+        symbols=[elements[int(e)].symbol for e in atoms]
+        coords=self.get_content('Current cartesian coordinates').reshape(-1,3)*0.5291772083
+        ACMs=self.get_content('Alpha MO coefficients')
+        aeN=self.get_content('Number of alpha electrons') #alpha和beta电子数量
+        beN=self.get_content('Number of beta electrons')
+        basiN=self.get_content('Number of basis functions') # 基函数数量
+
+        
+        # print(atoms)
+        # print(symbols)
+        # print(coords)
+        for i,atomic in enumerate(atoms):
+            symbol=symbols[i]
+            coord=list(coords[i])
+            self.mol.add_atom(symbol=symbol,coord=coord)
+        self.mol.obtElcts=[1]*aeN+[0]*(basiN-aeN)+[1]*beN+[0]*(basiN-beN)
+        
+
+
+
+class Content:
+    def __init__(self,idx:int,line:str):
+        """fch中的数据格式非常规整，刚初始化的时候不读取数据，需要的时候再读取"""
+        self.idx=idx
+        title,dataType,isArray,number=re.match(titleMatch,line).groups()
+        self.title:str=title
+        self.dataType:str=dataType
+        self.isArray=True if 'N=' in isArray else False
+        self.number:int=int(number)
+
+    def get(self,reader:FchReader):
+        """
+        读取其中内容
+        整数一行六个数据，浮点数一行五个数据
+        """
+        ps={
+            'I':'\d+',
+            'R':'-?\d+.\d+E[\+-]\d{2}'
+        }
+        ds={
+            'I':np.int8,
+            'R':np.float32
+        }
+        lineCount=5 if self.dataType=='R' else 6 #每一行的数据量
+        if self.isArray:
+            lineNum=self.number//lineCount+1
+            # print(self.idx,lineNum)
+            text='\n'.join(reader.lines[i] for i in range(self.idx,self.idx+lineNum))
+            res=re.findall(ps[self.dataType], text)
+            return np.array(res,dtype=ds[self.dataType])
+
+    def __repr__(self):
+        return f'{self.idx},{self.title},{self.dataType},{self.isArray},{self.number}\n'
+
+"""
+此脚本用来提取高斯输出文件的信息
+高斯的输出文件包含迭代信息(结构优化、扫描等)
+但是封装成分子对象之后就只有一个信息了
+所以迭代信息只能在reader对象中存在,且不是默认属性
+"""
+
+import re
+import numpy as np
+from typing import *
+from ..base import Mol
+from ..data import Basis
+from ..maths import Gto
+from .reader import Reader
+from colorama import Fore
+from .. import utils
+from ..utils import printer
+
+
+atomSymbols=[
+    'H','He','li','Be','B',
+    'C','N','O','F','Ne',
+    'Na','Mg','Al','Si','P',
+    'S','Cl','Ar','K','Ca'
+]
+
+class LogReader(Reader):
+    def __init__(self, path:str,program=None):
+        Reader.__init__(self,path)
+        self.mol=Mol()
+        self.mol.reader=self
+        self.path=path
+        with open(path,'r',encoding='utf-8') as f:
+            self.content=f.read()
+            if 'Normal termination of Gaussian' not in self.content:
+                print(Fore.RED + '文件未正常结束!')
+            self.logLines=self.content.splitlines(keepends=False)
+        self.program = program
+        self.search_title()
+        self.read_Coords()
+        self.read()
+        self.read_basis()
+        self.read_SM()
+
+    def search_title(self):
+        """
+        为了避免每次搜索都从头开始,一次性搜索完所有需要用到的标题行
+        """
+        # 所有标题所在的行
+        self.titleNums={
+            'coords':None,
+            'basis':None
+        }
+        for i,line in enumerate(self.logLines):
+            if 'Input orientation' in line:
+                self.titleNums['coords']=i
+            elif 'Standard orientation' in line:
+                self.titleNums['coords']=i
+            elif 'Standard basis:' in line:
+                self.titleNums['basis']=i
+    
+    def read_basis(self):
+        titleNum=self.titleNums['basis']
+        if titleNum is None:raise
+        print(f'{titleNum=}')
+        basis=re.match(' Standard basis: (\S+) ',self.logLines[titleNum]).group(1)
+        self.mol.basis=Basis(basis)
+        self.mol.gto=Gto(self.mol.basis)
+
+
+    def read(self):
+        self.OCdict:Dict[int,OC]={}
+        self.OS:List[str]=[] #所有分子轨道的符号
+        self.ES:List[float]=[] #所有分子轨道能量
+        self.read_orbitalCoefficients('  Molecular Orbital Coefficients')
+        self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
+        self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
+        
+    def windowLog(self,message):
+        if self.program is not None:
+            self.program.logWindow.insert('end',f'{message}')
+        else:
+            print(f'{message}')
+    
+    def read_Coords(self):
+        '''读取原子坐标'''
+        titleNum=self.titleNums['coords']
+        if titleNum is None:
+            print('没有读取到原子坐标')
+            return
+        s1=r' +\d+ +(\d+) +\d +(-?\d+.\d{6}) +(-?\d+.\d{6}) +(-?\d+.\d{6})'
+        coords=[]
+        for i in range(titleNum+5,len(self.logLines)):
+            line=self.logLines[i]
+            if re.search(s1, line) is not None:
+                res=list(re.search(s1, line).groups())
+                atomID=res[0]
+                symbol=atomSymbols[int(atomID)-1]
+                coord=[float(each) for each in res[1:]]
+
+                coords.append({'symbol':symbol,'coord':coord})
+            else:
+                break
+        for each in coords:
+            self.mol.add_atom(symbol=each['symbol'],coord=each['coord'])
+
+    
+    def read_summery(self):
+        '''读取总结信息'''
+        summerys=re.findall(r' \d[\\||]\d[\S\s]*?@',self.content)
+        summery=summerys[-1]
+        summery=''.join([each[1:] for each in summery.split('\n')])
+        summeryList=summery.replace('\n','').replace('\\\\','||').split('||')
+        Infos,KeyWords,JobTitle,Coords=summeryList[:4]
+        _,_,_,jobType,method,basisSet,molFormula,user,date,_=Infos.replace('\\','|').split('|')
+        summery={
+            'basisSet':basisSet,
+            'Coords':np.array([[float(num.replace(' ','')) for num in each.split(',')[1:]] for each in Coords.replace('\\','|').split('|')[1:]])
+        }
+        return summery
+           
+    # 分子轨道的文本数据有5种情况
+    #情况1                           1         2         3         4         5
+    #情况2                           O         O         O         O         O
+    #情况3     Eigenvalues --   -11.17917 -11.17907 -11.17829 -11.17818 -11.17794
+    #情况4   1 1   C  1S         -0.00901  -0.01132   0.00047  -0.01645  -0.02767
+    #情况5   2        2S         -0.00131  -0.00175  -0.00041  -0.00184  -0.00173
+    def read_orbitalCoefficients(self, title:str):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
+        s1='^(( +\d+){1,5}) *$'
+        s2=r'^(( *(\(\w+\)--)?[OV]){1,5})$'
+        s3=r'^ +Eigenvalues --(( +-?\d+.\d+){1,5})'
+        s4='^ +\d+ +(\d+) +([A-Za-z]+) +(\d[A-Z]+)(( *-?\d+.\d+){1,5})$'
+        s5='^ +\d+ +(\d[A-Za-z ]+)(( *-?\d+.\d+){1,5})$'
+        titleNum=None
+        for i,line in enumerate(self.logLines):
+            if title in line:
+                titleNum=i
+        if titleNum is None:
+            # print(f'不存在{title}')
+            return
+        self.mol.isOpenShell=False if '  Molecular Orbital Coefficients' in title else True
+        # print(title,self.orbitalType,'  Molecular Orbital Coefficients' in title)
+        
+        for i in range(titleNum+1,len(self.logLines)):
+            line=self.logLines[i]
+            if re.search(s1, line) is not None: #情况1
+                pass
+            elif re.search(s2, line) is not None: # 情况2，获得column
+                # print(line)
+                orbitals = re.split(r' +', line.replace('\n',''))[1:] # 获取占据轨道还是非占据轨道
+                self.OS+=orbitals
+            elif re.search(s3, line) is not None: # 情况3，每个·        
+                line_data,_=re.search(s3,line).groups()
+                line_data=re.findall('-?\d+.\d+', line_data)
+                line_data=[float(each) for each in line_data]
+                self.ES+=line_data
+            elif re.search(s4,line) is not None:
+                atomIDX,atomType,layer,line_data,_=re.search(s4,line).groups()
+                atomIDX = int(atomIDX)
+                nums=[float(each) for each in re.findall('-?\d+.\d+',line_data)]
+                if atomIDX not in self.OCdict.keys():self.OCdict[atomIDX]=OC()
+                self.OCdict[atomIDX].set(layer,nums)
+            elif re.search(s5,line) is not None:
+                layer,line_data,_=re.search(s5,line).groups()
+                line_data=re.findall('-?\d+.\d+', line_data)
+                nums=[float(each) for each in line_data]
+                self.OCdict[atomIDX].set(layer,nums)
+            else: # 若不满足以上任意一种情况，说明已经查找完毕，则对收集到的数据进行处理
+                # print('end_line',line)
+                self.mol.Eigenvalues=self.ES
+                self.mol.orbitals=self.OS
+                oe= 1 if self.mol.isOpenShell else 2
+                self.mol.obtElcts=[oe if 'O' in o else 0 for o in self.OS] # 每个轨道的电子数量
+                for key,value in self.OCdict.items():
+                    layers,matrix=value()
+                    atom=self.mol.atom(key)
+                    atom.layers=layers
+                    atom.OC=matrix
+                break
+    # 情况1：      1 0 #开始一个原子
+    # 情况2：S   6 1.00       0.000000000000 #开始新的一层
+    # def read_basis(self):
+    #     '''读取GTO函数的拟合系数'''
+    #     from ..base.basis import Basis
+    #     s1='^ +(\d+) +\d' # 开始一个原子
+    #     s2='^ ([A-Za-z]+) +\d ' # 开始新的一层
+    #     s3='^ +(( +-?0.\d{10}D[+*/-]\d{2}){2,3})' # 获取一层内的数据
+    #     s4=' ****'
+    #     # self.windowLog('reading Overlap normalization...\n')
+    #     ifRead=True #是否读取数据(防止重读读取)
+    #     titleNum=None
+    #     for i,line in enumerate(self.logLines):
+    #         if 'Overlap normalization' in line:
+    #             titleNum=i
+    #     if titleNum is None:
+    #         print(Fore.YELLOW + '没有基组信息')
+    #         return
+    #     basis=Basis()
+    #     i=titleNum+1
+    #     while i < len(self.logLines):
+    #         line=self.logLines[i]
+    #         if not line:break
+    #         elif re.search(s1, line) is not None:
+    #             atomNum:int=int(re.search(s1, line).groups()[0])
+    #             symbol=self.mol.atom(atomNum).symbol
+    #             ifRead=basis.new(symbol) #生成一个新的原子的基组,并返回是否还要继续读取
+    #         elif ifRead:
+    #             if re.search(s2,line) is not None:
+    #                 layerName=re.search(s2,line).groups()[0]
+    #                 layer=basis.get(symbol).add_layer(layerName)
+    #             elif re.search(s3,line) is not None: #读取基组数据
+    #                 linesearch=re.search(s3,line).groups()[0] #长字符串
+    #                 linerep=linesearch.replace('D','e')
+    #                 linestrs=re.findall('-?0.\d{10}e[+*/-]\d{2}',linerep) # 分割
+    #                 linefloats=[float(e) for e in linestrs] #转为浮点数
+    #                 layer.add(linefloats)
+    #             elif line==s4:
+    #                 pass
+    #         i+=1
+    #     self.mol.basis=basis
+    
+    def read_SM(self):
+        """读取重叠矩阵"""
+        s1='^( +\d+){1,5} *$'
+        s2=' +\d+( +-?\d.\d{6}D[+-]\d{2}){1,5} *'
+        
+        titleNum=None
+        for i,line in enumerate(self.logLines):
+            if ' *** Overlap *** ' in line:
+                titleNum=i
+        if titleNum is None:
+            return None
+        lineDatas=Data()
+        for i in range(titleNum+1,len(self.logLines)):
+            line=self.logLines[i]
+            if re.match(s1, line) is not None:
+                continue
+            elif re.match(s2, line) is not None:
+                idx=int(re.split(' +',line)[1])
+                lineData=re.split(' +',line)[2:]
+                lineData=list(map(lambda s:float(s.replace('D','e')),lineData))
+                lineDatas.add(idx, lineData)
+            else:
+                # print(f'|{line}|')
+                break
+        matrix=lineDatas()
+        self.mol._SM=np.tril(matrix)+np.tril(matrix,-1).T
+
+    def read_PM(self):
+        """读取密度矩阵"""
+        ...
+
+
+class Data:
+    def __init__(self):
+        self.data={}
+    
+    def add(self,idx,value):
+        if idx not in self.data.keys():
+            self.data[idx]=[]
+        if isinstance(value,list):
+            self.data[idx]+=value
+
+    def __getitem__(self,idx):
+        return self.data[idx]
+
+    def __call__(self):
+        total=len(self.data.keys())
+        for key,value in self.data.items():
+            self.data[key]=value+[0]*(total-key)
+        return np.array(list(self.data.values()))
+
+def numlist(l):
+    """将列表字符串转为数字"""
+    return [float(e) for e in l]
+
+# 自己定义一些数据类型,方便读取
+class OC:
+    """原子轨道系数矩阵"""
+    def __init__(self) -> None:
+        self.data:Dict[str:List[float]]={}
+    
+    def set(self,layer:str,values:List[float]):
+        layer=layer.strip()
+        if layer not in self.data.keys():self.data[layer]=[]
+        self.data[layer]+=values #数组的拼接
+    
+    def __call__(self) ->Tuple[List[str],np.ndarray]:
+        layers=list(self.data.keys())
+        matrix=[each for each in self.data.values()]
+        matrix=np.array(matrix)
+        return layers,matrix
+
+if __name__=='__main__':
+    from ..base.mol import Mol
+class Reader:
+    """所有文件读取器的基类"""
+    def __init__(self,path) -> None:
+        self.path=path
+"""
+本脚本用来读取.xyz文件
+xyz文件只包含原子坐标,所以很好读
+一个xyz文件可以包含多个分子的坐标,所以要生成多个分子对象
+"""
+from typing import List
+from ..data import elements
+import re
+from ..base import Mol
+import numpy as np
+
+class XyzReader:
+    def __init__(self,path) -> None:
+        self.path=path
+        with open(path,'r',encoding='utf-8') as f:
+            self.content=f.read()
+        self.logLines=self.content.splitlines(keepends=False)
+        self.mols:List[Mol]=[]
+        self.read_coord()
+    
+    def read_coord(self):
+        """
+        有三种情况,原子数量,标题,原子坐标
+        """
+        
+        s1='^ +\d+$'
+        # 不满足第一种和第二种情况就是第三种情况
+        s3='^ +([A-Za-z])+ +(-?\d+.\d+) +(-?\d+.\d+) +(-?\d+.\d+)$'
+
+        for line in self.logLines:
+            if re.search(s1,line) is not None:
+                self.mols.append(Mol())
+            elif re.search(s3,line) is not None:
+                symbol,x,y,z=re.search(s3,line).groups()
+                self.mols[-1].add_atom(symbol,[float(x),float(y),float(z)])
+            else:
+                continue
+
+"""
+该子模块定义各种文件的读取器
+所有读取器应该都是读取分子所需要的属性？
+"""
+from .fch import FchReader
+from .log import LogReader
+from .xyz import XyzReader
+from .. import utils
+from ..utils import printer
+
+from pathlib import Path
+
+def get_reader(path:Path):
+    """根据输入文件的类型自动判断应该使用哪个读取器"""
+    # print(path)
+    if not isinstance(path,Path):raise
+    fileType=path.suffix
+    if fileType=='.out':
+        return LogReader(path)
+    if fileType=='.log':
+        return LogReader(path)
+    if fileType=='.chk':
+        return FchReader(path)
+
+
+这可能是一个长远的项目，以后计算别的东西也都可以放到这个项目里面  
+所有计算部分都单独拎出来，保证程序在没有GUI的时候也可以当作脚本单独使用
+# 项目结构 
+## 基础类 bases
+首先要有基础的类
+- Mol 根据读取的文件生成分子对象
+    - 其中atoms的索引是从1开始
+    - 进行计算时主要使用的时Mol和Atom的方法和属性
+    - 所有的计算都是基于分子类的，所以分子类应可以自定义
+- Atom 根据读取的文件生成原子对象  
+> 分子对象的信息可以自己指定的，也可以是从文件中读取的
+## 读取器 readers
+读取各种文件，如log/out或fchk
+- LogReader 读取log/out文件
+- FchReader 读取fch文件
+## 计算器 calculates
+实例化计算器，传入分子，计算的结果将保存到基础类的属性中  
+获得属性 -> 计算指定任务 - 返回并设置属性
+- 计算键级
+    - 计算π键级(新方法) projectionPI
+    - 计算π键级(老方法) selectionPI
+    - 计算mayer键级 mayerOrder
+    - 计算mayerπ键级 
+- 原子属性
+    - Mulliken电荷
+## 工具类 tools
+其它的一些对文件操作的函数
+- Spliter 扫描/优化步骤的分割并单独文件导出
+- Gif 指定信息，根据模板批量生成gjf文件
+- SI 批量导出SI信息
+
+## 通用函数 utils
+有些计算需要使用大量的相同计算(通常为数学计算)，将这些计算保存在单独的文件`utils.py`中
+
+# 获取actor对象
+- 调用pv.add_mesh()时会返回actor对象，可以设置其不透明度
+
+# 使用说明
+```python
+# 实例化一个Reader对象
+reader=pywfn.Reader(path)
+# 获取分子对象
+mol=reader.mol
+# 获取原子对象
+atom=mol.atoms[1]
+
+```
+# 盘点一下程序中会出现的变量名以及缩写
+> 变量名过长的话会导致程序冗长,而且函数会更长,所以尽量保持每一个含义长度在5以内  
+总规则: 动词_形容词+名词
+- 贡献 contribution cont
+- 坐标 coordinates coord
+- 系数 coefficients coeft
+- 投影 projection projt
+- 方向 direction 
+
+一个原子的坐标为`coord`  
+一个分子的所有原子的坐标为`coords`  
+多个分子的原子坐标为`allCoords`
+# 叨叨叨叨
+每一个模块都有一个类，所以调用起来可能比较费劲：`pywfn.子包.子模块.类`  
+一个模块只有一个类，感觉有点浪费，如果以后代码稳定了可以尝试把多个类写在同一个文件中  
+由于想把每个功能都写在一个模块文件中，所以代码可能会显得比较冗杂,但是问题不大
+# 用来管理程序的一些设置
+from pathlib import Path
+import numpy as np
+
+BOND_LIMIT=1.7 # 判断量原子之间是否成键的长度限制
+
+IF_DEBUG=True # 是否开启debug,控制项目中所有的打印,避免与shell中的print冲突
+
+GIF_TEMPLATE_PATH=Path(__file__).parent/'data/gifTemplate.txt' #批量导出gif文件时的模板文件
+
+BASE_VECTOR=np.array([0,0,1]) # 标准向量，求原子法向量和轨道方向的时候要与该向量夹角小于90°
+
+IF_ORBITAL_ORDER=False #是否计算键级中每个轨道的成分，尤其是mayer键级拆分成每个轨道的成分很麻烦
+from setuptools import setup,find_packages
+
+setup(
+    name="hfv",
+    version="1.0",
+    description="python 波函数分析工具",
+    author="石小飞",
+    packages=find_packages()
+)
+"""
+模仿multiwfn以命令窗口的形式操作程序计算各种想要的东西
+可以彩色输出
+绿色-结果
+黄色-警告
+红色-错误
+在没有特别提示的地方,空输入代表返回上级
+功能模块划分与pywfn设计一致
+主页
+    计算键级
+    原子属性
+        mulliken电荷
+    实用工具
+        导出SI信息
+        生成gif文件
+        分割扫描文件
+"""
+
+from tqdm import tqdm
+from .base import Mol
+from .readers import get_reader
+from .tools import ScanSpliter
+import os
+
+from .atomprop import mullikenCharge,piElectron
+from . import tools
+from colorama import Fore,init
+from pathlib import Path
+from typing import *
+from . import setting
+import re
+import sys
+init(autoreset=True)
+INPUT_COMMAND='input command option: '
+LINE='-'*40
+from .utils import printer
+
+def inputBond():
+    """将输入的字符串形式的键级转为整数形式"""
+    bond=input('输入两个原子的编号(用-分开,例如1-2): ')
+    if not bond:
+        return None
+    a1,a2=bond.split('-')
+    return int(a1),int(a2)
+
+class Shell:
+    def __init__(self):
+
+        self.paths:List[Path]=None
+        self.explain=(Path(__file__).parent / 'data' / 'explain.txt').read_text(encoding='utf-8')
+        
+    def calerAtomProp(self):
+        """计算原子属性"""
+        print(LINE)
+        if self.paths is None:
+            self.inputFile()
+        opts=[
+            ['1','Mulliken电荷分布'],
+            ['2','pi电子分布'],
+            ['3','原子自由价']
+        ]
+        while True:
+            print('-'*20)
+            for i,opt in opts:
+                print(f'{i}.{opt}')
+            opt=input('input option: ')
+            if opt=='':
+                return
+            elif opt=='1': # 计算mulliken电荷分布
+                printer.info('可以批量计算')
+                for file in self.paths:
+                    reader=get_reader(file)
+                    mol=reader.mol
+                    
+                    caler=mullikenCharge.Calculator(mol)
+                    res=caler.calculate(mol.atoms)
+                    atoms=mol.atoms
+                    res=[f'{atoms[i].idx:<2}{atoms[i].symbol:>2}{e:>15.8f}' for i,e in enumerate(res)]
+                    printer.res('\n'.join(res))
+            elif opt=='2': # 计算π电子分布
+                file=self.paths[0]
+                reader=get_reader(file)
+                mol=reader.mol
+                atoms=mol.atoms
+                caler=piElectron.Calculator(mol)
+                res=caler.calculate()
+                printer.res(f'total:{sum(res)}')
+            elif opt=='3':
+                from .atomprop import freeValence
+
+                file=self.paths[0]
+                reader=get_reader(file)
+                mol=reader.mol
+                atomidx=input('输入原子编号: ')
+                if not atomidx.isdigit():
+                    printer.warn('请输入正确原子编号!')
+                    break
+                atom=mol.atom(atomidx)
+                caler=freeValence.Calculator(mol)
+                order=caler.calculate(atom)
+                printer.res(f'{order}')
+
+                
+    def calerBondOrder(self):
+        """计算各种键级"""
+        print(LINE)
+        
+        if self.paths is None:
+            self.inputFile()
+        opts=[
+            ['1','piDH'],
+            ['2','piSH'],
+            ['3','piDM'],
+            ['4','piSM'],
+            ['5','Mayer']
+        ]
+        if len(self.paths)>1:printer.info('计算第一个分子')
+        file=self.paths[0]
+        reader=get_reader(file)
+        mol=reader.mol
+        while True:
+            for key,each in opts:
+                print(f'{key}.{each}')
+            opt=input('选择要计算的键级类型: ')
+            caler=None
+            if opt=='':
+                break
+            elif opt=='1': # 轨道分解法 + HMO键级公式计算π键级
+                from .bondorder import piDH
+                caler=piDH.Calculator(mol)
+            elif opt=='2':
+                from .bondorder import piSH
+                caler=piSH.Calculator(mol)
+            elif opt=='3':
+                from .bondorder import piDM
+                caler=piDM.Calculator(mol)
+            elif opt=='4':
+                from .bondorder import piSM
+                caler=piSM.Calculator(mol)
+            elif opt=='5':
+                from .bondorder import mayer
+                caler=mayer.Calculator(mol)
+            else:
+                print(Fore.RED + '选项不存在')
+            if caler is not None:
+                printer.info('按回车键返回上级')
+                while True:
+                    bond=input('输入两个原子的编号(用 - 分开,例如1-2): ')
+                    if bond=='':
+                        break
+                    idx1,idx2=bond.split('-')
+                    idx1,idx2=int(idx1),int(idx2)
+                    res=caler.calculate(mol.atom(idx1), mol.atom(idx2))
+                    if opt=='1':
+                        orders=res['data']['orders'] # 结果可以有两个方向                        
+                        printer.res(f'{res["data"]["order"]}')
+                    elif opt=='2':
+                        orders=res
+                        printer.res(orders)
+                    else:
+                        order=res
+                        printer.res(order)
+
+    def toolsPage(self):
+        """进入实用工具页面"""
+        print(LINE)
+        if self.paths is None:self.inputFile()
+        opts=[
+            ['1','导出SI信息'],
+            ['2','批量生成gif文件'],
+            ['3','分割扫描log文件']
+        ]
+        for idx,txt in opts:
+            print(f'{idx} {txt}')
+        opt=input(INPUT_COMMAND)
+        if opt=='':
+            return
+        elif opt=='1': # 导出SI
+            print('1.坐标 2.能量 3.频率')
+            selects=input('选择导出信息[默认全选]: ')
+            selects=re.findall('\d',selects)
+            
+            for i,path in tqdm(enumerate(self.paths)):
+                reader=get_reader(path)
+                tool=tools.ExportSI(reader)
+                tool.save(selects)
+
+        elif opt=='2': # 根据模板文件批量生成gif文件
+            for i,path in tqdm(enumerate(self.paths)):
+                reader=get_reader(path)
+                tool=tools.SaveGif(reader)
+                tool.save()
+            printer.res('文件生成完成 >_<')
+        elif opt=='3':
+            for i,path in enumerate(self.paths):
+                tool=ScanSpliter(path)
+                tool.split()
+            printer.res('文件分割完成 >_<')
+
+    def home(self):
+        opts=[
+            ['1','计算键级'],
+            ['2','原子属性'],
+            ['3','实用工具']
+        ]
+        while True:
+            self.inputFile()
+            while True:
+                print(LINE)
+                for key,opt in opts:
+                    print(f'{key}.{opt}')
+                opt=input('input command option: ')
+                if opt=='1':self.calerBondOrder()
+                elif opt=='2':self.calerAtomProp()
+                elif opt=='3':self.toolsPage()
+                elif opt=='':break #返回上一级
+                else:printer.warn('命令不存在')
+            
+    def inputFile(self):
+        supportFileTypes=['.log','.out','.fch'] #支持的文件类型
+        print(Fore.BLUE+self.explain)
+        while True:
+            path=input('输入文件[夹]名: ')
+            if path=='q':sys.exit()
+            if path=='':continue
+            
+            path=Path(path)
+            if path.exists(): #如果路径存在
+                if path.is_file(): # 如果是文件
+                    if path.suffix in supportFileTypes:
+                        self.paths=[path]
+                        break
+                    else:
+                        printer.warn('不支持的文件类型')
+                elif path.is_dir(): # 如果是文件夹
+                    self.paths=[]
+                    for each in path.iterdir(): # 对文件夹中的每个文件进行循环
+                        if each.suffix in supportFileTypes: # 如果文件类型是支持的文件类型
+                            self.paths.append(each)
+                    printer.info(f'共{len(self.paths)}个文件')
+                    break
+                
+            else:
+                printer.wrong('路径不存在')
+
+"""
+生成gjf文件
+"""
+import numpy as np
+from typing import *
+import os
+from pathlib import Path
+
+class Tool:
+    def __init__(self,path:str) -> None:
+        self.path=Path(path)
+        self.coordStr=None
+        self.pwd=Path(__file__).parent
+        self._chk=None
+        # print(f'pwd={self.pwd}')
+        with open(os.path.join(self.pwd.parent,'data\\gifTemplate.txt'),'r',encoding='utf-8') as f:
+            self.template=f.read()
+
+    def set_coord(self,coord:List[List[str]]):
+        """写入坐标"""
+        lines=[]
+        for symbol,x,y,z in coord:
+            x,y,z=float(x),float(y),float(z)
+            line=f' {symbol}'+f'{x:.8f}'.rjust(14,' ')+f'{y:.8f}'.rjust(14,' ')+f'{z:.8f}'.rjust(14,' ')
+            lines.append(line)
+        self.coordStr='\n'.join(lines)
+    
+    def set_chk(self,path):
+        self._chk=path
+
+    def save(self):
+        content=self.template.replace('CHK',self._chk).replace('COORD',self.coordStr)
+        with open(f'{self.path}','w',encoding='utf-8') as f:
+            f.write(content)
+"""
+将分子对象保存为gif文件
+"""
+from pathlib import Path
+from ..base import Mol
+from .. import setting
+class Tool:
+    def __init__(self,reader):
+        self.reader=reader
+        self.mol=reader.mol
+        templatePath=setting.GIF_TEMPLATE_PATH
+        with open(templatePath,'r',encoding='utf-8') as f:
+            content=f.read()
+        self.template=content
+        
+    def str_coords(self):
+        """生成坐标的字符串形式"""
+        ss=[]
+        for atom in self.mol.atoms:
+            x,y,z=atom.coord
+            symbol=atom.symbol
+            s=f' {symbol}'.ljust(14)+f'{x:.8f}'.rjust(14)+f'{y:.8f}'.rjust(14)+f'{z:.8f}'.rjust(14)
+            ss.append(s)
+        return '\n'.join(ss)
+    
+    def save(self):
+        path=Path(self.reader.path)
+        content=self.template.replace('COORD', self.str_coords()).replace('CHK', str(path.stem))
+        with open(path.parent /f'{path.stem}.gjf','w',encoding='utf-8') as f:
+            f.write(content)
+"""
+该脚本用来生成SI文件,包含
+校正
+坐标
+频率
+"""
+from ..base import Mol
+from typing import *
+from pathlib import Path
+from ..readers import LogReader
+import re
+from ..utils import printer
+class Tool:
+    def __init__(self,reader:LogReader) -> None:
+        """
+        读取文件貌似只需要log/out文件就行了
+        """
+        self.reader=reader #已经实例化的
+        self.content=reader.content
+        self.resContent=''
+    
+    def write_energy(self):
+        """匹配并保存各种校正能量"""
+        corrList = [
+            'Zero-point correction=', 
+            'Thermal correction to Energy=', 
+            'Thermal correction to Enthalpy=',
+            'Thermal correction to Gibbs Free Energy=', 
+            'Sum of electronic and zero-point Energies=',
+            'Sum of electronic and thermal Energies=', 
+            'Sum of electronic and thermal Enthalpies=',
+            'Sum of electronic and thermal Free Energies='
+            ]
+        for each in corrList:
+            corrCom = re.compile(each + '\s+(-?\d+\.\d+)')
+            corrObj = corrCom.search(self.content)
+            if corrObj is not None:
+                self.resContent+=f'{each:50} {corrObj.group(1):>14}\n'
+                
+            else:
+                print(f'{each} 不存在')
+            
+    def write_coord(self):
+        mol=self.reader.mol
+        for atom in mol.atoms:
+            symbol=atom.symbol
+            x,y,z=atom.coord
+            self.resContent+=f'{symbol:8} {x:14.8f} {y:14.8f} {z:14.8f}\n'
+
+    def write_freq(self):
+        freqObj = re.findall(r'^\s+Frequencies\s--\s+(-?\d+\.\d+.+)$', self.content, flags=re.M)
+        if freqObj is not None:
+            self.resContent+=f'Vibrational frequencies\n'
+            for freq in freqObj:
+                self.resContent+=f'{freq}\n'
+        else:
+            print("Match Frequencies Error")
+
+    def save(self,options:List[str]):
+        """
+        导出分子的各种信息到txt文件
+        1. 坐标 coord
+        2. 能量 energy
+        3. 频率 freq
+        """
+        if not options: #如果什么都不传进来就是全都导出
+            options=['1','2','3']
+        for opt in options:
+            if opt=='1':
+                self.write_coord()
+            elif opt=='2':
+                self.write_energy()
+            elif opt=='3':
+                self.write_freq()
+        path=Path(self.reader.path)
+        with open(f'{path.parent/path.stem}_SI.txt','w',encoding='utf-8') as f:
+            f.write(self.resContent)
+
+
+
+"""
+输入文件有很多结构，将每个结构分割来来
+"""
+import enum
+from typing import *
+import re
+import os
+import numpy as np
+from .fileCreater import Tool as FileCreater
+from pathlib import Path
+from ..data import Elements
+
+class Tool:
+    def __init__(self,path:str) -> None:
+        self.path=Path(path)
+        self.dirName=self.path.parent
+        self.baseName=self.path.name # 包含后缀的文件名
+        self.fileName=self.path.stem # 不包含后缀的文件名
+        folder=self.dirName / self.fileName
+        if not Path(folder).exists(): #判断文件夹是否存在
+            os.mkdir(folder)
+        with open(path,'r',encoding='utf-8') as f:
+            self.content=f.read()
+        self.elements=Elements()
+
+    def split_raw(self)->List[str]:
+        """将原始的一大段文本分割"""
+        splitMark=' Optimization completed.' #以此为每个结构的分隔
+        contents=self.content.split(splitMark)
+        return contents
+    
+    def get_coord(self,content:str):
+        """将每一段内容的坐标挑选出来"""
+        lines=content.split('\n')
+        titleNum=None
+        for i,line in enumerate(lines):
+            if 'Standard orientation:' in line or 'Input orientation:' in line:
+                titleNum=i
+        if titleNum is None:
+            return
+        s=r" +\d+ +(\d+) +\d +(-?\d+.\d+) +(-?\d+.\d+) +(-?\d+.\d+)"
+        coords=[]
+        for i in range(titleNum+5,len(lines)):
+            line=lines[i]
+            if re.search(s,line) is not None:
+                idx,x,y,z=re.search(s,line).groups()
+                symbol=self.elements.get_element_by_idx(int(idx)).symbol
+                coords.append([symbol,x,y,z])
+            else:
+                return coords
+            
+    def split(self):
+        """分割文件"""
+        # 首先获取所有构象的坐标
+        contents=self.split_raw()
+        for i,content in enumerate(contents):
+            coords=self.get_coord(content)
+            path=os.path.join(self.dirName,self.fileName,f'f{i+1}.gjf')
+            print(path)
+            fileCreater=FileCreater(path=path)
+            fileCreater.set_coord(coords)
+            fileCreater.set_chk(f'{i+1}')
+            fileCreater.save()
+from .scanSpliter import Tool as ScanSpliter
+from .fileCreater import Tool as FileCreater
+from .saveSI import Tool as ExportSI
+from .saveGif import Tool as SaveGif
+# 将需要的每个模块共同需要的计算都放在这里面
+import re
+import numpy as np
+import math
+import time
+
+from . import setting
+def get_nums(string):
+    res = []
+    for each in re.split(r',|，', string):
+        content = each.split('-')
+        if len(content) == 1:
+            res.append(int(each) - 1)
+        else:
+            res += [int(i) - 1 for i in range(int(content[0]), int(content[1]) + 1)]
+    return res
+
+
+def get_vertical(v1,v2):
+    '''获得垂直于两向量的单位向量'''
+    v=np.corss(v1,v2)
+    return v/np.linalg.norm(v)
+
+def get_points_between_two_pos(pos1,pos2,n):
+    '''计算两点之间的点的坐标'''
+    dp=pos2-pos1
+    all_pos=[pos1+dp/(n-1)*i for i in range(n)]
+    return np.array(all_pos)
+
+
+def coordTrans(nx,ny,nz,coords):
+    """对一个向量实行空间坐标变换
+    nx,ny,nz: 另一组基坐标
+    coord:要尽心变换的坐标/向量
+    """
+    e=np.array([[1,0,0],[0,1,0],[0,0,1]]).T # 空间坐标变换
+    nx,ny,nz=normalize(nx),normalize(ny),normalize(nz)
+    e_=np.array([nx,ny,nz]).T
+    A_=np.dot(np.linalg.inv(e_),e)
+    ps__=np.array([np.dot(A_,p) for p in coords])
+    return ps__
+
+arounds=np.array([
+        [-1,0,0],
+        [+1,0,0],
+        [0,-1,0],
+        [0,+1,0],
+        [0,0,-1],
+        [0,0,+1]
+    ])
+def get_aroundPoints(p,step): # 
+    '''
+    计算空间中一个点周围六个点处的坐标
+    p:[3,]坐标
+    step:步长
+    '''
+    return p+arounds*step
+
+
+from . import base
+def get_extraValue(atom:"base.Atom",obt:int,valueType='max'):
+    '''
+    从指定位置开始,利用爬山算法寻找原子波函数极值
+    maxPos:[3,]
+    '''
+    p=p0=atom.coord #起始点,p是原子坐标不变
+    v0=atom.get_cloud(np.zeros((1,3)),obt) # 计算原子坐标处的初始值
+    # print(f'{v0=:.6f},{p0=}')
+    step=0.1
+    while True:
+        aroundPs=get_aroundPoints(p0,step) # aroundPs:(n,3)
+        aroundVs=atom.get_cloud(aroundPs-p,obt)
+        if valueType=='max' and np.max(aroundVs)>v0:
+            # v0=np.max(aroundVs)
+            maxID=np.argmax(aroundVs) #最大值的索引
+            p0=aroundPs[maxID] # 最大值坐标
+            v0=aroundVs[maxID] # 最大值
+            # print(f'{v0=:.6f},{p0=}')
+        elif valueType=='min' and np.min(aroundVs)<v0:
+            # v0=np.min(aroundVs)
+            minID=np.argmin(aroundVs)
+            p0=aroundPs[minID]
+            v0=aroundVs[minID]
+        else:
+            if step<=1e-6:
+                return p0,v0 #
+            else:
+                step/=10
+
+def differ_function(posan1,posan2): #计算电子分布差值图
+    return (posan1+posan2)**2-(posan1**2+posan2**2)/2
+
+
+def get_gridPoints(range,step,ball=False): 
+    '''获取空间格点[3,n]'''
+    points=[]
+    for x in np.arange(-range,range,step):
+        for y in np.arange(-range,range,step):
+            for z in np.arange(-range,range,step):
+                if ball:
+                    distance=(x**2+y**2+z**2)**0.5
+                    if distance>range:
+                        continue
+                points.append([x,y,z])
+    return np.array(points).T
+
+def vector_angle(a,b,trans=False): # 计算两向量之间的夹角
+    '''计算两向量之间的夹角'''
+    if np.linalg.norm(a)*np.linalg.norm(b)==0:
+        raise
+    value=np.dot(a,b)/(np.linalg.norm(a)*np.linalg.norm(b))
+    if value>1:value=1
+    if value<-1:value=-1
+    angle=np.arccos(value)/math.pi
+    if not trans:
+        return angle
+    else:
+        return 0.5-abs(angle-0.5)
+
+def get_normalVector(p1,p2,p3):
+    '''
+    获取三点确定的平面的单位法向量
+    根据两个向量也可以确定法向量
+    '''
+    vi=p3-p2
+    vj=p1-p2
+    n=np.cross(vi,vj)
+    if vector_angle(n,setting.BASE_VECTOR)>0.5:n*=-1
+    return n/np.linalg.norm(n) # 返回单位向量
+
+def timeit(func):
+    '''定义一个装饰器，统计函数的执行时间'''
+    def wrapper(*args,**kwargs):
+        start=time.time()
+        res=func(*args,**kwargs)
+        end=time.time()
+        print(f'{func.__name__},{end-start}ms')
+        return res
+    return wrapper
+
+def k_means(des,points):
+    '''定义k-means聚类算法函数,返回每一类对应的索引'''
+    N=len(des)
+    for epoch in range(5):
+        types=[[] for n in range(N)]
+        idxs=[[] for n in range(N)]
+        for _,each in enumerate(points):
+            distance=np.linalg.norm((des-each),axis=1) #计算每个点与中心点的距离(范数)，两个数值
+            idx=np.argmin(distance) # 获取距离最近的索引
+            types[idx].append(each) # 在索引位置添加点（分类）
+            idxs[idx].append(_)
+        types=[np.array(each) for each in types]
+        pos=np.array([np.mean(each,axis=0) if len(each)>0 else des[i] for i,each in enumerate(types)]) # 获取两个类别的中心点坐标
+        des=pos  # 更新目标点
+    return idxs
+
+def linear_classify(points): #将向量分类转为表示角度的数值分类
+    nv=points[-1]
+    angles=np.array([vector_angle(each,nv) for each in points])
+    y=np.abs(0.5-angles)
+    types=[[],[]]
+    idxs=[[],[]]
+    for i,each in enumerate(y):
+        distance=np.abs(each-np.array([0,0.5]))
+        idx=np.argmin(distance)
+        types[idx].append(each)
+        idxs[idx].append(i)
+    return idxs
+
+def orbital_classify(atom,vectors,O_obts):
+    '''定义函数将轨道分类'''
+    points=[]
+    orbitals=[]
+    keys=vectors.keys()
+    for key in keys:
+        atomidx=int(key.split('-')[0])
+        orbitalidx=int(key.split('-')[1])
+        if atomidx==atom and orbitalidx in O_obts and vectors[key] is not None:
+            vector=vectors[key]/np.linalg.norm(vectors[key])
+            points.append(vector)
+            orbitals.append(orbitalidx)
+    if len(points)>0:
+        points=np.array(points)
+        idxs=linear_classify(points)
+    else:
+        idxs=[[],[]]
+    V,H=[[orbitals[id] for id in idx] for idx in idxs]
+    return V,H
+
+def list_remove(l,x):
+    new_l=[]
+    for each in l:
+        if each!=x:
+            new_l.append(each)
+    return new_l
+
+def connectH(atom,connections):
+    '''
+    如果连接的有H,就返回C-H键的向量,否则返回None
+    '''
+    CHVectors=[]
+    for each in connections:
+        if each['atom_type']=='H':
+            CHVectors.append(each['pos']-atom['pos'])
+    return CHVectors
+
+def multiple(a,b):
+    '''获取两个量之间的倍数关系，必定是大于等于1的'''
+    if abs(a)>=abs(b):
+        return a/b
+    else:
+        return b/a
+
+def nodeNum(data):
+    '''获取节点曲线中的节点数量，有可能会找多'''
+    data[np.where(data==0)]=1e-6
+    res=data[:-1]*data[1:]
+    return len(np.where(res<=0)[0])
+
+def normalize(vector):
+    length=np.linalg.norm(vector)
+    if length==0:
+        raise
+    return vector/length
+
+from typing import *
+from colorama import Fore,init
+init(autoreset=True)
+class Printer:
+    def __init__(self) -> None:
+        self.ifDebug=setting.IF_DEBUG
+
+    def __call__(self,text,end='\n'):
+        if self.ifDebug:
+            print(text,end=end)
+
+    def warn(self,text):
+        self.__call__(Fore.YELLOW+f'{text}')
+
+    def info(self,text):
+        self.__call__(Fore.BLUE+f'{text}')
+
+    def wrong(self,text):
+        self.__call__(Fore.RED+f'{text}')
+    
+    def res(self,text):
+        self.__call__(Fore.GREEN+f'{text}')
+    
+    def print(self,text):
+        self.__call__(f'{text}')
+    
+    def multi(self,texts:List[str]):
+        for text in texts:
+            self.__call__(text,end='')
+        self.__call__('')
+
+printer=Printer()
+
+from . import setting
+from typing import *
+
+def run():
+    from .shell import Shell
+    shell=Shell()
+    shell.home()
+
+
+
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+import PySide6
+dirname = os.path.dirname(PySide6.__file__) 
+plugin_path = os.path.join(dirname, 'plugins', 'platforms')
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+os.environ["QT_API"] = "pyside6"
+
+from PySide6.QtWidgets import QApplication,QStyleFactory
+from PySide6.QtGui import QIcon,QFont
+import sys
+from .window import Window
+
+def run():
+    app=QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create("Fusion")) #fusion风格
+    w=Window()
+    w.show()
+
+    sys.exit(app.exec_())
+"""处理用户在命令行文本框输入的命令"""
+
+class Command:
+    def __init__(self,app:"Window") -> None:
+        self.app:Window=app
+        self.currentFile:"FileItem"
+
+
+    def printf(self,txt:str):
+        return txt
+
+
+    def run(self,opt:str):
+        self.currentFile=self.app.currentFile
+        printf=self.printf
+        try:
+            res=eval(f'{opt}')
+            return res
+        except:
+            return 'command error'
+
+
+# from .window import Window,FileItem
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'orbital.ui'
+##
+## Created by: Qt User Interface Compiler version 6.4.1
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QListWidget, QListWidgetItem, QSizePolicy,
+    QVBoxLayout, QWidget)
+
+class Ui_Form(object):
+    def setupUi(self, Form):
+        if not Form.objectName():
+            Form.setObjectName(u"Form")
+        Form.resize(328, 446)
+        self.verticalLayout = QVBoxLayout(Form)
+        self.verticalLayout.setSpacing(0)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.listWidget = QListWidget(Form)
+        self.listWidget.setObjectName(u"listWidget")
+
+        self.verticalLayout.addWidget(self.listWidget)
+
+
+        self.retranslateUi(Form)
+
+        QMetaObject.connectSlotsByName(Form)
+    # setupUi
+
+    def retranslateUi(self, Form):
+        Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
+    # retranslateUi
+
+
+from PySide6.QtWidgets import QWidget,QListWidgetItem
+from .ui_orbital import Ui_Form
+from typing import *
+
+# from ...window import Window
+from ... import window
+
+class OrbitalWidget(QWidget,Ui_Form):
+    def __init__(self,app:"window.Window"):
+        QWidget.__init__(self,parent=None)
+        self.setupUi(self)
+        self.app=app
+        self.listWidget.itemClicked.connect(self.clicked)
+        # self.itemClicked.connect(self.clicked)
+    
+    def set_orbitals(self,obts:List[str]):
+        self.obts=obts
+        self.listWidget.addItems(obts)
+    
+    def clicked(self,item:QListWidgetItem):
+        obt=self.obts.index(item.text())
+        self.app.currentFile.canvas.show_cloud(obt)
+        
+        print(item.text())
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'setting.ui'
+##
+## Created by: Qt User Interface Compiler version 6.4.1
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QFormLayout, QLabel, QPushButton,
+    QSizePolicy, QWidget)
+
+class Ui_Form(object):
+    def setupUi(self, Form):
+        if not Form.objectName():
+            Form.setObjectName(u"Form")
+        Form.resize(400, 309)
+        self.formLayoutWidget = QWidget(Form)
+        self.formLayoutWidget.setObjectName(u"formLayoutWidget")
+        self.formLayoutWidget.setGeometry(QRect(100, 90, 160, 80))
+        self.formLayout = QFormLayout(self.formLayoutWidget)
+        self.formLayout.setObjectName(u"formLayout")
+        self.formLayout.setContentsMargins(0, 0, 0, 0)
+        self.label = QLabel(self.formLayoutWidget)
+        self.label.setObjectName(u"label")
+
+        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.label)
+
+        self.pushButton = QPushButton(self.formLayoutWidget)
+        self.pushButton.setObjectName(u"pushButton")
+
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.pushButton)
+
+
+        self.retranslateUi(Form)
+
+        QMetaObject.connectSlotsByName(Form)
+    # setupUi
+
+    def retranslateUi(self, Form):
+        Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
+        self.label.setText(QCoreApplication.translate("Form", u"TextLabel", None))
+        self.pushButton.setText(QCoreApplication.translate("Form", u"PushButton", None))
+    # retranslateUi
+
+
+from PySide6.QtWidgets import QWidget
+from .ui_setting import Ui_Form
+from typing import *
+import PySide6
+class SettingWidget(QWidget,Ui_Form):
+    def __init__(self,parent=None) -> None:
+        QWidget.__init__(self,parent)
+        self.setupUi(self)
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'start.ui'
+##
+## Created by: Qt User Interface Compiler version 6.4.1
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QLabel, QSizePolicy, QWidget)
+
+class Ui_Form(object):
+    def setupUi(self, Form):
+        if not Form.objectName():
+            Form.setObjectName(u"Form")
+        Form.resize(400, 300)
+        self.label = QLabel(Form)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(140, 120, 161, 51))
+
+        self.retranslateUi(Form)
+
+        QMetaObject.connectSlotsByName(Form)
+    # setupUi
+
+    def retranslateUi(self, Form):
+        Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
+        self.label.setText(QCoreApplication.translate("Form", u"\u6b22\u8fce\u4f7f\u7528\u6b64\u7a0b\u5e8f", None))
+    # retranslateUi
+
+
+from PySide6.QtWidgets import QWidget
+from .ui_start import Ui_Form
+
+class StartWidget(QWidget,Ui_Form):
+    def __init__(self,parent=None):
+        QWidget.__init__(self,parent)
+        self.setupUi(self)
+from pyvista import Plotter,Cylinder,Sphere,PolyData,Light
+from pywfn.base import Atom,Bond,Mol
+import numpy as np
+from typing import *
+from pywfn import utils
+import pyvista as pv
+from . import utils
+from .materials import Elements
+import vtk
+from pyvistaqt import QtInteractor
+from . import utils
+from ..window import Mol
+elements=Elements()
+
+
+class Canvas(QtInteractor):
+    """继承自plotter"""
+    def __init__(self,app,mol:Mol,parent) -> None:
+        """每个canvas都对应一个分子"""
+        super().__init__(parent=parent)        
+        self.app=app
+        self.mol=mol
+        self.plotter=self.interactor
+        self.plotter.enable_mesh_picking(callback=self.onClick,left_clicking=True,show=False,show_message=False,\
+            style='wireframe',line_width=1,color='white')
+        self.mols:List[Mol]=[]
+        self.scene=[] # 除了原子之外的actor都加入到scene中，方便管理
+        self.cloudRange:float=0.001
+        self.selectedAtoms:List[str]=[]
+        self.actors=[] #存储所有要显示的对象
+        self.atomActors={}
+
+        for atom in self.mol.atoms:
+            self.add_atom(atom.coord,atom.symbol,atom.idx)
+        for bond in self.mol.bonds:
+            a1,a2=bond.a1,bond.a2
+            self.add_bond(a1.coord,a2.coord,bond.idx)
+    
+    # def onClick(self,mesh):
+    #     for mol in self.mols:
+    #         mol.onClick(mesh)
+        
+    
+    def add_atom(self,coord,symbol:str,idx:int):
+        poly=Sphere(center=coord,radius=elements[symbol].radius)
+        name=f'{symbol}-{idx}'
+        poly.name=name
+        actor=self.plotter.add_mesh(poly,color=elements[symbol].color,smooth_shading=True,name=name)
+        self.atomActors[name]=actor
+        self.actors.append(actor)
+        
+    
+    def add_bond(self,coord1,coord2,name:str):
+        poly=Cylinder(center=(coord1+coord2)/2,direction=coord2-coord1,radius=0.1)
+        actor=self.plotter.add_mesh(poly,name=name,pickable=False)
+        self.actors.append(actor)
+
+    def hide_cloud(self,names):
+        """
+        将非指定点云全部隐藏
+        并返回指定的点云是否已经存在
+        """
+        render=self.plotter.renderer
+        actors=render.actors
+        exist=False
+        for key in actors:
+            if key.split('-')[0]=='cloud':
+                if key in names:
+                    actors[key].visibility=True
+                    exist=True
+                else:
+                    actors[key].visibility=False
+
+        return exist
+
+    def show_cloud(self,obt:int):
+        """
+        显示指定原子的轨道
+        """
+        if len(self.selectedAtoms)==0:
+            print('尚未选择原子')
+            return
+        
+        # 根据原子计算点云应该存在的位置
+        print(self.selectedAtoms)
+        atoms=[int(a.split('-')[1])-1 for a in self.selectedAtoms]
+        atoms.sort()
+        atomStr=','.join([str(a) for a in atoms])
+        name=f'{atomStr}-{obt}'
+        exist=self.hide_cloud([f'cloud-N-{name}',f'cloud-P-{name}'])
+        if exist:return # 如果已经存在的话就没必要再添加了
+        
+        coords=self.mol.coords[atoms,:]
+        minX,minY,minZ=np.min(coords,axis=0)
+        maxX,maxY,maxZ=np.max(coords,axis=0)
+        step=0.1
+
+        Rx=np.arange(minX-2,maxX+2.1,step)
+        Ry=np.arange(minY-2,maxY+2.1,step)
+        Rz=np.arange(minZ-2,maxZ+2.1,step)
+        origin=np.array([Rx[0],Ry[0],Rz[0]])
+        Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
+        X,Y,Z=np.meshgrid(Rx,Ry,Rz)
+        pos=np.array([X.flatten(),Y.flatten(),Z.flatten()]).T
+
+        values=np.zeros(len(pos))
+        print(values.shape,pos.shape)
+        for i in atoms:
+            atom=self.mol.atoms[i]
+            values+=atom.get_cloud(pos-atom.coord,obt)
+        # P:positive，N:negative
+        values=values.reshape(Lx,Ly,Lz) # 转成三位数组
+        self.add_cloud_surface(values,origin,(0.2,1),name='P')
+        self.add_cloud_surface(values,origin,(-1,-0.2),name='N')
+        
+        valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
+        values=np.where((values>0.2) | (values<-0.2),1.,0.)
+        values[[0,-1],:,:]=0
+        values[:,[0,-1],:]=0
+        values[:,:,[0,-1]]=0
+
+        valuesX0=np.zeros_like(values)
+        valuesX1=np.zeros_like(values)
+        valuesY0=np.zeros_like(values)
+        valuesY1=np.zeros_like(values)
+        valuesZ0=np.zeros_like(values)
+        valuesZ1=np.zeros_like(values)
+
+        valuesX0[1:,:,:]=values[:-1,:,:]
+        valuesX1[:-1,:,:]=values[1:,:,:]
+
+        valuesY0[:,1:,:]=values[:,:-1,:]
+        valuesY1[:,:-1,:]=values[:,1:,:]
+
+        valuesZ0[1:,:,:]=values[:-1,:,:]
+        valuesZ1[:,:,:-1]=values[:,:,1:]
+
+        valuesR=values+valuesX0+valuesX1+valuesY0+valuesY1+valuesZ0+valuesZ1
+
+        valuesR=np.where((valuesR==0)|(valuesR==7),0.,1.)
+        valuesR*=valuesUnits
+        valuesR=valuesR.flatten() #拉平
+
+        idxsP=np.argwhere(valuesR>0).flatten()
+        idxsN=np.argwhere(valuesR<0).flatten()
+        posP=pos.copy()[idxsP]
+        posN=pos.copy()[idxsN]
+        self.add_cloud(posP,'red',f'cloud-P-{name}')
+        self.add_cloud(posN,'blue',f'cloud-N-{name}')
+
+    def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name):
+        grid = pv.UniformGrid()
+        grid.dimensions = np.array(values.shape) + 1
+        grid.spacing = (0.1, 0.1, 0.1)
+        grid.origin = origin
+        
+        # values=values.flatten(order="F")
+        # idx=np.argwhere(values>0.2)
+        grid.cell_data["values"] = values.flatten(order="F")
+        vol = grid.threshold(value=value)
+        print(vol.number_of_cells)
+        if vol.number_of_cells==0:
+            return
+        surf = vol.extract_geometry()
+        smooth = surf.smooth(n_iter=500)
+        self.plotter.add_mesh(smooth,color='pink',opacity=0.5,smooth_shading=True,name=name)
+
+    def add_cloud(self,points,color:str,name:str):
+        if len(points)>0:
+            cloud=pv.PolyData(points)
+            actor=self.plotter.add_mesh(cloud,color=color,opacity=0.5,
+                reset_camera=False,name=name,pickable=False)
+            self.actors.append(actor)
+        else:
+            print('没有点')
+
+    def onClick(self,mesh:PolyData): #使选中的原子改变颜色
+        if not hasattr(mesh,'name'):return
+        name:str=mesh.name
+        symbol,idx=name.split('-')
+        actor=self.atomActors[mesh.name]
+        prop = actor.GetProperty()
+        if name not in self.selectedAtoms: # 如果该原子没有被选中
+            self.selectedAtoms.append(name)
+            prop.SetColor(utils.hex2rgb('#108b96'))
+            prop.SetAmbient(0.5)
+        else:
+            hexColor=elements[symbol].color
+            rgbColor=utils.hex2rgb(hexColor)
+            prop.SetColor(rgbColor)
+            prop.SetAmbient(0)
+            index=self.selectedAtoms.index(name)
+            self.selectedAtoms.pop(index)
+            actor.SetProperty(prop)
+
+# 定义各种原子的颜色
+import pandas as pd
+from pathlib import Path
+from typing import *
+class Elements:
+    def __init__(self):
+        data=pd.read_csv(Path(__file__).parent / 'elements.csv')
+        self.elements:List[Element]=[]
+        for i in range(data.shape[0]):
+            idx,symbol,color,radius=data.iloc[i,:]
+            self.elements.append(Element(idx, symbol, color, radius))
+    
+    def __getitem__(self,item):
+        if isinstance(item,int):
+            for element in self.elements:
+                if element.idx==item:
+                    return element
+        elif isinstance(item, str):
+            for element in self.elements:
+                if element.symbol==item:
+                    return element
+        
+
+class Element:
+    def __init__(self,idx,symbol,color,radius):
+        self.idx=idx
+        self.symbol=symbol
+        self.color=color
+        self.radius=radius
+
+if __name__=='__main__':
+    data=pd.read_csv(Path(__file__).parent.parent/'data/elements.csv')
+    for i in range(len(data)):
+        idx,symbol,color,radius=data.iloc[i,:]
+        print(idx,symbol,color,radius)
+使用pyvista在程序界面上显示分子
+
+这个项目也是一个可以单独拿出来的项目，所以尽量不依赖pywfn，而是在界面中封装，以便在以后其他地方使用
+
+
+```python
+class Clouds: #定义点云类型
+    def __init__(self,atoms:List[Atom],canvas:Canvas) -> None:
+        self.canvas=canvas
+        # 不管选择哪几个原子，只需要按照原子序号排序
+        idxs=[str(atom.idx) for atom in atoms]
+        self.name=f'{self.canvas.selectedOrbital}-{",".join(idxs)}'
+        if self.canvas.app is not None:
+            self.canvas.app.ui.listWidget_clouds.addItem(self.name)
+        self.atoms=atoms
+        coords=np.array([atom.coord for atom in atoms])
+        self.centerPos=np.mean(coords,axis=0)
+        self.radius=np.linalg.norm(np.max(np.abs(coords-self.centerPos),axis=0))+1
+        self.positiveCloud=None
+        self.negativeCloud=None
+        self.gridPoints=utils.get_gridPoints(self.radius,0.1,ball=True)
+        self.addCloud()
+        self.cloudRang:float=0.0
+        
+    def createData(self):
+        datas=[]
+        for atom in self.atoms:
+            centerPos=self.centerPos.reshape(3,1)
+            aroundPos=self.gridPoints+centerPos
+            data=utils.posan_function(
+                centerPos=centerPos,
+                aroundPos=aroundPos,
+                paras=atom.standardBasis,
+                ts=atom.pLayersTs(self.canvas.selectedOrbital)
+                )
+            datas.append(data)
+        datas=np.array(datas).sum(axis=0)
+        return datas
+
+    def addCloud(self):
+        self.cloudRange=self.canvas.cloudRange
+        values=self.createData()
+        points=self.gridPoints+self.centerPos.reshape(3,-1)
+        data=np.concatenate([points,values]).T
+        positiveValues,negativeValues=util.splited(data)
+        positiveValues=util.limited(positiveValues,self.canvas.cloudRange)
+        negativeValues=util.limited(negativeValues,self.canvas.cloudRange)
+
+        positiveValues=positiveValues.reshape(-1,4)[:,:-1]
+        negativeValues=negativeValues.reshape(-1,4)[:,:-1]
+
+        positivePoints=util.get_borders(positiveValues) # 获取边界点
+        negativePoints=util.get_borders(negativeValues)
+
+        positivePoints=np.concatenate([positivePoints,self.centerPos.reshape(1,3)]) #为了使数组不为空，需要添加原点
+        negativePoints=np.concatenate([negativePoints,self.centerPos.reshape(1,3)])
+        print('数据点',len(positivePoints),len(negativeValues))
+        positiveCloud=pv.PolyData(positivePoints)
+        negativeCloud=pv.PolyData(negativePoints)
+
+        # print('添加点云')
+        if len(positiveValues)>0:
+            self.positiveCloud=self.canvas.plotter.add_mesh(positiveCloud,color='#c12c1f',opacity=0.5,
+                reset_camera=False,name=f'cloud-positive-{self.name}',pickable=False)
+        if len(negativeValues)>0:
+            self.negativeCloud=self.canvas.plotter.add_mesh(negativeCloud,color='#84a729',opacity=0.5,
+                reset_camera=False,name=f'cloud-negative-{self.name}',pickable=False)
+
+    def setVisible(self,name):
+        # print(f'{name=},{self.name=}')
+        if name==self.name:
+            if self.positiveCloud:self.positiveCloud.SetVisibility(True)
+            if self.negativeCloud:self.negativeCloud.SetVisibility(True)
+        else:
+            if self.positiveCloud:self.positiveCloud.SetVisibility(False)
+            if self.negativeCloud:self.negativeCloud.SetVisibility(False)
+```
+"""
+存储一些与显示图形相关的函数，为了与utils区分命名为util
+"""
+import numpy as np
+
+def inArray(elements,array): #一个一维向量是否在二位向量中
+    '''
+    判断一些向量是否在另一些向量中
+    '''
+    elements=elements[:,0]*1e12+elements[:,1]*1e8+elements[:,2]*1e4
+    array=array[:,0]*1e12+array[:,1]*1e8+array[:,2]*1e4
+    res=np.isin(elements,array)
+    return res
+
+def get_borders(gridData):
+    '''
+    获得点云边界点的坐标
+    '''
+    point=np.round(gridData.copy(),decimals=1)
+    gridData=np.round(gridData.copy(),decimals=1)
+
+    arounds=np.array([ #定义六个方向
+        [-0.1,0,0],
+        [0.1,0,0],
+        [0,-0.1,0],
+        [0,0.1,0],
+        [0,0,-0.1],
+        [0,0,0.1]
+    ])
+    res=np.zeros(point.shape[0])
+    for i in range(6):
+        around=arounds[i].reshape(1,3)
+        aroundPos=np.round(point+around,decimals=1)
+        res+=inArray(elements=aroundPos,array=gridData)
+    indexs=np.where(res!=6)[0]
+    return gridData[indexs,:]
+
+def splited(data): #将数据点分为正负两部分
+        positiveValues=[]
+        negativeValues=[]
+        for each in data:
+            if each[-1]>0:
+                positiveValues.append(each)
+            elif each[-1]<0:
+                negativeValues.append(each)
+        return np.array(positiveValues),np.array(negativeValues)
+        
+def limited(values,limit,limitType='more'): # 挑选出大于指定值的函数值
+    # limit=app.setting['functionValueLimit']
+    limitValues=[]
+    if limitType=='more':
+        for each in values:
+            if abs(each[-1])>limit:
+                limitValues.append(each)
+    elif limitType=='less':
+        for each in values:
+            if abs(each[-1])<limit:
+                limitValues.append(each)
+    return np.array(limitValues)
+
+def hex2rgb(hexcolor:str):
+    '''HEX转RGB'''
+    hexcolor=hexcolor.replace('#', '')
+    hexcolor = int(hexcolor, base=16)
+    rgb = (hexcolor >> 16) & 0xff , (hexcolor >> 8) & 0xff , hexcolor & 0xff 
+    return rgb[0]/255,rgb[1]/255,rgb[2]/255
+
+def rgb(r,g,b):
+    return r/255,g/255,b/255
+
+import json
+import os
+from typing import *
+import shutil
+class settingManager:
+    def __init__(self) -> None:
+        """不要改变默认的设置文件，克隆一份方便还原"""
+        self.cwd=cwd=os.path.join(os.getcwd(),'app')
+        print(cwd)
+        if not os.path.exists(self.local('setting.json')):
+            shutil.copyfile(self.local('rawSetting.json'),self.local('setting.json'))
+        self._setting:Dict=self.read()
+
+    def local(self,path):
+        """将相对路径转为绝对路径"""
+        return os.path.join(self.cwd,path)
+
+    def read(self):
+        """读取设置文件"""
+        with open(self.local('setting.json'),'r',encoding='utf-8') as f:
+            return json.loads(f.read())
+
+    def save(self):
+        """保存设置信息"""
+        with open(self.local('setting.json'),'w',encoding='utf-8') as f:
+            f.write(json.dumps(self._setting))
+
+
+    @property
+    def lastOpenFilePath(self):
+        """最后一次打开文件的位置(文件夹)"""
+        return self._setting['lastOpenFilePath']
+    
+    @lastOpenFilePath.setter
+    def lastOpenFilePath(self,value):
+        if not isinstance(value, str):
+            raise
+        self._setting['lastOpenFilePath']=value
+        self.save()
+
+
+
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'app.ui'
+##
+## Created by: Qt User Interface Compiler version 6.4.1
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
+from PySide6.QtWidgets import (QApplication, QFrame, QLineEdit, QMainWindow,
+    QMenu, QMenuBar, QSizePolicy, QSplitter,
+    QStatusBar, QTabWidget, QTextBrowser, QToolBar,
+    QVBoxLayout, QWidget)
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        if not MainWindow.objectName():
+            MainWindow.setObjectName(u"MainWindow")
+        MainWindow.setWindowModality(Qt.NonModal)
+        MainWindow.resize(895, 706)
+        MainWindow.setStyleSheet(u"#canvas{\n"
+"height:80%;\n"
+"background-color:gray;\n"
+"}")
+        MainWindow.setDocumentMode(False)
+        MainWindow.setTabShape(QTabWidget.Rounded)
+        self.actionopen = QAction(MainWindow)
+        self.actionopen.setObjectName(u"actionopen")
+        self.actionpiBondOrder = QAction(MainWindow)
+        self.actionpiBondOrder.setObjectName(u"actionpiBondOrder")
+        self.actionpiSelectOrder = QAction(MainWindow)
+        self.actionpiSelectOrder.setObjectName(u"actionpiSelectOrder")
+        self.actionlabel = QAction(MainWindow)
+        self.actionlabel.setObjectName(u"actionlabel")
+        self.actionclear = QAction(MainWindow)
+        self.actionclear.setObjectName(u"actionclear")
+        self.actionsigmaBondOrder = QAction(MainWindow)
+        self.actionsigmaBondOrder.setObjectName(u"actionsigmaBondOrder")
+        self.centralwidget = QWidget(MainWindow)
+        self.centralwidget.setObjectName(u"centralwidget")
+        self.verticalLayout = QVBoxLayout(self.centralwidget)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.splitter_2 = QSplitter(self.centralwidget)
+        self.splitter_2.setObjectName(u"splitter_2")
+        self.splitter_2.setOrientation(Qt.Horizontal)
+        self.splitter_2.setHandleWidth(0)
+        self.icons = QFrame(self.splitter_2)
+        self.icons.setObjectName(u"icons")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.icons.sizePolicy().hasHeightForWidth())
+        self.icons.setSizePolicy(sizePolicy)
+        self.icons.setMinimumSize(QSize(40, 0))
+        self.icons.setMaximumSize(QSize(40, 16777215))
+        self.icons.setFrameShape(QFrame.NoFrame)
+        self.icons.setFrameShadow(QFrame.Sunken)
+        self.icons.setLineWidth(0)
+        self.splitter_2.addWidget(self.icons)
+        self.view = QFrame(self.splitter_2)
+        self.view.setObjectName(u"view")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy1.setHorizontalStretch(4)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.view.sizePolicy().hasHeightForWidth())
+        self.view.setSizePolicy(sizePolicy1)
+        self.view.setFrameShape(QFrame.NoFrame)
+        self.view.setFrameShadow(QFrame.Raised)
+        self.view.setLineWidth(0)
+        self.splitter_2.addWidget(self.view)
+        self.splitter = QSplitter(self.splitter_2)
+        self.splitter.setObjectName(u"splitter")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        sizePolicy2.setHorizontalStretch(10)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.splitter.sizePolicy().hasHeightForWidth())
+        self.splitter.setSizePolicy(sizePolicy2)
+        self.splitter.setOrientation(Qt.Vertical)
+        self.splitter.setHandleWidth(1)
+        self.fileTab = QFrame(self.splitter)
+        self.fileTab.setObjectName(u"fileTab")
+        self.fileTab.setFrameShape(QFrame.StyledPanel)
+        self.fileTab.setFrameShadow(QFrame.Raised)
+        self.splitter.addWidget(self.fileTab)
+        self.canvas = QFrame(self.splitter)
+        self.canvas.setObjectName(u"canvas")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(4)
+        sizePolicy3.setHeightForWidth(self.canvas.sizePolicy().hasHeightForWidth())
+        self.canvas.setSizePolicy(sizePolicy3)
+        self.canvas.setFrameShape(QFrame.WinPanel)
+        self.splitter.addWidget(self.canvas)
+        self.command = QLineEdit(self.splitter)
+        self.command.setObjectName(u"command")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(1)
+        sizePolicy4.setHeightForWidth(self.command.sizePolicy().hasHeightForWidth())
+        self.command.setSizePolicy(sizePolicy4)
+        font = QFont()
+        font.setFamilies([u"Consolas"])
+        self.command.setFont(font)
+        self.splitter.addWidget(self.command)
+        self.log = QTextBrowser(self.splitter)
+        self.log.setObjectName(u"log")
+        self.splitter.addWidget(self.log)
+        self.splitter_2.addWidget(self.splitter)
+
+        self.verticalLayout.addWidget(self.splitter_2)
+
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QMenuBar(MainWindow)
+        self.menubar.setObjectName(u"menubar")
+        self.menubar.setGeometry(QRect(0, 0, 895, 22))
+        self.menufile = QMenu(self.menubar)
+        self.menufile.setObjectName(u"menufile")
+        self.menucompute = QMenu(self.menubar)
+        self.menucompute.setObjectName(u"menucompute")
+        self.menuview = QMenu(self.menubar)
+        self.menuview.setObjectName(u"menuview")
+        self.menuselect = QMenu(self.menubar)
+        self.menuselect.setObjectName(u"menuselect")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setObjectName(u"statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+        self.toolBar = QToolBar(MainWindow)
+        self.toolBar.setObjectName(u"toolBar")
+        MainWindow.addToolBar(Qt.TopToolBarArea, self.toolBar)
+
+        self.menubar.addAction(self.menufile.menuAction())
+        self.menubar.addAction(self.menucompute.menuAction())
+        self.menubar.addAction(self.menuview.menuAction())
+        self.menubar.addAction(self.menuselect.menuAction())
+        self.menufile.addAction(self.actionopen)
+        self.menucompute.addAction(self.actionpiBondOrder)
+        self.menucompute.addAction(self.actionpiSelectOrder)
+        self.menucompute.addAction(self.actionsigmaBondOrder)
+        self.menuview.addAction(self.actionlabel)
+        self.menuselect.addAction(self.actionclear)
+        self.toolBar.addAction(self.actionclear)
+
+        self.retranslateUi(MainWindow)
+
+        QMetaObject.connectSlotsByName(MainWindow)
+    # setupUi
+
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"HFV", None))
+        self.actionopen.setText(QCoreApplication.translate("MainWindow", u"open", None))
+        self.actionpiBondOrder.setText(QCoreApplication.translate("MainWindow", u"piBondOrder", None))
+        self.actionpiSelectOrder.setText(QCoreApplication.translate("MainWindow", u"piSelectOrder", None))
+        self.actionlabel.setText(QCoreApplication.translate("MainWindow", u"label", None))
+        self.actionclear.setText(QCoreApplication.translate("MainWindow", u"clear", None))
+        self.actionsigmaBondOrder.setText(QCoreApplication.translate("MainWindow", u"sigmaBondOrder", None))
+        self.command.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input command here", None))
+        self.menufile.setTitle(QCoreApplication.translate("MainWindow", u"file", None))
+        self.menucompute.setTitle(QCoreApplication.translate("MainWindow", u"compute", None))
+        self.menuview.setTitle(QCoreApplication.translate("MainWindow", u"view", None))
+        self.menuselect.setTitle(QCoreApplication.translate("MainWindow", u"select", None))
+        self.toolBar.setWindowTitle(QCoreApplication.translate("MainWindow", u"toolBar", None))
+    # retranslateUi
+
+
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'canvas.ui'
+##
+## Created by: Qt User Interface Compiler version 6.3.2
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QSizePolicy, QWidget)
+
+class Ui_canvas(object):
+    def setupUi(self, canvas):
+        if not canvas.objectName():
+            canvas.setObjectName(u"canvas")
+        canvas.resize(400, 296)
+
+        self.retranslateUi(canvas)
+
+        QMetaObject.connectSlotsByName(canvas)
+    # setupUi
+
+    def retranslateUi(self, canvas):
+        canvas.setWindowTitle(QCoreApplication.translate("canvas", u"Form", None))
+    # retranslateUi
+
+
+# 更新程序页面中的信息
+import numpy as np
+from pywfn import utils
+
+
+class Updater:
+    def __init__(self,app:"Window"):
+        self.app=app
+    def updateLabel(self):
+        selectedAtoms=self.app.currentFile.canvas.selectedAtoms
+        message=f'atoms {[atom.idx for atom in selectedAtoms]}'
+        if len(selectedAtoms)==2: # 添加键长信息
+            a1,a2=selectedAtoms
+            bondLength=np.linalg.norm(a2.coord-a1.coord)
+            message+=f',{bondLength:.4f}Å'
+        elif len(selectedAtoms)==3: # 添加键角信息
+            a1,a2,a3=selectedAtoms
+            angle=utils.vector_angle(a1.coord-a2.coord, a3.coord-a2.coord)/np.pi*180
+            print(angle)
+            message+=f',{angle:.4f}°'
+        self.app.ui.label.setText(message)
+
+
+
+# from .window import Window
+"""
+记录一些常用的工具函数
+"""
+from typing import *
+
+
+def formPrint(self,contents:List[List[str]],eachLength:int,lineNum:int,window):
+    """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
+    logs=[]
+    for content in contents:
+        logs.append([])
+        for i in range(0,len(content),lineNum):
+            text=''.join([f'{each}'.rjust(eachLength,' ') for each in content[i:i+lineNum]])
+            logs[-1].append(text)
+    for i in range(len(logs[0])):
+        for log in logs:
+            window.addLog(log[i])
+import sys
+import os
+import PySide6
+dirname = os.path.dirname(PySide6.__file__) 
+plugin_path = os.path.join(dirname, 'plugins', 'platforms')
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+os.environ["QT_API"] = "pyside6"
+import pyvista as pv
+
+from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel
+from PySide6.QtGui import QIcon,QFont
+from PySide6.QtCore import Qt
+from pyvistaqt import QtInteractor, MainWindow
+
+
+from pywfn.base import Mol
+from pywfn.bondorder import piDM,piSH
+from pywfn.readers import get_reader
+
+from .plotter.canvas import Canvas
+from .commands import Command
+from .ui_app import Ui_MainWindow
+from .setting import settingManager
+from .update import Updater
+
+from typing import *
+from pathlib import Path
+
+from .pages.setting import SettingWidget
+from .pages.start import StartWidget
+from .pages.orbital import OrbitalWidget
+
+class Window(MainWindow):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setting=settingManager()
+        self.ui:Ui_MainWindow=Ui_MainWindow()
+        self.ui.setupUi(self)
+        
+
+        self.commandLine=Command(self)
+        self.ui.log.setFont(QFont('Courier New'))
+        # self.ui.lineEdit.returnPressed.connect(self.command)
+        
+        self.init_menu()
+
+        # self.ui.listWidget_files.itemClicked.connect(self.selectFile)
+        # self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital) # 点击分子轨道名时触发的事件
+        
+        
+        self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
+
+        self.updater=Updater(self)
+        self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
+        # self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
+        # self.ui.clearCloudBtn.clicked.connect(lambda:self.currentFile.canvas.clear('cloud'))
+
+        self.files:Dict[str,FileItem]={}
+        self.currentFile:FileItem=None # 初始化一个啥都没有的文件
+        # self.ui.verticalLayout_canvas.addWidget(self.currentFile.widget) #第一次打开的时候添加组件，之后是替换组件
+        
+        # self.canvasLayout.addWidget(StartWidget())
+        self.init_layout()
+        self.orbital=OrbitalWidget(self)
+        self.viewLaout.addWidget(self.orbital)
+
+    def init_layout(self):
+        """初始化布局"""
+        self.fileTab=QHBoxLayout()
+        self.ui.fileTab.setLayout(self.fileTab)
+        self.canvasLayout=QVBoxLayout()
+        self.ui.canvas.setLayout(self.canvasLayout)
+        self.viewLaout=QVBoxLayout()
+        self.ui.view.setLayout(self.viewLaout)
+
+    def init_menu(self):
+        """初始化菜单的命令"""
+        self.ui.actionopen.triggered.connect(self.openFile)
+        self.ui.actionpiBondOrder.triggered.connect(lambda:self.compute_piOrder('new'))
+
+
+        self.ui.actionpiSelectOrder.triggered.connect(lambda:self.compute_piOrder('old'))
+        self.ui.actionlabel.triggered.connect(self.viewLabel)
+
+    def clear_selectedAtoms(self):
+        if self.currentFile is not None:
+            self.currentFile.canvas.clearAtoms()
+
+    def command(self):
+        """处理命令行输入的内容"""
+        opt=self.ui.lineEdit.text()
+        res=self.commandLine.run(opt)
+        self.addInfo(res)
+
+
+    def compute_piOrder(self,orderType):
+        atoms=self.currentFile.canvas.selectedAtoms
+        if len(atoms)==2:
+            if orderType=='old':
+                computer=piSH.Calculator(self.currentFile.mol)
+            if orderType=='new':
+                computer=piDM.Calculator(self.currentFile.mol)
+            res=computer.calculate(atoms[0],atoms[1])
+            orders=res['data']['orders']
+            order=res['data']['order']
+            # 将orders根据大小进行排序，并删除为0的部分
+            orders=sorted(zip(range(len(orders)),orders),key=lambda x:x[1])
+            limit=1e-4
+            ranges=[r+1 for r,o in orders if o>=limit]
+            orbitalNum=len(self.currentFile.mol.O_obts)
+            orbitalNum=orbitalNum//2+orbitalNum%2
+            oE=1 if self.currentFile.mol.isOpenShell else 2
+            if oE==1:
+                ranges = [f"α{r}" if r <= orbitalNum else f'β{r-orbitalNum}' for r in ranges]
+
+            orders=[o for r,o in orders if o>=limit]
+            self.addLog(f'compute piSelectOrder {atoms[0].idx}-{atoms[1].idx}')
+            rangesStrs=[f'{each}' for each in ranges]
+            ordersStrs=[f'{each:.4f}' for each in orders]
+            self.formPrint([rangesStrs,ordersStrs],eachLength=8,lineNum=10)
+            self.addLog(f'{order=:.4f}')
+        else:
+            self.addLog('compute bond order need two atoms')
+
+    def viewLabel(self):
+        """显示或隐藏原子的label"""
+        label=self.currentFile.canvas.labels
+        visible=label.GetVisibility()
+        label.SetVisibility(int(not visible))
+        print(label.GetVisibility())
+    
+    def addLog(self,log:str):
+        """输出程序的执行结果"""
+        self.ui.log.append(log)
+
+    def openFile(self):
+        """打开log/out文件"""
+        print('打开文件')
+        files=[]
+        filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
+        for filePath,fileType in zip(filePaths,fileTypes):
+            # self.ui.listWidget_files.addItem(filePath)
+            # self.files[filePath]=FileItem(filePath=filePath,app=self) # 添加一个文件
+            files.append(filePath)
+            self.addLog(f'open {filePath}')
+            self.setting.lastOpenFilePath=str(Path(filePath).parent)
+        if len(files)==0:return
+        name=files[-1] # 最后一个文件的名称
+        fileItem=FileItem(Path(files[-1]),app=self)
+        self.currentFile=fileItem
+        self.canvasLayout.addWidget(fileItem)
+        self.addTab(files[-1])
+        # self.showMol(self.currentFile,self.files[name])
+    
+    def addTab(self,text):
+        """在tabFrame添加一个标签"""
+        self.fileTab.addWidget(QLabel(text))
+            
+    def selectFile(self):
+        """选择一个打开的文件,当选择文件名的时候，如果就是当前的文件，则不发生变化，如果不是则取代"""
+        file=self.ui.listWidget_files.currentItem().text() # 点前选中的文件
+        if file==self.currentFile.filePath: # 当前展示的文件
+            return
+        print('替换组件',self.currentFile.filePath,file)
+        oldFile=self.currentFile
+        newFile=self.files[file]
+        self.showMol(oldFile,newFile)
+        
+    def showMol(self,oldFile,newFile):
+        """显示指定的分子"""
+        print('显示指定文字')
+        self.update()
+
+    def selectOrbital(self):
+        """选择某个轨道"""
+        orbital=self.ui.listWidget_orbitals.currentIndex().row()
+        self.currentFile.canvas.selectedOrbital=orbital
+        if self.orbitalType=='cloud':
+            self.currentFile.canvas.addCloud()
+        elif self.orbitalType=='arrow':
+            atoms=self.currentFile.canvas.selectedAtoms
+            for atom in atoms:
+                start=atom.coord
+                direction=atom.get_obtWay(orbital)
+                name=f'{atom.idx}-{orbital}'
+                self.currentFile.canvas.add_arrow(start, direction,name)
+
+    def update(self):
+        """更新页面中的内容"""
+        ...
+
+    def set_cloudRange(self,e):
+        """设置点云范围"""
+        self.currentFile.canvas.cloudRange=e/10000
+        # print(e)
+    
+    def on_exit(self):
+        for each in self.files.values():
+            each.canvas.plotter.Finalize()
+    
+    def closeEvent(self, event) -> None:
+        """退出程序时的回调函数"""
+        for each in self.files.values():
+            each.canvas.plotter.Finalize()
+        return super().closeEvent(event)
+
+    def add_fileItem(self):
+        """模仿vscode,每一个可视化的分子文件为一个FileItem"""
+            
+
+from .plotter.canvas import Mol as MolActor
+from .plotter.canvas import Canvas
+
+
+class FileItem(QWidget):
+    """
+    应该是一个tab，里面可以包含各种组件
+    """
+    def __init__(self,filePath:Path,app:Window,showMol:bool=True) -> None:
+        QWidget.__init__(self,parent=None)
+        self.app=app
+        self.filePath=filePath
+        mol=get_reader(filePath).mol
+        orbitals=[str(o) for o in mol.orbital_symbols]
+        self.app.orbital.set_orbitals(orbitals)
+        self.layout=QHBoxLayout()
+
+        self.canvas=Canvas(self.app,mol,self)
+        self.layout.addWidget(self.canvas.interactor)
+        self.setLayout(self.layout)
+        # self.init_mol()
+        
+    
+    def hide_mol(self):
+        """隐藏原子"""
+        ...
+        
+    
+    def onClick(self):
+        print('click')
+
+class viewItem(QWidget):
+    def __init__(self):
+        QWidget.__init__(self,parent=None)
+import sys
+from pathlib import Path
+sys.path.append(Path(__file__).parent.parent)
+
+
+from .setting import settingManager
+from . import App
+def run():
+    App.run()
+routes: []
+storagePath: D:\BaiduSyncdisk\gaussianFile
+
+"""
+根据三维点绘制图像
+"""
+from pywfn.data import Elements
+from pywfn.base import Mol
+elements=Elements()
+from PIL import Image,ImageDraw
+from . import utils
+from pywfn.readers import LogReader
+from pywfn.base import Mol
+import numpy as np
+
+imgSize=400
+atomRadius=int(imgSize/100)
+bondWidth=int(atomRadius/5)
+def saveImg(mol:Mol,path):
+    """传入2d点绘制分子"""
+    
+    coords=mol.coords
+    bonds=[]
+    for i in range(len(coords)):
+        for j in range(i,len(coords)):
+            if 0<np.linalg.norm(coords[j]-coords[i])<1.7:
+                bonds.append([i,j])
+    symbols=[atom.symbol for atom in mol.atoms]
+
+    points=deduction(coords)*imgSize+imgSize/2
+
+    img=Image.new('RGB',(imgSize,imgSize),color='white')
+    draw=ImageDraw.Draw(img)
+    d=atomRadius
+    for i,(x,y) in enumerate(points):# 绘制原子
+        symbol=symbols[i]
+        color=elements.get_element_by_symbol(symbol).color
+        draw.ellipse((x-d, y-d, x+d, y+d), fill=color, width=0) 
+
+    for a1,a2 in bonds:
+        x1,y1=points[a1]
+        x2,y2=points[a2]
+        draw.line([(x1,y1),(x2,y2)],fill='black',width=bondWidth,joint=None)
+    img.save(path)
+
+def deduction(coords):
+    """返回投影到2d屏幕的坐标,[n,2],范围在-1,1之间"""
+    points,steps=utils.search(coords) # 寻找最优的旋转结构
+    points=utils.pers(points) # 计算透视坐标
+    return points[:,:-1]
+"""
+制作一个游戏演示点的更新
+"""
+import time
+import numpy as np
+import sys
+
+
+from pywfn.readers import LogReader
+from pywfn.data import Elements
+elements=Elements()
+path=input('输入path:')
+reader=LogReader(path)
+mol=reader.mol
+symbols=[atom.symbol for atom in mol.atoms]
+
+import pygame
+from .utils import search,pers
+pygame.init()
+width=800
+height=600
+screen = pygame.display.set_mode((width,height))
+
+pygame.display.set_caption('show Mol')
+# points=np.random.rand(30,3)*400-200
+mx,my,mz=np.abs(mol.coords).max(axis=0)
+ml=max(mx,my,mz)
+points=(mol.coords/ml)*200
+print(points.max(),points.min())
+res,steps=search(points)
+steps=[e[:3,:].T for e in steps]
+steps=[pers(e)*height/2 for e in steps] #为所有的点添加透视效果
+bonds=[]
+
+for i in range(len(mol.coords)):
+    for j in range(i,len(mol.coords)):
+        r=np.linalg.norm(mol.coords[j]-mol.coords[i])
+        if 0<r<=1.7:
+            bonds.append([i,j])
+print(bonds)
+
+def wordPoint(points):
+    """将屏幕坐标转为世界坐标,[n,3]"""
+    centerPoint=np.array([width/2,height/2,0])
+    return points+centerPoint
+
+i=0
+d=1
+while True:
+    # 循环获取事件，监听事件状态
+    for event in pygame.event.get():
+        # 判断用户是否点了"X"关闭按钮,并执行if代码段
+        if event.type == pygame.QUIT:
+            #卸载所有模块
+            pygame.quit()
+            #终止程序，确保退出程序
+            sys.exit()
+    pygame.draw.rect(screen,'white',(0,0,width,height))
+    if i==len(steps)-1:
+        d=-1
+    if i==0:
+        d=1
+    i+=d
+    wordStep=wordPoint(steps[i])
+    for a,(x,y,z) in enumerate(wordStep): # 绘制点
+        symbol=symbols[a]
+        element=elements.get_element_by_symbol(symbol)
+        pygame.draw.circle(screen,element.color, [x,y], 4, width=0)
+    for a1,a2 in bonds:
+        x1,y1,z1=wordStep[a1]
+        x2,y2,z2=wordStep[a2]
+        pygame.draw.line(screen, 'black', (x1,y1), (x2,y2), width=1)
+    time.sleep(0.1)
+    # pygame.display.flip() #更新屏幕内容
+    pygame.display.update()
+    
+"""
+这个程序应该比较简单,不需要进行什么运算,只需要利用pywfn的模块读取、保存、显示信息就好了
+"""
+import sys
+from pathlib import Path
+print(Path(__file__).parent)
+sys.path.append(Path(__file__).parent)
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+import PySide6
+dirname = os.path.dirname(PySide6.__file__) 
+plugin_path = os.path.join(dirname, 'plugins', 'platforms') # 指定动态链接库的位置
+print(plugin_path)
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+os.environ["QT_API"] = "pyside6"
+
+from PySide6.QtWidgets import QWidget,QMainWindow,QApplication,QStyleFactory,QFileDialog,\
+    QTableWidgetItem,QTableWidget,QTreeWidgetItem,QHeaderView
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap,QAction
+
+from .ui_main import Ui_MainWindow
+from .tools import Tools,Info,Infos
+from typing import *
+import time
+from threading import Thread
+from .rightMenu import RightMenu
+from tqdm import tqdm
+import multiprocessing as mp
+from collections import Counter
+
+class Main(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.ui=ui=Ui_MainWindow()
+        ui.setupUi(self)
+        ui.action_import.triggered.connect(self.import_files)
+        self.setAcceptDrops(True)
+        
+        self.currentRoute=None #当前文件分类
+        self.ui.table.itemDoubleClicked.connect(self.openFile)
+        self.ui.table.itemClicked.connect(self.selectFile)
+        self.ui.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.rightMenu=RightMenu(self)
+    
+        # self.ui.img.setScaledContents(True)
+        self.ui.splitter.setStretchFactor(0,2)
+        self.ui.splitter.setStretchFactor(1,6)
+        self.ui.splitter.setStretchFactor(2,2)
+        # self.ui.table.clear()
+        self.tools=Tools(self)
+        self.table=Table(self)
+        self.tree=RouteList(self)
+        
+        self.ui.route_btn.clicked.connect(self.add_route)
+    
+    def add_route(self):
+        name=self.ui.route_input.text()
+        self.tree.add(name)
+
+    def openFile(self,item):
+        path=self.table.infos[item.row()].path
+        print(path)
+        os.startfile(path)
+    
+    def selectFile(self,item):
+        info=self.table.infos[item.row()]
+        self.showProp(info)
+        print(info)
+    
+    def showProp(self,info:Info):
+        """显示文件的基本信息"""
+        # self.ui.text.setHtml(info.html())
+        imgPath=info.folder/'mol.png'
+        img=QPixmap(imgPath)#.scaled(self.ui.img.size())
+        self.ui.img.setPixmap(img)
+        self.ui.text.setMarkdown(info.md()) # 以markdown的形式显示信息
+
+        
+    def import_files(self):
+        """导入外部文件"""
+        import multiprocessing as mp
+        files,fileType=QFileDialog.getOpenFileNames(self,'打开文件')
+        ts=[]
+        for file in files:
+            t=Thread(target=self.tools.create_file,args=(file,))
+            ts.append(t)
+            t.start()
+        for t in ts:
+            t.join()
+        self.tree.update()
+
+    def dragEnterEvent(self, event) -> None:
+        print('拖动事件')
+
+    def showMsg(self,text):
+        """在状态栏显示信息"""
+        self.ui.statusbar.showMessage(text,500)
+
+class RouteList:
+    """最左边的文件栏是树结构"""
+    def __init__(self,window:Main) -> None:
+        self.window=window
+        self.infos:List[Info]=window.tools.infos
+        self.msgs:List[str]=[]
+        self.init()
+
+    def init(self):
+        """初始化节点信息"""
+        names=[]
+        for info in self.infos:
+            route=info.route
+            name='未分类文件' if route is None else route
+            names.append(name)
+        
+        for name in set(names):
+            self.msgs.append(f'{name}-{names.count(name)}')
+        
+        self.show()
+    
+    def add(self,name):
+        msg=f'{name}-0'
+        if msg not in self.msgs:
+            self.msgs.append(msg)
+            self.show()
+    
+    def show(self):
+        """根据节点信息显示组件内容"""
+        self.window.ui.list.clear()
+        for msg in self.msgs:
+            self.window.ui.list.addItem(msg)
+    
+            
+class Table:
+    """
+    表格这个组件本是不需要动的,需要改变的是表格的内容(当切换分类的时候)
+    """
+    def __init__(self,window:Main) -> None:
+        self.window=window
+        self.titles=['文件名','原子数量','修改时间'] # 字符串组成的列表，用于控制显示那些类型的信息
+        self.infos=[]
+        self.contents=[] # 字典组成的列表
+        self.show(None)
+    
+    def show(self,route):
+        infos=[]
+        """显示指定路由的信息"""
+        for info in self.window.tools.infos:
+            if info.route==route:
+                infos.append(info)
+        self.set(infos)
+
+    
+    def set(self,infos:List[Info]):
+        """将传入的info以列表的形式显示出来"""
+        self.infos=infos
+        self.window.showProp(infos[0]) # 显示第一个信息
+        contents=[]
+        for info in infos:
+            content={}
+            for title in self.titles:
+                if title=='文件名':
+                    content[title]=info.name
+                elif title=='原子数量':
+                    content[title]=f'{len(info.symbols)}'
+                elif title=='修改时间':
+                    content[title]=f'{time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(info.st_mtime))}'
+            contents.append(content)
+        self.contents=contents
+        self.update()
+
+    def update(self):
+        """根据内容生成一个表格对象"""
+        
+        # 首先要把原来的表格清空
+        table=self.window.ui.table
+        # 然后根据数据生成表格内容        
+        # 添加标题
+        table.setColumnCount(len(self.titles)) # 设置有多少列
+        table.setRowCount(len(self.contents))
+        table.setHorizontalHeaderLabels(self.titles)
+        # 添加内容
+        for i,content in enumerate(self.contents):
+            for j,title in enumerate(self.titles):
+                item=QTableWidgetItem(content[title])
+                item.setFlags(Qt.ItemIsEnabled)
+                table.setItem(i,j,item)
+        
+        self.window.ui.table.resizeColumnsToContents()
+        
+def run():
+    app=QApplication(sys.argv)
+    app.setStyle(QStyleFactory.create("Fusion")) #fusion风格
+    w=Main()
+    w.show()
+    sys.exit(app.exec())
+# 标签
+# 备注
+# 文件信息
+文件名:NAME
+# 分子信息
+共ATOM_NUM个原子  
+共TO_NUM个分子轨道
+其中OO_NUM个占据轨道
+## 原子坐标:
+COORD
+# log/out文件管理器
+- 模仿zetero，这个就是一个大列表
+- 设置本地存储文件夹，每一个文件都单独存放在一个随机命名的文件夹中
+- 默认情况下文件会被拷贝到存储路径中，当然也可以保存原始路径信息而不复制文件
+- 每一个文件夹内应该有个info.yml文件，用来保存文件的信息
+- 用户可以直接通过该程序打开log文件，并且修改后程序会更新文件的信息
+- 可以为文件添加 标签、分类、备注
+    - 文件的类别用`route`表示，类似于路径:`a\b\c`
+- 点击一个文件的时候，右侧预览窗口可以显示详细信息
+ui界面是使用qt还是tk呢？之前使用qt是因为要和pyvista联用
+
+程序界面分为三个大部分
+1. Tree
+用来显示文件分类
+2. Table
+用来显示该分类下的文件
+3. Prop
+用来预览文件的信息(图片+文本)
+# 定义右键菜单的函数
+from PySide6.QtGui import QPixmap,QAction
+from PySide6.QtCore import Qt
+from . import main
+import os
+from pathlib import Path
+
+class RightMenu:
+    def __init__(self,window:"main.Main") -> None:
+        self.window=window
+        """初始化右键菜单"""
+        self.init_table()
+        self.init_list()
+        # 列表的右键菜单
+
+    def init_table(self):
+        # 表格的右键菜单
+        self.window.ui.table.setContextMenuPolicy(Qt.ActionsContextMenu) # 允许右键菜单
+        menus={
+            "更新":self.updateFile,
+            "复制路径":self.copyPath,
+            "查看文件夹":self.openFolder
+        }
+        for name,fun in menus.items():
+            option = QAction(self.window.ui.table)
+            option.setText(name)
+            option.triggered.connect(fun) # 点击菜单中的“发送控制代码”执行的函数
+            # tableView 添加具体的右键菜单
+            self.window.ui.table.addAction(option)
+
+    def init_list(self):
+        self.window.ui.list.setContextMenuPolicy(Qt.ActionsContextMenu)
+        menus={
+            '删除':self.remove_route
+        }
+        for name,fun in menus.items():
+            option = QAction(self.window.ui.list)
+            option.setText(name)
+            option.triggered.connect(fun) # 点击菜单中的“发送控制代码”执行的函数
+            # tableView 添加具体的右键菜单
+            self.window.ui.list.addAction(option)
+    
+    def remove_route(self):
+        """删除一个分类"""
+        ...
+
+    def updateFile(self):
+        item=self.window.ui.table.currentItem()
+        info=self.window.table.infos[item.row()]
+        info.update()
+        self.window.tree.update()
+
+    def copyPath(self):
+        """复制文件路径"""
+        import pyperclip
+        item=self.window.ui.table.currentItem()
+        info=self.window.table.infos[item.row()]
+        path=info.path
+        pyperclip.copy(path)
+    
+    def openFolder(self):
+        """打开文件所处位置"""
+        item=self.window.ui.table.currentItem()
+        info=self.window.table.infos[item.row()]
+        path=info.path
+        os.system(f'explorer.exe {Path(path).parent}')
+
+
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def pers(p):\n",
+    "    \"\"\"\n",
+    "    获得3d坐标的透视坐标,p[n,3]\n",
+    "    摄像机在z轴的-2处,所有的点缩放范围在(-1,1)之间\n",
+    "    \"\"\"\n",
+    "    n,_=p.shape\n",
+    "    mx,my,mz=np.abs(p).max(axis=0)\n",
+    "    p=p/max([mx,my,mz])\n",
+    "    o=np.array([0,0,-2]).reshape(1,3)\n",
+    "    z_=np.array([0,0,-1.5]).reshape(1,3)\n",
+    "    z=p.copy()[:,-1].reshape(n,1)\n",
+    "    oz=z-o\n",
+    "    oz_=z_-o\n",
+    "    op=p-o\n",
+    "    op_=op*(oz_[:,-1]/oz[:,-1]).reshape(n,1)\n",
+    "    p_=o+op_\n",
+    "    p_[:,-1]=0\n",
+    "    p_*=2\n",
+    "    return p_"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(4, 1)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "array([[ 1.        ,  0.        ,  0.        ],\n",
+       "       [-1.        ,  0.        ,  0.        ],\n",
+       "       [ 0.33333333,  0.        ,  0.        ],\n",
+       "       [-0.33333333,  0.        ,  0.        ]])"
+      ]
+     },
+     "execution_count": 83,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# p=np.random.rand(10,3)*2-1\n",
+    "p=np.array([\n",
+    "    [1,0,-1],\n",
+    "    [-1,0,-1],\n",
+    "    [1,0,1],\n",
+    "    [-1,0,1]\n",
+    "])\n",
+    "p_=pers(p)\n",
+    "p_"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from PIL import Image,ImageDraw"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 126,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "img=Image.new('RGB',(300,300),color='white')\n",
+    "draw=ImageDraw.Draw(img)\n",
+    "# d=2\n",
+    "# xy = [(i,i) for i in range(0, 300, 5)]\n",
+    "# for x,y in xy:\n",
+    "#     draw.ellipse((x-d, y-d, x+d, y+d), fill=(255,0,0), width=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 127,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAIAAAD2HxkiAAAEu0lEQVR4nO3TO2LjBgwAUVj3v7NSJJvsOrYl2SSHn/caAB2aeZuZ+/0+QOR2v9/f3t7qN+C6bjOjQwjd/h46hMrt302HkLj9fugQtnd7d+sQNvY+wtEhbOuDCEeHsKGPIxwdwlY+jXB0CJv4KsLRIazvQYSjQ1jZ4whHh7CmpyIcHcJqno1wdAjreCHC0SGs4LUIR4ewtJcjHB3Cor4T4egQlvPNCEeHsJDvRzg6hCX8KMLRIfzYTyMcHcLPLBDh6BB+YJkIR4fwXYtFODqEb1kywtEhvG7hCEeH8KLlIxwdwitWiXB0CE9bK8LRITxnxQhHh/CEdSMcHcIjq0c4OoQvbRHh6BA+t1GEo0P4xHYRjg7hI5tGODqE/9k6wtEh/CmIcHQIv2kiHB3CL1mEo0OYmTbC0SHkEY4Oubw+wtEh17aLCEeHXNheIhwdclU7inB0yCXtK8LRIdezuwhHh1zMHiMcHXIlO41wdMhl7DfC0SHXsOsIR4dcwN4jHB1ydgeIcHTIqR0jwtEh53WYCEeHnNSRIhwdckYHi3B0yOkcL8LRIedyyAhHh5zIUSMcHXIWB45wdMgpHDvC0SHHd/gIR4cc3BkiHB1yZCeJcHTIYZ0nwtEhx3SqCEeHHNDZIhwdcjQnjHB0yKGcM8LRIcdx2ghHhxzEmSMcHXIEJ49wdMjunT/C0SH7dokIR4fs2FUiHB2yVxeKcHTILl0rwtEh+3O5CEeH7MwVIxwdsicXjXB0yG5cN8LRIftw6QhHh+zA1SMcHVIT4YwOSYnwHzqkIsL/6JCECP+gQ7Ynwvd0yMZE+AEdsiURfkyHbEaEn9Ih2xDhV3TIBkT4gA5Zmwgf0yGrEuFTdMh6RPgsHbISEb7gfr/XL3BCIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIISZCiIkQYiKEmAghJkKIiRBiIoSYCCEmQoiJEGIihJgIIfYXUhQ0YYkBb64AAAAASUVORK5CYII=",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=300x300 at 0x1B945A36730>"
+      ]
+     },
+     "execution_count": 127,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "draw.line([(0,0),(100,100)],fill='black',width=1,joint=None)\n",
+    "img"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3.9.12 ('base')",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.12"
+  },
+  "orig_nbformat": 4,
+  "vscode": {
+   "interpreter": {
+    "hash": "672ca2a25535a6d48271f05eb2b77601c4e8033e4cdbf8170f899b3527edcd3d"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+
+import random
+import yaml
+import os
+import hashlib
+from pathlib import Path
+from shutil import copyfile
+from typing import *
+from . import utils
+from .draw import saveImg
+from pywfn.readers import LogReader
+import multiprocessing
+from threading import Thread
+from PySide6.QtWidgets import QFileDialog
+
+
+def get_yaml(path)->dict:
+    with open(path,'r',encoding='utf-8') as f:
+        return yaml.load(f,Loader=yaml.Loader)
+
+def set_yaml(path,data):
+    with open(path,'w',encoding='utf-8') as f:
+        yaml.dump(data,f)
+
+class Tools:
+    def __init__(self,window) -> None:
+        self.window=window
+        self.confifPath=Path(__file__).parent/'config.yml'
+        self.config=self.get_config()
+        self.check()
+        self.infos=Infos(self)
+    def check(self):
+        """
+        有时候需要为程序添加一些新的功能，就需要添加一些新的记录属性
+        """
+        if not Path(self.config["storagePath"]).exists():
+            path=QFileDialog.getExistingDirectory(self.window,'选择存储位置')
+            print(path)
+            self.config['storagePath']=path
+            self.set_config()
+
+    def get_config(self):
+        """获取配置信息"""
+        return get_yaml(self.confifPath)
+    
+    def set_config(self):
+        """保存并更新配置信息"""
+        set_yaml(self.confifPath,self.config)
+        self.config=self.get_config()
+
+
+    def create_file(self,path):
+        """
+        创建一个本地文件
+        文件名是随机的,内部包含一个yml文件用来保存文件的信息
+        """
+        # 获取文件哈希值
+        print(f'{path=}')
+        path=Path(path)
+        fileHash=utils.get_fileHash(path)
+        if self.infos.exists(fileHash):
+            print('相同的文件已经存在')
+            return
+        # print(f'{fileHash=}')
+        # 随机生成一个文件名
+        name=utils.get_randomName()
+        # 创建文件夹
+        folder=Path(__file__).parent/self.config["storagePath"]/f'{name}'
+        os.mkdir(folder)
+        # 将文件拷贝到文件夹中
+        copyfile(path,folder/path.name)
+
+        info=self.infos.add(folder,update=True)
+        return info
+
+class Infos(list):
+    """存储所有log文件的信息,实例化的时候会准备好已经存在的信息"""
+    def __init__(self,tools:Tools) -> None:
+        list.__init__([])
+        self.tools=tools
+        self.update()
+    
+    def add(self,folder:str,update=False)->"Info":
+        """添加info,检查是否已经存在,已经存在的话就不添加了"""
+        info=Info(folder)
+        if update:info.update()
+        self.append(info)
+        return info
+    
+    def exists(self,hash):
+        """根据哈希值判断文件是否存在"""
+        for each in self:
+            if each.hash==hash:
+                return True
+        return False
+    
+    def update(self):
+        """获取已存储文件的信息"""
+        storagePath=self.tools.config["storagePath"]
+        for folder in Path(storagePath).iterdir():
+            self.add(folder)
+
+    def __getitem__(self,item)->"Info":
+        return self[item]
+    
+    def __repr__(self) -> str:
+        return f'{len(self)}'
+    
+class Info:
+    # 设置一个文件应该有的属性,如果没有就补充,多余的话就删除
+    props=['name','path','hash','route','symbols','coords','ooNum','voNum']
+    #文件属性的md模板
+    with open(Path(__file__).parent/'prop.md','r',encoding='utf-8') as f:
+        mdTemplate=f.read()
+
+    def __init__(self,folder:Path) -> None:
+        """
+        一个Info对象对应一个info.yml文件
+        所以初始化对象的时候只需要传入文件所在的文件夹
+        """
+        self.folder=folder
+        # 文件本的属性,文件名,路径,哈希值
+        self.name:str=None
+        self.path:str=None
+        self.hash:str=None
+        # 用户可自定义的属性,路由(分类),标签,备注
+        self.route:str=None
+        self.label:List[str]=None
+        self.note:str=None
+        # 根据文件内容的属性
+        self.symbols:List[str]=None
+        self.coords:List[List[float]]=None
+        self.ooNum:int=None
+        self.voNum:int=None
+        
+        self.check()
+        # 文件状态属性,每次都重新生成,不需要存储
+        
+        self.st_size =self.logPath.stat().st_size #文件大小
+        self.st_ctime=self.logPath.stat().st_ctime #创建时间
+        self.st_mtime=self.logPath.stat().st_mtime #修改时间
+        self.st_atime=self.logPath.stat().st_atime #修改时间
+        
+
+    def set_prop(self):
+        """将字典的属性设置为类的属性"""
+        # 对于属性名与yaml数据完全一致的，可以直接赋值
+        for key,value in self.info.items():
+            if key in self.props:
+                setattr(self,key,value)
+    
+    def get_logPath(self):
+        """获取当前文件夹下的log文件的路径"""
+        for file in self.folder.iterdir():
+            if file.suffix in ['.log','.out']:
+                return file
+        raise
+    
+    def check_prop(self,key,value): #添加目前不存在但又需要的属性
+        if key not in self.info.keys():
+            self.info[key]=value
+            
+    def check(self):
+        """检查属性是否完整"""
+        self.logPath=self.get_logPath()
+        logHash=utils.get_fileHash(self.logPath)       
+        if not (self.folder/'info.yml').exists(): # 如果还不存在yml文件,则生成一个yml文件            
+            set_yaml(self.folder/'info.yml',{})
+            self.update()
+        self.info=get_yaml(self.folder/'info.yml')
+
+        self.check_prop('path',f'{self.logPath}')
+        self.check_prop('name',f'{self.logPath.name}')
+        self.check_prop('hash',logHash)
+        self.check_prop('route',None)
+        self.check_prop('labels',[]) # 标签
+        self.check_prop('note','') # 备注
+        self.save()
+        self.set_prop()
+
+    def save(self):
+        """保存本地配置信息"""
+        set_yaml(self.folder/'info.yml',self.info)
+
+    def update(self):
+        """
+        生成一些属性需要调用pywfn才能属性
+        触发方式:
+            1.用户手动触发
+            2.新添加文件时触发
+            3.文件哈希值改变触发
+        存储属性:
+            1.原子符号
+            2.原子坐标
+            3.轨道数量
+            4.任务类型
+        """
+        info=get_yaml(self.folder/'info.yml')
+        reader=LogReader(self.logPath)
+        mol=reader.mol
+        saveImg(reader.mol,self.folder/'mol.png')
+        info['symbols']=[atom.symbol for atom in mol.atoms] # 存储所有的原子符号
+        info['coords']=mol.coords.tolist() #存储原子坐标
+        info['ooNum']=len(mol.O_obts) #占据分子轨道数量
+        info['voNum']=len(mol.V_obts) #空分子轨道数量
+        self.info=info
+        self.save()
+
+    def __repr__(self) -> str:
+        return f'{self.name};{self.hash}'
+    
+    def prop(self,propName:str):
+        """根据属性名返回属性值"""
+        self.get
+    
+    def md(self):
+        """返回文件属性markdowm字符串"""
+        msg={}
+        msg['NAME']=self.name
+        atomNum=0
+        if self.symbols is not None:atomNum=len(self.symbols)
+        msg['ATOM_NUM']=f'{atomNum}'
+        if self.ooNum is not None and self.voNum is not None:
+            msg['TO_NUM']=f'{self.ooNum+self.voNum}'
+            msg['OO_NUM']=f'{self.ooNum}'
+
+        if self.symbols is not None and self.coords is not None:
+            msg['COORD']=''
+            for s,(x,y,z) in zip(self.symbols,self.coords):
+                msg['COORD']+=f'{s:<3}{x:<8.4f}{y:<8.4f}{z:<8.4f}  \n'
+
+        
+        for key,value in msg.items():
+            self.mdTemplate=self.mdTemplate.replace(key,value)
+        return self.mdTemplate
+
+def clear_info():
+    config=get_yaml(Path(__file__).parent/'config.yml')
+    storagePath=config['storagePath']
+    for each in Path(storagePath).iterdir():
+        os.remove(each/'info.yml')
+
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'main.ui'
+##
+## Created by: Qt User Interface Compiler version 6.3.2
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
+from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QLabel,
+    QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
+    QMenu, QMenuBar, QPushButton, QSizePolicy,
+    QSplitter, QStatusBar, QTableWidget, QTableWidgetItem,
+    QTextBrowser, QVBoxLayout, QWidget)
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        if not MainWindow.objectName():
+            MainWindow.setObjectName(u"MainWindow")
+        MainWindow.resize(911, 607)
+        self.action_import = QAction(MainWindow)
+        self.action_import.setObjectName(u"action_import")
+        self.centralwidget = QWidget(MainWindow)
+        self.centralwidget.setObjectName(u"centralwidget")
+        self.verticalLayout_4 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.splitter = QSplitter(self.centralwidget)
+        self.splitter.setObjectName(u"splitter")
+        self.splitter.setOrientation(Qt.Horizontal)
+        self.widget = QWidget(self.splitter)
+        self.widget.setObjectName(u"widget")
+        self.verticalLayout_2 = QVBoxLayout(self.widget)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.list = QListWidget(self.widget)
+        self.list.setObjectName(u"list")
+        self.list.setMinimumSize(QSize(200, 0))
+
+        self.verticalLayout_2.addWidget(self.list)
+
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.route_input = QLineEdit(self.widget)
+        self.route_input.setObjectName(u"route_input")
+
+        self.horizontalLayout.addWidget(self.route_input)
+
+        self.route_btn = QPushButton(self.widget)
+        self.route_btn.setObjectName(u"route_btn")
+
+        self.horizontalLayout.addWidget(self.route_btn)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout)
+
+        self.splitter.addWidget(self.widget)
+        self.widget1 = QWidget(self.splitter)
+        self.widget1.setObjectName(u"widget1")
+        self.verticalLayout_3 = QVBoxLayout(self.widget1)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.lineEdit_2 = QLineEdit(self.widget1)
+        self.lineEdit_2.setObjectName(u"lineEdit_2")
+
+        self.verticalLayout_3.addWidget(self.lineEdit_2)
+
+        self.table = QTableWidget(self.widget1)
+        self.table.setObjectName(u"table")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.table.sizePolicy().hasHeightForWidth())
+        self.table.setSizePolicy(sizePolicy)
+
+        self.verticalLayout_3.addWidget(self.table)
+
+        self.splitter.addWidget(self.widget1)
+        self.layoutWidget = QWidget(self.splitter)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.verticalLayout = QVBoxLayout(self.layoutWidget)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.img = QLabel(self.layoutWidget)
+        self.img.setObjectName(u"img")
+        self.img.setMinimumSize(QSize(0, 200))
+
+        self.verticalLayout.addWidget(self.img)
+
+        self.text = QTextBrowser(self.layoutWidget)
+        self.text.setObjectName(u"text")
+        font = QFont()
+        font.setFamilies([u"Consolas"])
+        font.setPointSize(10)
+        self.text.setFont(font)
+
+        self.verticalLayout.addWidget(self.text)
+
+        self.splitter.addWidget(self.layoutWidget)
+
+        self.verticalLayout_4.addWidget(self.splitter)
+
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QMenuBar(MainWindow)
+        self.menubar.setObjectName(u"menubar")
+        self.menubar.setGeometry(QRect(0, 0, 911, 22))
+        self.menu = QMenu(self.menubar)
+        self.menu.setObjectName(u"menu")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setObjectName(u"statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.menubar.addAction(self.menu.menuAction())
+        self.menu.addAction(self.action_import)
+
+        self.retranslateUi(MainWindow)
+
+        QMetaObject.connectSlotsByName(MainWindow)
+    # setupUi
+
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"gaussian Manager", None))
+        self.action_import.setText(QCoreApplication.translate("MainWindow", u"import", None))
+        self.route_btn.setText(QCoreApplication.translate("MainWindow", u"\u6dfb\u52a0", None))
+        self.img.setText("")
+        self.text.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"</style></head><body style=\" font-family:'Consolas'; font-size:10pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>", None))
+        self.menu.setTitle(QCoreApplication.translate("MainWindow", u"file", None))
+    # retranslateUi
+
+
+"""
+数学运算
+"""
+import numpy as np
+import hashlib
+import random
+# 坐标变化
+def T(x,y,z):
+    """生成平移矩阵"""
+    return np.array([
+        [1,0,0,x],
+        [0,1,0,y],
+        [0,0,1,z],
+        [0,0,0,1]
+    ])
+
+def S(x,y,z):
+    """生层缩放矩阵"""
+    return np.array([
+        [x,0,0,0],
+        [0,y,0,0],
+        [0,0,z,0],
+        [0,0,0,1]
+    ])
+
+def R(w,a):
+    """旋转方向和旋转角度"""
+    s=np.sin(a)
+    c=np.cos(a)
+    if w=='x':
+        m=np.array([
+            [1,0,0,0],
+            [0,c,-s,0],
+            [0,s,c,0],
+            [0,0,0,1]
+        ])
+        return m
+    elif w=='y':
+        m=np.array([
+            [c,0,s,0],
+            [0,1,0,0],
+            [-s,0,c,0],
+            [0,0,0,1]
+        ])
+        return m
+    elif w=='z':
+        m=np.array([
+            [c,-s,0,0],
+            [s,c,0,0],
+            [0,0,1,0],
+            [0,0,0,1]
+        ])
+        return m
+    else:
+        raise
+
+def get_area(points):
+    """计算x,y两个维度的面积,[4,n]"""
+    x1,y1=np.min(points[:2,:],axis=1)
+    x2,y2=np.max(points[:2,:],axis=1)
+    return (x2-x1)*(y2-y1)
+
+def get_arounds(points):
+    
+    """返回该构象周围的六个构象,points:[4,n]"""
+    da=0.1
+    arounds=[
+        R('x',da)@points,
+        R('x',-da)@points,
+        R('y',da)@points,
+        R('y',-da)@points,
+        # R('z',da)@points,
+        # R('z',-da)@points,
+    ]
+    random.shuffle(arounds)
+    return arounds
+
+def search(points):
+    """爬山法搜索时显示面积最大的旋转结果,points:[n,3]->[n,3]"""
+    points=points.T #[3,n]
+    _,n=points.shape
+    points=np.concatenate([points,np.ones(shape=(1,n))]) #[4,n]
+    area=get_area(points)
+    # print(f'{area=}')
+    steps=[points]
+    while True:
+        arounds=get_arounds(points) # 获取该点周围的构象
+        areas=[get_area(e) for e in arounds]
+        # print(areas)
+        for each in areas:
+            if each>area:
+                maxArea=each
+            else:
+                maxArea=max(areas)
+        if maxArea>area:
+            maxIdx=areas.index(maxArea)
+            area=areas[maxIdx]
+            points=arounds[maxIdx]
+            steps.append(points)
+            # print(f'{area=}')
+        else:
+            return points[:3,:].T,steps
+        
+def pers(p):
+    """
+    获得3d坐标的透视坐标,p[n,3]
+    摄像机在z轴的-2处,所有的点缩放范围在(-1,1)之间
+    """
+    n,_=p.shape
+    mx,my,mz=np.abs(p).max(axis=0)
+    p=p/max([mx,my,mz])
+    o=np.array([0,0,-2]).reshape(1,3)
+    z_=np.array([0,0,-1.5]).reshape(1,3)
+    z=p.copy()[:,-1].reshape(n,1)
+    oz=z-o
+    oz_=z_-o
+    op=p-o
+    op_=op*(oz_[:,-1]/oz[:,-1]).reshape(n,1)
+    p_=o+op_
+    p_[:,-1]=0
+    p_*=2
+    return p_
+
+def get_fileHash(path):
+        """为了避免导入文件重复,计算文件哈希值"""
+        m=hashlib.md5()
+        with open(path,'rb') as f:
+            while True:
+                data=f.read(1024)
+                if not data:
+                    break
+                m.update(data)
+        return m.hexdigest()
+
+def get_randomName():
+    """获取一个随机名称"""
+    s='1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    res=random.choices(s,k=20)
+    return ''.join(res)
+
+if __name__=='__main__':
+    points=np.random.rand(5,3)*2
+    res,steps=search(points)
+"""刚来时的时候检测"""
+import sys
+from pathlib import Path
+print(Path(__file__).parent)
+sys.path.append(Path(__file__).parent)
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+import PySide6
+dirname = os.path.dirname(PySide6.__file__) 
+plugin_path = os.path.join(dirname, 'plugins', 'platforms') # 指定动态链接库的位置
+print(plugin_path)
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+os.environ["QT_API"] = "pyside6"
+
+from .main import run
+
+from pathlib import Path
+import sys
+print(Path.cwd())
+sys.path.append(str(Path.cwd()))
+# 设定好执行库所必须的文件
+import importlib
+import os
+libSource='https://pypi.tuna.tsinghua.edu.cn/simple'
+# libSource='http://mirrors.aliyun.com/pypi/simple'
+def chkPkgs(pkg):
+    """检查所需的包是否完整,不完整的话就下载"""
+    lib,name = pkg
+    # os.system(f'env\python.exe -m pip install {lib} -i {libSource}')
+    try:
+        importlib.import_module(name)
+    except:
+        os.system(f'env\python.exe -m pip install {lib} -i {libSource}')
+pkgs=[
+    ['numpy','numpy'],
+    ['pyside6','PySide6'],
+    ['pyyaml','yaml'],
+    ['pandas','pandas'],
+    ['colorama','colorama'],
+    ['numba','numba'],
+    ['Pillow','PIL'],
+    ['tqdm','tqdm'],
+    ['pyperclip','pyperclip'],
+    ['pyvista','pyvista'],
+    ['pyvistaqt','pyvistaqt'],
+]
+# 导入与安装
+# 安装时的名称和导入时的名称是不一样滴
+for pkg in pkgs:chkPkgs(pkg)
+# os.system('cls')
+def run(opt):
+    if opt=='1':
+        import pywfn
+        # pywfn.setting.IF_DEBUG=False
+        pywfn.run()
+    elif opt=='2':
+        import app
+        app.run()
+    elif opt=='3':
+        import manager
+        manager.run()
+    elif opt=='4':
+        from manager import game
+
+if len(sys.argv)>1:run(sys.argv[1])
+else:
+    print("""
+    1.pywfn命令行
+    2.窗口程序
+    3.文件管理器
+    """)
+    opt=input('请选择需要启动的应用:')
+    run(opt)
+%cd%/env/python.exe main.py

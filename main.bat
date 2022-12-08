@@ -1,1 +1,1 @@
-%cd%/env/python.exe main.py
+%cd%\env\python.exe main.py

@@ -28,7 +28,6 @@ class Calculator:
             a_1,a_2=atom.obtMatrixRange
             for orbital in orbitals:
                 if judgeOrbital(centerAtom,aroundAtom,orbital,centerNormal): # 如果是π轨道
-                    # print(atom.idx,orbital)
                     CM_[a_1:a_2,orbital]=self.mol.CM[a_1:a_2,orbital]
         oe=1 if self.mol.isOpenShell else 2
         n=[oe if 'O' in o else 0 for o in self.mol.orbitals]

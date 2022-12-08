@@ -14,7 +14,8 @@ from pyvistaqt import QtInteractor, MainWindow
 
 
 from pywfn.base import Mol
-from pywfn.bondorder import piDM,piSH
+from pywfn.bondorder import piDH,piSH,piDM,piSM,mayer
+from pywfn.atomprop import mullikenCharge,piElectron,freeValence
 from pywfn.readers import get_reader
 
 from .plotter.canvas import Canvas
@@ -53,7 +54,7 @@ class Window(MainWindow):
         self.updater=Updater(self)
         self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
         # self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
-        # self.ui.clearCloudBtn.clicked.connect(lambda:self.currentFile.canvas.clear('cloud'))
+        
 
         self.files:Dict[str,FileItem]={}
         self.currentFile:FileItem=None # 初始化一个啥都没有的文件
@@ -76,12 +77,17 @@ class Window(MainWindow):
     def init_menu(self):
         """初始化菜单的命令"""
         self.ui.actionopen.triggered.connect(self.openFile)
-        self.ui.actionpiBondOrder.triggered.connect(lambda:self.compute_piOrder('new'))
-
-
-        self.ui.actionpiSelectOrder.triggered.connect(lambda:self.compute_piOrder('old'))
         self.ui.actionlabel.triggered.connect(self.viewLabel)
+        self.ui.actionclearCloud.triggered.connect(lambda:self.currentFile.canvas.hide_cloud(names=[]))
+        self.ui.actionpiDH.triggered.connect(lambda:self.caler_bondOrder('piDH'))
+        self.ui.actionpiDM.triggered.connect(lambda:self.caler_bondOrder('piDM'))
+        self.ui.actionpiSH.triggered.connect(lambda:self.caler_bondOrder('piSH'))
+        self.ui.actionpiSM.triggered.connect(lambda:self.caler_bondOrder('piSM'))
+        self.ui.actionMayer.triggered.connect(lambda:self.caler_bondOrder('Mayer'))
 
+        self.ui.actionMullikenCharge.triggered.connect(lambda:self.claer_atomProp('MullikenCharge'))
+        self.ui.actionpiElectron.triggered.connect(lambda:self.claer_atomProp('piElectron'))
+        self.ui.actionfreeValence.triggered.connect(lambda:self.claer_atomProp('freeValence'))
     def clear_selectedAtoms(self):
         if self.currentFile is not None:
             self.currentFile.canvas.clearAtoms()
@@ -204,8 +210,46 @@ class Window(MainWindow):
             each.canvas.plotter.Finalize()
         return super().closeEvent(event)
 
-    def add_fileItem(self):
-        """模仿vscode,每一个可视化的分子文件为一个FileItem"""
+    def caler_bondOrder(self,name):
+        atoms=self.currentFile.canvas.selectedAtoms
+        if len(atoms)!=2:return
+        atoms=[int(atom.split('-')[1]) for atom in atoms]
+        mol=self.currentFile.mol
+        if name=='piDH':
+            caler=piDH.Calculator(mol)
+        elif name=='piSH':
+            caler=piSH.Calculator(mol)
+        elif name=='piDM':
+            caler=piDM.Calculator(mol)
+        elif name=='piSM':
+            caler=piSM.Calculator(mol)
+        elif name=='Mayer':
+            caler=mayer.Calculator(mol)
+        idx1,idx2=atoms
+        res=caler.calculate(mol.atom(idx1), mol.atom(idx2))
+        self.addLog(f'{res}')
+    
+    def claer_atomProp(self,name):
+        mol=self.currentFile.mol
+        if name=='MullikenCharge': # 计算mulliken电荷分布
+            caler=mullikenCharge.Calculator(mol)
+            res=caler.calculate(mol.atoms)
+            atoms=mol.atoms
+            res=[f'{atoms[i].idx:<2}{atoms[i].symbol:>2}{e:>15.8f}' for i,e in enumerate(res)]
+
+        elif name=='piElectron': # 计算π电子分布
+            atoms=mol.atoms
+            caler=piElectron.Calculator(mol)
+            res=caler.calculate()
+
+        elif name=='freeValence':
+            atoms=self.currentFile.canvas.selectedAtoms
+            if len(atoms)!=1:return
+            atoms=[int(atom.split('-')[1]) for atom in atoms]
+            atom=mol.atom(int(atoms[0]))
+            caler=freeValence.Calculator(mol)
+            res=caler.calculate(atom)
+        self.addLog(f'{res}')
             
 
 from .plotter.canvas import Mol as MolActor
@@ -220,7 +264,7 @@ class FileItem(QWidget):
         QWidget.__init__(self,parent=None)
         self.app=app
         self.filePath=filePath
-        mol=get_reader(filePath).mol
+        self.mol=mol=get_reader(filePath).mol
         orbitals=[str(o) for o in mol.orbital_symbols]
         self.app.orbital.set_orbitals(orbitals)
         self.layout=QHBoxLayout()
@@ -235,7 +279,6 @@ class FileItem(QWidget):
         """隐藏原子"""
         ...
         
-    
     def onClick(self):
         print('click')
 

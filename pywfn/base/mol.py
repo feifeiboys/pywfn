@@ -19,15 +19,16 @@
 """
 
 from typing import *
-from pywfn.utils import vector_angle
+from ..maths import vector_angle
 from .atom import Atom,Atoms
 from .bond import Bond
 # from .basis import Basis
-from ..data import Basis
+from .. import data
 import numpy as np
 from .. import setting
 from functools import cached_property, lru_cache
-from ..utils import printer
+from .. import utils
+printer=utils.Printer()
 from ..maths import gto
 
 class Mol:
@@ -41,7 +42,7 @@ class Mol:
         self._CM:np.ndarray=None # 系数矩阵
         self._SM:np.ndarray=None # 重叠矩阵
         self.reader=None
-        self.basis:Basis=None
+        self.basis:"data.Basis"=None
         self.gto:"gto.Gto"=None
         
     
@@ -49,7 +50,6 @@ class Mol:
         """添加一个原子"""
         idx=len(self._atoms)+1
         atom=Atom(symbol,coord,idx,self)
-        # print(type(self._atoms),self._atoms,dir(self._atoms))
         self._atoms.append(atom)
     
     def atom(self,idx:int)->Atom:

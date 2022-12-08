@@ -98,6 +98,7 @@ class Canvas(QtInteractor):
         Rx=np.arange(minX-2,maxX+2.1,step)
         Ry=np.arange(minY-2,maxY+2.1,step)
         Rz=np.arange(minZ-2,maxZ+2.1,step)
+        origin=np.array([Rx[0],Ry[0],Rz[0]])
         Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
         X,Y,Z=np.meshgrid(Rx,Ry,Rz)
         pos=np.array([X.flatten(),Y.flatten(),Z.flatten()]).T
@@ -109,6 +110,9 @@ class Canvas(QtInteractor):
             values+=atom.get_cloud(pos-atom.coord,obt)
         # P:positive，N:negative
         values=values.reshape(Lx,Ly,Lz) # 转成三位数组
+        # self.add_cloud_surface(values,origin,(0.2,1),name='P')
+        # self.add_cloud_surface(values,origin,(-1,-0.2),name='N')
+        
         valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
         values=np.where((values>0.2) | (values<-0.2),1.,0.)
         values[[0,-1],:,:]=0
@@ -144,6 +148,22 @@ class Canvas(QtInteractor):
         self.add_cloud(posP,'red',f'cloud-P-{name}')
         self.add_cloud(posN,'blue',f'cloud-N-{name}')
 
+    def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name):
+        grid = pv.UniformGrid()
+        grid.dimensions = np.array(values.shape) + 1
+        grid.spacing = (0.1, 0.1, 0.1)
+        grid.origin = origin
+        
+        # values=values.flatten(order="F")
+        # idx=np.argwhere(values>0.2)
+        grid.cell_data["values"] = values.flatten(order="F")
+        vol = grid.threshold(value=value)
+        print(vol.number_of_cells)
+        if vol.number_of_cells==0:
+            return
+        surf = vol.extract_geometry()
+        smooth = surf.smooth(n_iter=500)
+        self.plotter.add_mesh(smooth,color='pink',opacity=0.5,smooth_shading=True,name=name)
 
     def add_cloud(self,points,color:str,name:str):
         if len(points)>0:

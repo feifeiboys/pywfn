@@ -66,7 +66,6 @@ class Gto:
                 for k,lmn in enumerate(self.basis.lmn(ang)):
                     Ci=OCi[idx]
                     if show:vs+=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
-                    # print(f'{idx:<4}{Ci:<10}shell={i:<4}{ang=} {lmn} {show=}')
                     idx+=1
                     
         return vs

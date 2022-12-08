@@ -1,1 +1,0 @@
-%cd%/python38/python.exe run.py shell
