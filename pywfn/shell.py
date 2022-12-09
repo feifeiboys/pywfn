@@ -89,14 +89,16 @@ class Shell:
                 file=self.paths[0]
                 reader=get_reader(file)
                 mol=reader.mol
-                atomidx=input('输入原子编号: ')
-                if not atomidx.isdigit():
-                    printer.warn('请输入正确原子编号!')
-                    break
-                atom=mol.atom(int(atomidx))
-                caler=freeValence.Calculator(mol)
-                order=caler.calculate(atom)
-                printer.res(f'{order}')
+                while True:
+                    atomidx=input('输入原子编号: ')
+                    if not atomidx:break
+                    if not atomidx.isdigit():
+                        printer.warn('请输入正确原子编号!')
+                        break
+                    atom=mol.atom(int(atomidx))
+                    caler=freeValence.Calculator(mol)
+                    order=caler.calculate(atom)
+                    printer.res(f'{order:.6f}')
 
                 
     def calerBondOrder(self):

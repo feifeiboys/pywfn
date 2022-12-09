@@ -6,6 +6,7 @@ from .. import utils
 
 from .. import setting
 from .. import base
+from .. import maths
 
 from functools import cached_property,lru_cache
 
@@ -106,13 +107,13 @@ class Atom:
                 p1,p2,p3=[(each.coord-self.coord) for each in neighbors] 
             else:
                 p1,p2,p3=[(each.coord-self.coord)*(1 if each.idx==aroundIdx else locNum) for each in neighbors] 
-            normal=utils.get_normalVector(p1,p2,p3)
+            normal=maths.get_normalVector(p1,p2,p3)
         elif len(neighbors)==2:
             p2=self.coord
             p1,p3=neighbors[0].coord,neighbors[1].coord
-            angle=utils.vector_angle(p1-p2,p3-p2)
+            angle=maths.vector_angle(p1-p2,p3-p2)
             if angle>=0.01:
-                normal=utils.get_normalVector(p1,p2,p3)
+                normal=maths.get_normalVector(p1,p2,p3)
             else:return None
         elif main: #如果是在递归中调用本函数的话就不要再次递归了
             for each in neighbors:
@@ -127,7 +128,7 @@ class Atom:
     def get_obtWay(self,obt:int):
         """获得原子某一轨道的方向"""
         atomPos=self.coord
-        maxPos,maxValue=utils.get_extraValue(self,obt)
+        maxPos,maxValue=maths.get_extraValue(self,obt)
         way=maxPos-atomPos # 如果两者相同说明完全没有电子云、这显然不对啊
         if np.linalg.norm(way)==0:
             raise

@@ -4,7 +4,7 @@
 """
 from pywfn import setting
 
-from pywfn.utils import vector_angle
+from pywfn.maths import vector_angle
 from ..base import Mol,Atom
 from typing import *
 import numpy as np
@@ -20,7 +20,7 @@ class Calculator:
     
     def calculate(self,centerAtom:Atom,aroundAtom:Atom):
         if centerAtom.symbol=='H' or aroundAtom.symbol=='H':
-            print(Fore.YELLOW+'不能计算含有H的键')
+            # print(Fore.YELLOW+'不能计算含有H的键')
             return 0
         self.mol.createAtomOrbitalRange()
         CM_=np.zeros_like(self.mol.CM,dtype=np.float32) #新的系数矩阵
@@ -39,7 +39,7 @@ class Calculator:
         a2_1,a2_2=aroundAtom.obtMatrixRange
         centerPIndex=[i for i,l in enumerate(centerAtom.layers) if 'P' in l]
         aroundPIndex=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
-        for i,orbital in tqdm(enumerate(orbitals),total=len(orbitals),desc='重构密度矩阵'):
+        for i,orbital in enumerate(orbitals):
             C1op=centerAtom.get_pProj(normal,orbital)
             C2op=aroundAtom.get_pProj(normal,orbital)
             C1o=np.zeros(len(centerAtom.layers))

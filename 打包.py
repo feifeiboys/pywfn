@@ -55,6 +55,7 @@ opts=[
     'main.py',
     'main.bat'
 ]
+# 定义需要排除的文件类型
 rms=[
     '__pycache__',
     '.pyc',

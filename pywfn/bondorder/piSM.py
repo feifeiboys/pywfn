@@ -3,7 +3,7 @@
 mayer键级需要重叠矩阵,可一次性计算所有键级(此时原子的法向量由三个原子决定,而不是垂直于键轴)
 """
 from ..base import Mol,Atom
-from ..utils import vector_angle
+from ..maths import vector_angle
 from .utils import CM2PM,judgeOrbital
 import numpy as np
 

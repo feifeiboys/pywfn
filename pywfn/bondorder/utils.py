@@ -4,7 +4,7 @@
 import numpy as np
 from typing import *
 from ..base import Atom
-from ..utils import vector_angle
+from ..maths import vector_angle
 import numpy as np
 import time
 def CM2PM(CM,orbital:List[int],oe:int):

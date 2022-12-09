@@ -4,6 +4,7 @@
 from ..base import Mol,Atom,Bond
 import numpy as np
 from .. import utils
+from .. import maths
 from typing import *
 
 
@@ -74,8 +75,8 @@ class Calculator:
                 orbitalDirection=centerAtom.get_obtWay(o)
                 if np.linalg.norm(orbitalDirection)==0:
                     continue
-                bondDirection=self.mol.bond(centerAtom.idx, aroundAtom.idx).bondVector()
-                if utils.vector_angle(orbitalDirection, bondDirection,trans=True)>0.4: # 夹角要很大
+                bondDirection=self.mol.bond(centerAtom.idx, aroundAtom.idx).vector
+                if maths.vector_angle(orbitalDirection, bondDirection,trans=True)>0.4: # 夹角要很大
                     break
             if orbitalDirection is not None:
                 orders1=self.get_orders(centerAtom,aroundAtom,O_obts,orbitalDirection)
