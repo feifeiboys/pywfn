@@ -30,13 +30,20 @@ class Ui_MainWindow(object):
         MainWindow.setStyleSheet(u"#canvas{\n"
 "height:80%;\n"
 "background-color:gray;\n"
+"}\n"
+"#icons{\n"
+"background-color:gray;\n"
+"box-shadow: 10px 10px 5px black;\n"
+"}\n"
+"QMenuBar,QMenu,QAction{\n"
+"font-family:Consolas;\n"
 "}")
         MainWindow.setDocumentMode(False)
         MainWindow.setTabShape(QTabWidget.Rounded)
         self.actionopen = QAction(MainWindow)
         self.actionopen.setObjectName(u"actionopen")
-        self.actionlabel = QAction(MainWindow)
-        self.actionlabel.setObjectName(u"actionlabel")
+        self.actionatomLabels = QAction(MainWindow)
+        self.actionatomLabels.setObjectName(u"actionatomLabels")
         self.actionclear = QAction(MainWindow)
         self.actionclear.setObjectName(u"actionclear")
         self.actionsigmaBondOrder = QAction(MainWindow)
@@ -59,6 +66,8 @@ class Ui_MainWindow(object):
         self.actionpiElectron.setObjectName(u"actionpiElectron")
         self.actionfreeValence = QAction(MainWindow)
         self.actionfreeValence.setObjectName(u"actionfreeValence")
+        self.actionresetAtomColor = QAction(MainWindow)
+        self.actionresetAtomColor.setObjectName(u"actionresetAtomColor")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -82,11 +91,12 @@ class Ui_MainWindow(object):
         self.splitter_2.addWidget(self.icons)
         self.view = QFrame(self.splitter_2)
         self.view.setObjectName(u"view")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         sizePolicy1.setHorizontalStretch(4)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.view.sizePolicy().hasHeightForWidth())
         self.view.setSizePolicy(sizePolicy1)
+        self.view.setMinimumSize(QSize(120, 0))
         self.view.setFrameShape(QFrame.NoFrame)
         self.view.setFrameShadow(QFrame.Raised)
         self.view.setLineWidth(0)
@@ -135,7 +145,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 895, 22))
+        self.menubar.setGeometry(QRect(0, 0, 895, 21))
         self.menufile = QMenu(self.menubar)
         self.menufile.setObjectName(u"menufile")
         self.menucompute = QMenu(self.menubar)
@@ -171,8 +181,9 @@ class Ui_MainWindow(object):
         self.menuatomProp.addAction(self.actionMullikenCharge)
         self.menuatomProp.addAction(self.actionpiElectron)
         self.menuatomProp.addAction(self.actionfreeValence)
-        self.menuview.addAction(self.actionlabel)
+        self.menuview.addAction(self.actionatomLabels)
         self.menuview.addAction(self.actionclearCloud)
+        self.menuview.addAction(self.actionresetAtomColor)
         self.menuselect.addAction(self.actionclear)
         self.toolBar.addAction(self.actionclear)
 
@@ -182,9 +193,9 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"HFV", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"PywfnW", None))
         self.actionopen.setText(QCoreApplication.translate("MainWindow", u"open", None))
-        self.actionlabel.setText(QCoreApplication.translate("MainWindow", u"label", None))
+        self.actionatomLabels.setText(QCoreApplication.translate("MainWindow", u"atomLabels", None))
         self.actionclear.setText(QCoreApplication.translate("MainWindow", u"clear", None))
         self.actionsigmaBondOrder.setText(QCoreApplication.translate("MainWindow", u"sigmaBondOrder", None))
         self.actionclearCloud.setText(QCoreApplication.translate("MainWindow", u"clearCloud", None))
@@ -196,6 +207,7 @@ class Ui_MainWindow(object):
         self.actionMullikenCharge.setText(QCoreApplication.translate("MainWindow", u"MullikenCharge", None))
         self.actionpiElectron.setText(QCoreApplication.translate("MainWindow", u"piElectron", None))
         self.actionfreeValence.setText(QCoreApplication.translate("MainWindow", u"freeValence", None))
+        self.actionresetAtomColor.setText(QCoreApplication.translate("MainWindow", u"resetAtomColor", None))
         self.command.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input command here", None))
         self.menufile.setTitle(QCoreApplication.translate("MainWindow", u"file", None))
         self.menucompute.setTitle(QCoreApplication.translate("MainWindow", u"compute", None))

@@ -8,7 +8,7 @@ class Calculator:
     def __init__(self,mol:"Mol"):
         self.mol=mol
     
-    def calculate(self,atoms:List[Atom]):
+    def calculate(self,atoms:List[Atom])->List[float]:
         self.mol.createAtomOrbitalRange()
         PM=self.mol.PM
         SM=self.mol.SM

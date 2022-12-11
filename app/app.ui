@@ -14,12 +14,19 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>HFV</string>
+   <string>PywfnW</string>
   </property>
   <property name="styleSheet">
    <string notr="true">#canvas{
 height:80%;
 background-color:gray;
+}
+#icons{
+background-color:gray;
+box-shadow: 10px 10px 5px black;
+}
+QMenuBar,QMenu,QAction{
+font-family:Consolas;
 }</string>
   </property>
   <property name="documentMode">
@@ -69,10 +76,16 @@ background-color:gray;
       </widget>
       <widget class="QFrame" name="view">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>4</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
@@ -144,7 +157,7 @@ background-color:gray;
      <x>0</x>
      <y>0</y>
      <width>895</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">
@@ -182,8 +195,9 @@ background-color:gray;
     <property name="title">
      <string>view</string>
     </property>
-    <addaction name="actionlabel"/>
+    <addaction name="actionatomLabels"/>
     <addaction name="actionclearCloud"/>
+    <addaction name="actionresetAtomColor"/>
    </widget>
    <widget class="QMenu" name="menuselect">
     <property name="title">
@@ -214,9 +228,9 @@ background-color:gray;
     <string>open</string>
    </property>
   </action>
-  <action name="actionlabel">
+  <action name="actionatomLabels">
    <property name="text">
-    <string>label</string>
+    <string>atomLabels</string>
    </property>
   </action>
   <action name="actionclear">
@@ -272,6 +286,11 @@ background-color:gray;
   <action name="actionfreeValence">
    <property name="text">
     <string>freeValence</string>
+   </property>
+  </action>
+  <action name="actionresetAtomColor">
+   <property name="text">
+    <string>resetAtomColor</string>
    </property>
   </action>
  </widget>

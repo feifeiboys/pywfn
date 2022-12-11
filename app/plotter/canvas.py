@@ -1,4 +1,9 @@
-from pyvista import Plotter,Cylinder,Sphere,PolyData,Light
+"""
+一个canvas里面有一个分子，其实就是原子和键
+原子的名字的格式为：symbol-idx
+"""
+
+from pyvista import Plotter,Cylinder,Sphere,PolyData,Light,Actor,Property,Color
 from pywfn.base import Atom,Bond,Mol
 import numpy as np
 from typing import *
@@ -11,6 +16,7 @@ from pyvistaqt import QtInteractor
 from . import utils
 from ..window import Mol
 elements=Elements()
+
 
 
 class Canvas(QtInteractor):
@@ -27,38 +33,28 @@ class Canvas(QtInteractor):
         self.scene=[] # 除了原子之外的actor都加入到scene中，方便管理
         self.cloudRange:float=0.001
         self.selectedAtoms:List[str]=[]
-        self.actors=[] #存储所有要显示的对象
-        self.atomActors={}
-
+        self.add_atoms()
+        self.add_bonds()
+        
+    def add_atoms(self):
         for atom in self.mol.atoms:
-            self.add_atom(atom.coord,atom.symbol,atom.idx)
+            poly=Sphere(center=atom.coord,radius=elements[atom.symbol].radius)
+            name=f'{atom.symbol}-{atom.idx}'
+            setattr(poly,'name',name) #为poly添加name属性，只有能够被点击的物体才设置name，以便与场景中的actor对照
+            self.plotter.add_mesh(poly,color=elements[atom.symbol].color,smooth_shading=True,name=name)
+
+    def add_bonds(self):
         for bond in self.mol.bonds:
             a1,a2=bond.a1,bond.a2
-            self.add_bond(a1.coord,a2.coord,bond.idx)
+            poly=Cylinder(center=(a1.coord+a2.coord)/2,direction=a2.coord-a1.coord,radius=0.1)
+            self.plotter.add_mesh(poly,name=bond.idx,pickable=False)
     
-    # def onClick(self,mesh):
-    #     for mol in self.mols:
-    #         mol.onClick(mesh)
-        
-    
-    def add_atom(self,coord,symbol:str,idx:int):
-        poly=Sphere(center=coord,radius=elements[symbol].radius)
-        name=f'{symbol}-{idx}'
-        poly.name=name
-        actor=self.plotter.add_mesh(poly,color=elements[symbol].color,smooth_shading=True,name=name)
-        self.atomActors[name]=actor
-        self.actors.append(actor)
-        
-    
-    def add_bond(self,coord1,coord2,name:str):
-        poly=Cylinder(center=(coord1+coord2)/2,direction=coord2-coord1,radius=0.1)
-        actor=self.plotter.add_mesh(poly,name=name,pickable=False)
-        self.actors.append(actor)
+    def add_labels(self):
+        """添加原子的label"""
 
     def hide_cloud(self,names):
         """
-        将非指定点云全部隐藏
-        并返回指定的点云是否已经存在
+        将非指定点云全部隐藏，并返回指定的点云是否已经存在
         """
         render=self.plotter.renderer
         actors=render.actors
@@ -154,8 +150,6 @@ class Canvas(QtInteractor):
         grid.spacing = (0.1, 0.1, 0.1)
         grid.origin = origin
         
-        # values=values.flatten(order="F")
-        # idx=np.argwhere(values>0.2)
         grid.cell_data["values"] = values.flatten(order="F")
         vol = grid.threshold(value=value)
         print(vol.number_of_cells)
@@ -168,9 +162,8 @@ class Canvas(QtInteractor):
     def add_cloud(self,points,color:str,name:str):
         if len(points)>0:
             cloud=pv.PolyData(points)
-            actor=self.plotter.add_mesh(cloud,color=color,opacity=0.5,
+            self.plotter.add_mesh(cloud,color=color,opacity=0.5,
                 reset_camera=False,name=name,pickable=False)
-            self.actors.append(actor)
         else:
             print('没有点')
 
@@ -178,7 +171,7 @@ class Canvas(QtInteractor):
         if not hasattr(mesh,'name'):return
         name:str=mesh.name
         symbol,idx=name.split('-')
-        actor=self.atomActors[mesh.name]
+        actor=self.get_actor(name)
         prop = actor.GetProperty()
         if name not in self.selectedAtoms: # 如果该原子没有被选中
             self.selectedAtoms.append(name)
@@ -192,3 +185,65 @@ class Canvas(QtInteractor):
             index=self.selectedAtoms.index(name)
             self.selectedAtoms.pop(index)
             actor.SetProperty(prop)
+    
+    def get_actor(self,name)->Actor:
+        """
+        根据name获取actor
+        """
+        actors:dict=self.plotter.renderer.actors
+        names=actors.keys()
+        if name in names:
+            return actors[name]
+        else:
+            return None
+        for name_,actor in actors.items():
+            if name_==name:
+                return actor
+        return None
+
+    def get_atom(self,idx:int)->Actor:
+        """
+        根据原子标签获取原子对象
+        """
+        atom=self.mol.atom(idx)
+        name=f'{atom.symbol}-{idx}'
+        return self.get_actor(name)
+
+
+    def set_color(self,idx:int,color=None):
+        """
+        设置原子的颜色，如果不传入任何参数则使用原子默认颜色
+        """
+        symbol=self.mol.atom(idx).symbol
+        if color is None:color=elements[symbol].color
+        self.get_atom(idx).prop.SetColor(utils.hex2rgb(color))
+    
+    def reset_color(self):
+        """将所有的原子回复原本的颜色"""
+        idxs=[a.idx for a in self.mol.atoms]
+        for idx in idxs:
+            self.set_color(idx)
+
+
+    def set_colors(self,idxs:List[int],values:List[float]):
+        """
+        根据数值计算对应的颜色并修改
+        idxs:原子指标
+        values:原子对应的数值
+        idx与values的长度应该相等
+        """
+        values:np.ndarray=np.array(values)
+        ratios=(values-values.min())/(values.max()-values.min()) #将数值映射到0-1之间
+        # 将数值映射到颜色值为两个值之间
+        for idx,ratio in zip(idxs,ratios):
+            color=color_bar(ratio)
+            self.set_color(idx,color)
+
+
+def color_bar(ratio:float):
+    c0=np.array([0.,0.,1.])
+    c1=np.array([1.,0.,0.])
+    color:np.ndarray=(c0+(c1-c0)*ratio)*255
+    r,g,b=color.astype(int)
+    hexColor=f'#{r:0>2x}{g:0>2x}{b:0>2x}'
+    return hexColor

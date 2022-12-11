@@ -41,6 +41,7 @@ class Window(MainWindow):
 
         self.commandLine=Command(self)
         self.ui.log.setFont(QFont('Courier New'))
+        # self.ui.menubar.setFont(QFont('Courier New'))
         # self.ui.lineEdit.returnPressed.connect(self.command)
         
         self.init_menu()
@@ -77,7 +78,7 @@ class Window(MainWindow):
     def init_menu(self):
         """初始化菜单的命令"""
         self.ui.actionopen.triggered.connect(self.openFile)
-        self.ui.actionlabel.triggered.connect(self.viewLabel)
+        self.ui.actionatomLabels.triggered.connect(self.viewLabel)
         self.ui.actionclearCloud.triggered.connect(lambda:self.currentFile.canvas.hide_cloud(names=[]))
         self.ui.actionpiDH.triggered.connect(lambda:self.caler_bondOrder('piDH'))
         self.ui.actionpiDM.triggered.connect(lambda:self.caler_bondOrder('piDM'))
@@ -88,45 +89,17 @@ class Window(MainWindow):
         self.ui.actionMullikenCharge.triggered.connect(lambda:self.claer_atomProp('MullikenCharge'))
         self.ui.actionpiElectron.triggered.connect(lambda:self.claer_atomProp('piElectron'))
         self.ui.actionfreeValence.triggered.connect(lambda:self.claer_atomProp('freeValence'))
+        self.ui.actionresetAtomColor.triggered.connect(lambda:self.currentFile.canvas.reset_color())
     def clear_selectedAtoms(self):
         if self.currentFile is not None:
             self.currentFile.canvas.clearAtoms()
+            
 
     def command(self):
         """处理命令行输入的内容"""
         opt=self.ui.lineEdit.text()
         res=self.commandLine.run(opt)
         self.addInfo(res)
-
-
-    def compute_piOrder(self,orderType):
-        atoms=self.currentFile.canvas.selectedAtoms
-        if len(atoms)==2:
-            if orderType=='old':
-                computer=piSH.Calculator(self.currentFile.mol)
-            if orderType=='new':
-                computer=piDM.Calculator(self.currentFile.mol)
-            res=computer.calculate(atoms[0],atoms[1])
-            orders=res['data']['orders']
-            order=res['data']['order']
-            # 将orders根据大小进行排序，并删除为0的部分
-            orders=sorted(zip(range(len(orders)),orders),key=lambda x:x[1])
-            limit=1e-4
-            ranges=[r+1 for r,o in orders if o>=limit]
-            orbitalNum=len(self.currentFile.mol.O_obts)
-            orbitalNum=orbitalNum//2+orbitalNum%2
-            oE=1 if self.currentFile.mol.isOpenShell else 2
-            if oE==1:
-                ranges = [f"α{r}" if r <= orbitalNum else f'β{r-orbitalNum}' for r in ranges]
-
-            orders=[o for r,o in orders if o>=limit]
-            self.addLog(f'compute piSelectOrder {atoms[0].idx}-{atoms[1].idx}')
-            rangesStrs=[f'{each}' for each in ranges]
-            ordersStrs=[f'{each:.4f}' for each in orders]
-            self.formPrint([rangesStrs,ordersStrs],eachLength=8,lineNum=10)
-            self.addLog(f'{order=:.4f}')
-        else:
-            self.addLog('compute bond order need two atoms')
 
     def viewLabel(self):
         """显示或隐藏原子的label"""
@@ -210,7 +183,7 @@ class Window(MainWindow):
             each.canvas.plotter.Finalize()
         return super().closeEvent(event)
 
-    def caler_bondOrder(self,name):
+    def caler_bondOrder(self,name): # 计算键性质
         atoms=self.currentFile.canvas.selectedAtoms
         if len(atoms)!=2:return
         atoms=[int(atom.split('-')[1]) for atom in atoms]
@@ -229,13 +202,16 @@ class Window(MainWindow):
         res=caler.calculate(mol.atom(idx1), mol.atom(idx2))
         self.addLog(f'{res}')
     
-    def claer_atomProp(self,name):
+    def claer_atomProp(self,name): # 计算原子性质
         mol=self.currentFile.mol
         if name=='MullikenCharge': # 计算mulliken电荷分布
             caler=mullikenCharge.Calculator(mol)
             res=caler.calculate(mol.atoms)
+            idxs=[a.idx for a in mol.atoms]
+            self.currentFile.canvas.set_colors(idxs,res)
             atoms=mol.atoms
             res=[f'{atoms[i].idx:<2}{atoms[i].symbol:>2}{e:>15.8f}' for i,e in enumerate(res)]
+            res='\n'.join(res)
 
         elif name=='piElectron': # 计算π电子分布
             atoms=mol.atoms

@@ -18,7 +18,8 @@ class OrbitalWidget(QWidget,Ui_Form):
         self.listWidget.addItems(obts)
     
     def clicked(self,item:QListWidgetItem):
-        obt=self.obts.index(item.text())
+        obt=self.obts.index(item.text()) # 轨道的序数，肯定都是整数
+        
         self.app.currentFile.canvas.show_cloud(obt)
         
         print(item.text())
