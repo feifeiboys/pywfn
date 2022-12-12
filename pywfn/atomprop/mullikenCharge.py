@@ -17,6 +17,8 @@ class Calculator:
         if SM is None:
             return 0
         charges=[]
+        if atoms is None:
+            atoms=self.mol.atoms
         for atom in atoms:
             a_1,a_2=atom.obtMatrixRange
             charge=PS_[a_1:a_2]

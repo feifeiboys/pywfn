@@ -1,6 +1,7 @@
 """
 该子模块定义各种文件的读取器
 所有读取器应该都是读取分子所需要的属性？
+数据尽量向量化存储
 """
 from .fch import FchReader
 from .log import LogReader

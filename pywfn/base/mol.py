@@ -36,15 +36,26 @@ class Mol:
         self._atoms:Atoms=Atoms()
         self.Eigenvalues:List[float]=[]
         self.isOpenShell:bool=None #轨道是否为开壳层，值为0或1
-        self.orbitals:List[str]=[] # 存储所有轨道时占据还是非占据
-        self.obtElcts:List[int]=[] # 存储每个分子轨道占据的电子数量(包含占据信息)
+        self.obtElcts:List[int]=None # 存储每个分子轨道占据的电子数量(包含占据信息)
         self._heavyAtoms:List[Atom]=None
         self._CM:np.ndarray=None # 系数矩阵
         self._SM:np.ndarray=None # 重叠矩阵
         self.reader=None
         self.basis:"data.Basis"=None
         self.gto:"gto.Gto"=None
-        
+    
+    @cached_property
+    def obtStr(self)->List[str]:
+        """返回轨道符号"""
+        strs=[]
+        for i,e in enumerate(self.obtElcts):
+            symbol='V' if e==0 else 'O'
+            if self.isOpenShell and i>=self._CM.shape[1]:
+                i-=self._CM.shape[1]
+            strs.append(f'{i+1:<3}{symbol}')
+        return strs
+    
+
     
     def add_atom(self,symbol:str,coord:List[float]):
         """添加一个原子"""
@@ -77,11 +88,11 @@ class Mol:
 
     @cached_property
     def O_obts(self)->List[int]:
-        return [i for i,s in enumerate(self.orbitals) if s[-1]=='O']
+        return [i for i,e in enumerate(self.obtElcts) if e!=0]
     
     @cached_property
     def V_obts(self)->List[int]:
-        return [i for i,s in enumerate(self.orbitals) if s[-1]=='V']
+        return [i for i,e in enumerate(self.obtElcts) if e==0]
     
     @cached_property
     def heavyAtoms(self):

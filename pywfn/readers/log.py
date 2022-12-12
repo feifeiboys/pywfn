@@ -163,7 +163,6 @@ class LogReader(Reader):
                 self.OCdict[atomIDX].set(layer,nums)
             else: # 若不满足以上任意一种情况，说明已经查找完毕，则对收集到的数据进行处理
                 self.mol.Eigenvalues=self.ES
-                self.mol.orbitals=self.OS
                 oe= 1 if self.mol.isOpenShell else 2
                 self.mol.obtElcts=[oe if 'O' in o else 0 for o in self.OS] # 每个轨道的电子数量
                 for key,value in self.OCdict.items():
