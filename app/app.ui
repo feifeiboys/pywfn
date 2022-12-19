@@ -165,6 +165,8 @@ font-family:Consolas;
      <string>file</string>
     </property>
     <addaction name="actionopen"/>
+    <addaction name="separator"/>
+    <addaction name="actionsetting"/>
    </widget>
    <widget class="QMenu" name="menucompute">
     <property name="title">
@@ -291,6 +293,11 @@ font-family:Consolas;
   <action name="actionresetAtomColor">
    <property name="text">
     <string>resetAtomColor</string>
+   </property>
+  </action>
+  <action name="actionsetting">
+   <property name="text">
+    <string>setting</string>
    </property>
   </action>
  </widget>

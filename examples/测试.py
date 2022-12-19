@@ -8,6 +8,11 @@ from pywfn.multiprop import Fukui
 reader=LogReader('examples/mols/CH2O.log')
 readerN=LogReader('examples/mols/CH2ON.log')
 readerP=LogReader('examples/mols/CH2OP.log')
-fukui=Fukui(readerN.mol,reader.mol,readerP.mol)
-for i in range(4):
-    print(fukui.fn(i+1),fukui.fp(i+1))
+
+MolProp(reader.mol).props()
+
+# fukui=Fukui(readerN.mol,reader.mol,readerP.mol)
+# for i in range(4):
+#     print(fukui.fn(i+1),fukui.fp(i+1))
+#     print(fukui.cs(i+1))
+#     print(fukui.ei(i+1))

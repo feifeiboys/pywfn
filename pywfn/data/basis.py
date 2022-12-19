@@ -33,6 +33,7 @@ class Basis:
         if name not in self.names:
             printer.wrong(f'不支持的基组{name}!!')
         self.basis=self.allBasis[name] #获取基组名的所有层
+        self.name=name
     
     @lru_cache
     def get(self,atomic)->List:

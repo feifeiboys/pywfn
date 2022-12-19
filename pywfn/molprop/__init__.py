@@ -3,6 +3,12 @@
 """
 from functools import cached_property
 from .. import base
+
+# 记录TCE的HOMO能量
+TCEs={
+    '6-31G*':-0.33520
+}
+
 class MolProp:
     def __init__(self,mol:"base.Mol") -> None:
         self.mol=mol
@@ -51,15 +57,25 @@ class MolProp:
     def ei(self):
         """亲点指数"""
         return self.ecp**2/self.ch
+    
+    @cached_property
+    def N(self):
+        """亲和反应指标"""
+        basi=self.mol.basis.name
+
+        return self.homo-TCEs[basi]
 
     def props(self):
         """以字典的形式返回分子属性"""
-        return [
+        props = [
             ['HOMO',self.homo],
             ['LOMO',self.lomo],
             ['化学势',self.ecp],
             ['电负性',self.en],
             ['化学硬度',self.ch],
             ['化学软度',self.cs],
-            ['亲点指数',self.ei]
+            ['亲点指数',self.ei],
+            ['亲和反应指标',self.N]
         ]
+        for k,v in props:
+            print(f'{k:{chr(12288)}<6}\t{v:>10.6f}')

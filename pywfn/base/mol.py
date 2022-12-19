@@ -80,7 +80,7 @@ class Mol:
 
     @cached_property
     def orbital_symbols(self)->List[str]:
-        n=len(self.orbitals)
+        n=len(self.obtStr)
         if self.isOpenShell:
             return [f'α{e+1}' if e<n/2 else f'β{int(e-n/2+1)}' for e in range(n)]
         else:

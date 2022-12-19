@@ -50,7 +50,7 @@ class Calculator:
             CM_[a2_1:a2_2,orbital]=C2o
             # progress('重构密度矩阵',i+1,len(orbitals))
         oe=1 if self.mol.isOpenShell else 2
-        n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
+        n=[oe if 'O' in o else 0 for o in self.mol.obtStr]
         SM=self.mol.SM
         
 

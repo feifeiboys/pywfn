@@ -30,7 +30,7 @@ class Calculator:
                 if judgeOrbital(centerAtom,aroundAtom,orbital,centerNormal): # 如果是π轨道
                     CM_[a_1:a_2,orbital]=self.mol.CM[a_1:a_2,orbital]
         oe=1 if self.mol.isOpenShell else 2
-        n=[oe if 'O' in o else 0 for o in self.mol.orbitals]
+        n=[oe if 'O' in o else 0 for o in self.mol.obtStr]
         PM_=CM2PM(CM_,orbitals,oe)
         SM=self.mol.SM
         PS=PM_@SM

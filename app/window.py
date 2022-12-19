@@ -22,7 +22,6 @@ from .plotter.canvas import Canvas
 from .commands import Command
 from .ui_app import Ui_MainWindow
 from .setting import settingManager
-from .update import Updater
 
 from typing import *
 from pathlib import Path
@@ -38,33 +37,25 @@ class Window(MainWindow):
         self.ui:Ui_MainWindow=Ui_MainWindow()
         self.ui.setupUi(self)
         
-
         self.commandLine=Command(self)
         self.ui.log.setFont(QFont('Courier New'))
-        # self.ui.menubar.setFont(QFont('Courier New'))
-        # self.ui.lineEdit.returnPressed.connect(self.command)
         
         self.init_menu()
-
-        # self.ui.listWidget_files.itemClicked.connect(self.selectFile)
-        # self.ui.listWidget_orbitals.itemClicked.connect(self.selectOrbital) # 点击分子轨道名时触发的事件
         
-        
-        self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
-
-        self.updater=Updater(self)
         self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
-        # self.ui.cloudRangeSlider.valueChanged.connect(self.set_cloudRange)
         
-
         self.files:Dict[str,FileItem]={}
         self.currentFile:FileItem=None # 初始化一个啥都没有的文件
-        # self.ui.verticalLayout_canvas.addWidget(self.currentFile.widget) #第一次打开的时候添加组件，之后是替换组件
         
-        # self.canvasLayout.addWidget(StartWidget())
         self.init_layout()
         self.orbital=OrbitalWidget(self)
         self.viewLaout.addWidget(self.orbital)
+
+        self.init_pages()
+
+    def init_pages(self):
+        """初始化一些子页面"""
+        self.settingPage=SettingWidget()
 
     def init_layout(self):
         """初始化布局"""
@@ -78,6 +69,7 @@ class Window(MainWindow):
     def init_menu(self):
         """初始化菜单的命令"""
         self.ui.actionopen.triggered.connect(self.openFile)
+        self.ui.actionsetting.triggered.connect(lambda:self.settingPage.show())
         self.ui.actionatomLabels.triggered.connect(self.viewLabel)
         self.ui.actionclearCloud.triggered.connect(lambda:self.currentFile.canvas.hide_cloud(names=[]))
         self.ui.actionpiDH.triggered.connect(lambda:self.caler_bondOrder('piDH'))
@@ -90,6 +82,7 @@ class Window(MainWindow):
         self.ui.actionpiElectron.triggered.connect(lambda:self.claer_atomProp('piElectron'))
         self.ui.actionfreeValence.triggered.connect(lambda:self.claer_atomProp('freeValence'))
         self.ui.actionresetAtomColor.triggered.connect(lambda:self.currentFile.canvas.reset_color())
+        self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
     def clear_selectedAtoms(self):
         if self.currentFile is not None:
             self.currentFile.canvas.clearAtoms()
@@ -227,10 +220,8 @@ class Window(MainWindow):
             res=caler.calculate(atom)
         self.addLog(f'{res}')
             
-
 from .plotter.canvas import Mol as MolActor
 from .plotter.canvas import Canvas
-
 
 class FileItem(QWidget):
     """

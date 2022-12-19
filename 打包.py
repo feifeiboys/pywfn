@@ -60,16 +60,16 @@ rms=[
     '__pycache__',
     '.pyc',
     '.ui',
-    # '.json',
-    # '.csv'
+    '.json',
+    '.csv'
 ]
 
 files=[]
 lines=[]
 for opt in opts:
     get(Path(opt))
-zip(files,'pywfn')
-# count(files)
+# zip(files,'pywfn')
+count(files)
 # save(files)
 
 
