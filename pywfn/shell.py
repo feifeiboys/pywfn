@@ -147,7 +147,9 @@ class Shell:
                     bond=input('输入两个原子的编号(用 - 分开,例如1-2): ')
                     if bond=='':
                         break
-                    idx1,idx2=bond.split('-')
+                    bondMatch=re.match('(\d+)-(\d+)',bond)
+                    if bondMatch is None:continue
+                    idx1,idx2=bondMatch.groups()
                     idx1,idx2=int(idx1),int(idx2)
                     res=caler.calculate(mol.atom(idx1), mol.atom(idx2))
                     if opt=='1':

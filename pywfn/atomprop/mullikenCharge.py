@@ -9,7 +9,6 @@ class Calculator:
         self.mol=mol
     
     def calculate(self,atoms:List[Atom])->List[float]:
-        self.mol.createAtomOrbitalRange()
         PM=self.mol.PM
         SM=self.mol.SM
         PS=PM*SM
@@ -20,7 +19,7 @@ class Calculator:
         if atoms is None:
             atoms=self.mol.atoms
         for atom in atoms:
-            a_1,a_2=atom.obtMatrixRange
+            a_1,a_2=atom.obtRange
             charge=PS_[a_1:a_2]
             symbol=atom.symbol
             charges.append(elements[symbol].charge-charge.sum())

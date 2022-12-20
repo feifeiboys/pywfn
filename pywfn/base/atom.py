@@ -31,11 +31,13 @@ class Atom:
         self.mol:"base.Mol"=mol
         self.idx=idx
         self.obtWays={} #存储所有分子轨道里原子轨道的方向
-
-        self.obtMatrixRange:List[int] # 需要在分子对象中调用函数产生这个属性值
         self._sContribution:Dict={}
         self.OC:ndarray=None
     
+    @property
+    def obtRange(self):
+        return self.mol.obtRange(self.idx)
+
     @cached_property
     def atomic(self)->int:
         return elements[self.symbol].idx

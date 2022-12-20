@@ -14,15 +14,14 @@ class Calculator:
 
     def calculate(self,centerAtom:Atom,aroundAtom:Atom):
         """计算两原子之间的mayer键级"""
-        self.mol.createAtomOrbitalRange() # 为每个原子分配其在轨道矩阵中的序数范围
         # 获取密度矩阵 P
         PM=self.mol.PM
         # 获取重叠矩阵
         SM=self.mol.SM
         PS=PM@SM
 
-        a1_1,a1_2=centerAtom.obtMatrixRange
-        a2_1,a2_2=aroundAtom.obtMatrixRange
+        a1_1,a1_2=centerAtom.obtRange
+        a2_1,a2_2=aroundAtom.obtRange
         order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
 
         return order

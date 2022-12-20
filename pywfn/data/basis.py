@@ -22,6 +22,11 @@ class Basis:
     """
     def __init__(self,name:str) -> None:
         """根据基组名实例化基组信息"""
+        self.name=name
+    
+    def setDefault(self):
+        """使用默认数据"""
+        if self.name is None:return
         with open(Path(__file__).parent/'basis.json','r') as f:
             self.allBasis:dict=json.loads(f.read())
         
@@ -32,8 +37,11 @@ class Basis:
         if name in transDict.keys():name=transDict[name]
         if name not in self.names:
             printer.wrong(f'不支持的基组{name}!!')
-        self.basis=self.allBasis[name] #获取基组名的所有层
-        self.name=name
+        self.setData(self.allBasis[name])
+    
+    def setData(self,basis):
+        """设置数据,既可以是默认的,也可以是指定的"""
+        self.basis=basis
     
     @lru_cache
     def get(self,atomic)->List:
@@ -60,4 +68,5 @@ class Basis:
             for ang in shell['ang']:
                 lmn=self.lmn(ang)
                 number+=len(lmn)
+                # print(len(lmn))
         return number

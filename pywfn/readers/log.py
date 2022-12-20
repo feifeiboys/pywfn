@@ -15,14 +15,8 @@ from .reader import Reader
 from colorama import Fore
 from .. import utils
 from ..utils import printer
+from ..data import elements
 
-
-atomSymbols=[
-    'H','He','li','Be','B',
-    'C','N','O','F','Ne',
-    'Na','Mg','Al','Si','P',
-    'S','Cl','Ar','K','Ca'
-]
 
 class LogReader(Reader):
     def __init__(self, path:str,program=None):
@@ -39,7 +33,8 @@ class LogReader(Reader):
         self.search_title()
         self.read_Coords()
         self.read()
-        self.read_basis()
+        self.read_basisName()
+        self.read_basisData()
         self.read_SM()
 
     def search_title(self):
@@ -49,7 +44,12 @@ class LogReader(Reader):
         # 所有标题所在的行
         self.titleNums={
             'coords':None,
-            'basis':None
+            'basis':None,
+            'coefs':None,
+            'acoefs':None,
+            'bcoefs':None,
+            'overlap':None,
+            'basisData':None
         }
         for i,line in enumerate(self.logLines):
             if 'Input orientation' in line:
@@ -58,22 +58,79 @@ class LogReader(Reader):
                 self.titleNums['coords']=i
             elif 'Standard basis:' in line:
                 self.titleNums['basis']=i
+            elif '  Molecular Orbital Coefficients' in line:
+                self.titleNums['coefs']=i
+            elif 'Alpha Molecular Orbital Coefficients' in line:
+                self.titleNums['acoefs']=i
+            elif 'Beta Molecular Orbital Coefficients' in line:
+                self.titleNums['bcoefs']=i
+            elif ' *** Overlap *** ' in line:
+                self.titleNums['overlap']=i
+            elif 'Overlap normalization' in line:
+                self.titleNums['basisData']=i
     
-    def read_basis(self):
+    def read_basisName(self):
+        """读取基组名"""
         titleNum=self.titleNums['basis']
         if titleNum is None:raise
         basis=re.match(' Standard basis: (\S+) ',self.logLines[titleNum]).group(1)
         self.mol.basis=Basis(basis)
         self.mol.gto=Gto(self.mol.basis)
-
+    
+    def read_basisData(self):
+        """读取基组数据"""
+        titleNum=self.titleNums['basisData']
+        if titleNum is None:raise
+        basisData:Dict[str:List[Dict[str:list]]]={}
+        ifRead=True
+        angDict={'S':0,'P':1,'D':2} #角动量对应的字典
+        s1='^ +(\d+) +\d+'
+        s2=r' ([SPD]+) +(\d+) \d.\d{2} +\d.\d{12}'
+        s3=r'^ +(( +-?\d.\d{10}D[+-]\d{2}){2,3})'
+        s4=' ****'
+        for i in range(titleNum+1,len(self.logLines)):
+            line=self.logLines[i]
+            if re.search(s1,line) is not None:
+                idx=re.search(s1,line).groups()[0]
+                idx=int(idx)
+                atomic=str(self.mol.atom(idx).atomic)
+                if atomic not in basisData.keys():
+                    basisData[atomic]=[] #shells
+                    ifRead=True
+                else:
+                    ifRead=False
+            elif not ifRead:
+                continue #如果不需要读的话，则跳过后面的部分
+            elif re.search(s2,line) is not None:
+                shellName,lineNum=re.search(s2,line).groups()
+                ang=[angDict[s] for s in shellName] #角动量
+                exp=[]
+                coe=[[]]*len(ang)
+                shell={'ang':ang,'exp':exp,'coe':coe}
+                basisData[atomic].append(shell)
+            elif re.search(s3,line) is not None:
+                numsStr=re.search(s3,line).groups()[0]
+                nums=re.findall(r'-?\d.\d{10}D[+-]\d{2}',numsStr)
+                nums=[float(num.replace('D','E')) for num in nums]
+                basisData[atomic][-1]['exp'].append(nums[0])
+                basisData[atomic][-1]['coe'][0].append(nums[1])
+                if len(ang)==2:
+                    basisData[atomic][-1]['coe'][1].append(nums[2])
+            elif line==s4 is not None:
+                continue
+            else:
+                # print(line)
+                self.mol.basis.setData(basisData)
+                break
 
     def read(self):
         self.OCdict:Dict[int,OC]={}
         self.OS:List[str]=[] #所有分子轨道的符号
         self.ES:List[float]=[] #所有分子轨道能量
-        self.read_orbitalCoefficients('  Molecular Orbital Coefficients')
-        self.read_orbitalCoefficients('Alpha Molecular Orbital Coefficients')
-        self.read_orbitalCoefficients('Beta Molecular Orbital Coefficients')
+        self.read_orbitalCoefficients(self.titleNums['coefs'])
+        self.read_orbitalCoefficients(self.titleNums['acoefs'])
+        self.read_orbitalCoefficients(self.titleNums['bcoefs'])
+        self.mol.isOpenShell=True if self.titleNums['coefs'] is None else False
         
     def windowLog(self,message):
         if self.program is not None:
@@ -93,8 +150,8 @@ class LogReader(Reader):
             line=self.logLines[i]
             if re.search(s1, line) is not None:
                 res=list(re.search(s1, line).groups())
-                atomID=res[0]
-                symbol=atomSymbols[int(atomID)-1]
+                atomID=int(res[0])
+                symbol=elements[atomID].symbol
                 coord=[float(each) for each in res[1:]]
 
                 coords.append({'symbol':symbol,'coord':coord})
@@ -124,20 +181,18 @@ class LogReader(Reader):
     #情况3     Eigenvalues --   -11.17917 -11.17907 -11.17829 -11.17818 -11.17794
     #情况4   1 1   C  1S         -0.00901  -0.01132   0.00047  -0.01645  -0.02767
     #情况5   2        2S         -0.00131  -0.00175  -0.00041  -0.00184  -0.00173
-    def read_orbitalCoefficients(self, title:str):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
+    def read_orbitalCoefficients(self, titleNum:int):  # 提取所有原子的轨道 自己写的代码自己看不懂真实一件可悲的事情,此函数逻辑复杂，要好好整明白
         s1='^(( +\d+){1,5}) *$'
         s2=r'^(( *(\(\w+\)--)?[OV]){1,5})$'
         s3=r'^ +Eigenvalues --(( +-?\d+.\d+){1,5})'
         s4='^ +\d+ +(\d+) +([A-Za-z]+) +(\d[A-Z]+)(( *-?\d+.\d+){1,5})$'
-        s5='^ +\d+ +(\d[A-Za-z ]+)(( *-?\d+.\d+){1,5})$'
-        titleNum=None
-        for i,line in enumerate(self.logLines):
-            if title in line:
-                titleNum=i
+        s5='^ +\d+ +(\d+[A-Za-z ]+)(( *-?\d+.\d+){1,5})$'
+        # titleNum=None
+        # for i,line in enumerate(self.logLines):
+        #     if title in line:
+        #         titleNum=i
         if titleNum is None:
             return
-        self.mol.isOpenShell=False if '  Molecular Orbital Coefficients' in title else True
-        
         for i in range(titleNum+1,len(self.logLines)):
             line=self.logLines[i]
             if re.search(s1, line) is not None: #情况1
@@ -177,10 +232,7 @@ class LogReader(Reader):
         s1='^( +\d+){1,5} *$'
         s2=' +\d+( +-?\d.\d{6}D[+-]\d{2}){1,5} *'
         
-        titleNum=None
-        for i,line in enumerate(self.logLines):
-            if ' *** Overlap *** ' in line:
-                titleNum=i
+        titleNum=self.titleNums['overlap']
         if titleNum is None:
             return None
         lineDatas=Data()

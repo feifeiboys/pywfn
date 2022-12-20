@@ -18,14 +18,13 @@ class Calculator:
         if self.mol.CM is None:
             print('没有重叠矩阵,无法计算')
             return 0
-        self.mol.createAtomOrbitalRange()
         centerNormal=centerAtom.get_Normal()
         orbitals=self.mol.O_obts
         CM_=np.zeros_like(self.mol.CM) # 拷贝一份，然后将不是π轨道的那些变成0
         atoms=[centerAtom,aroundAtom]
         for atom in atoms: # 修改每个原子对应的系数矩阵
             if atom.symbol=='H':continue
-            a_1,a_2=atom.obtMatrixRange
+            a_1,a_2=atom.obtRange
             for orbital in orbitals:
                 if judgeOrbital(centerAtom,aroundAtom,orbital,centerNormal): # 如果是π轨道
                     CM_[a_1:a_2,orbital]=self.mol.CM[a_1:a_2,orbital]
@@ -35,8 +34,8 @@ class Calculator:
         SM=self.mol.SM
         PS=PM_@SM
 
-        a1,a2=centerAtom.obtMatrixRange
-        b1,b2=aroundAtom.obtMatrixRange
+        a1,a2=centerAtom.obtRange
+        b1,b2=aroundAtom.obtRange
         order=np.sum(PS[a1:a2,b1:b2]**2)
         return order
 

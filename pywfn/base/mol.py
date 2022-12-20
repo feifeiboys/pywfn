@@ -55,7 +55,16 @@ class Mol:
             strs.append(f'{i+1:<3}{symbol}')
         return strs
     
-
+    @cached_property
+    def obtRanges(self): #获取每一个原子在系数矩阵中的范围
+        atomics=[atom.atomic for atom in self.atoms]
+        return [self.basis.num(atomic) for atomic in atomics]
+    
+    def obtRange(self,idx:int):
+        """获取指定原子在系数矩阵中的范围"""
+        start=sum(self.obtRanges[:idx-1]) #索引不包括
+        length=self.obtRanges[idx-1]
+        return [start,start+length]
     
     def add_atom(self,symbol:str,coord:List[float]):
         """添加一个原子"""
@@ -137,7 +146,7 @@ class Mol:
         idxs=[(i+1,j+1) for i in range(atomNum) for j in range(atomNum) if i<j]
         for idx1,idx2 in idxs:
             r=np.linalg.norm(self.atom(idx2).coord-self.atom(idx1).coord)
-            if r<1.7:
+            if r<1.8:
                 bonds.append(self.bond(idx1,idx2))
         return bonds
     
@@ -146,13 +155,6 @@ class Mol:
         """第一次调用是生成键,第二次调用时直接返回,秒啊"""
         if idx2<idx1:idx1,idx2=idx2,idx1
         return Bond(self.atom(idx1), self.atom(idx2))
-
-    def createAtomOrbitalRange(self):
-        """令每个原子生成其在轨道矩阵中的范围"""
-        total=0
-        for atom in self.atoms:
-            atom.obtMatrixRange=[total,total+len(atom.OC)]
-            total+=len(atom.OC)
     
     def get_dihedralAngle(self,idx1:int,idx2:int,idx3:int,idx4:int):
         """计算二面角"""

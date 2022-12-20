@@ -1,4 +1,4 @@
-%chk=D:\code\pywfn\examples\mols\TCE.chk
+%chk=TCE.chk
 # opt b3lyp/6-31g(d) pop=full gfinput iop(3/33=1)
 
 Title Card Required

@@ -22,14 +22,13 @@ class Calculator:
         if atoms is None:
             atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
         
-        self.mol.createAtomOrbitalRange()
         orbitals=self.mol.O_obts
         for atom in atoms:
             if atom.symbol=='H': #氢原子没有p轨道所以没有π电子
                 continue
             normal=atom.get_Normal()
              # 占据轨道
-            a_1,a_2=atom.obtMatrixRange
+            a_1,a_2=atom.obtRange
             pIndex=[i for i,l in enumerate(atom.layers) if 'P' in l]
             for i,orbital in enumerate(orbitals):
                 Cop=atom.get_pProj(normal,orbital)
@@ -43,7 +42,7 @@ class Calculator:
         PSS=PS.sum(axis=0)
         electrons=[]
         for atom in atoms:
-            a_1,a_2=atom.obtMatrixRange
+            a_1,a_2=atom.obtRange
             electron=np.sum(PSS[a_1:a_2])
             printer.res(f'{atom.idx:<2}{atom.symbol:>2}{electron:>15.8f}')
             electrons.append(electron)

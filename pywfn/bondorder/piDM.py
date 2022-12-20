@@ -22,7 +22,6 @@ class Calculator:
         if centerAtom.symbol=='H' or aroundAtom.symbol=='H':
             # print(Fore.YELLOW+'不能计算含有H的键')
             return 0
-        self.mol.createAtomOrbitalRange()
         CM_=np.zeros_like(self.mol.CM,dtype=np.float32) #新的系数矩阵
         orbitals=self.mol.O_obts #占据轨道的索引
 
@@ -35,8 +34,8 @@ class Calculator:
                     normal=direction
                     break
 
-        a1_1,a1_2=centerAtom.obtMatrixRange
-        a2_1,a2_2=aroundAtom.obtMatrixRange
+        a1_1,a1_2=centerAtom.obtRange
+        a2_1,a2_2=aroundAtom.obtRange
         centerPIndex=[i for i,l in enumerate(centerAtom.layers) if 'P' in l]
         aroundPIndex=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
         for i,orbital in enumerate(orbitals):
@@ -75,8 +74,8 @@ class Calculator:
 
     def get_OMi(self,idx): #计算一个矩阵元
         i,j=idx
-        a1,a2=self.centerAtom.obtMatrixRange
-        b1,b2=self.aroundAtom.obtMatrixRange
+        a1,a2=self.centerAtom.obtRange
+        b1,b2=self.aroundAtom.obtRange
         PSi=self.PSs[i,:,:]
         PSj=self.PSs[j,:,:]
         res=np.sum(PSi[a1:a2,b1:b2]*PSj[b1:b2,a1:a2].T)

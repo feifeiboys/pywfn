@@ -12,6 +12,8 @@ def read_csv(path):
         csv.append(line.split(','))
     return csv[1:]
 
+
+
 class Element:
     def __init__(self,idx,symbol,color,radius):
         self.idx=int(idx)
@@ -25,9 +27,13 @@ class Elements:
         self.elements=[] #原子列表，一定是按照顺序排列的
         self.sym2idx:Dict[str,int]={} #构建一个原子符号到原子序数的对应表
         self.scriptPath=Path(__file__) #当前脚本所在的路径
-        self.data=read_csv(self.scriptPath.parent / 'elements.csv')
-        for i in range(len(self.data)):
-            idx,symbol,color,radius=self.data[i]
+        with open(self.scriptPath.parent / 'elements.json','r',encoding='utf-8') as f:
+            elements=json.loads(f.read())
+        for element in elements[:55]:
+            idx=element['atomicNumber']
+            symbol=element['symbol']
+            color=f"#{element['cpkHexColor']}"
+            radius=float(element['atomicRadius'])/77/2 #以C原子半径为0.5作为基准
             self.elements.append(Element(idx,symbol,color,radius))
             self.sym2idx[symbol]=int(idx)
 
