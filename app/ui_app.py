@@ -33,7 +33,6 @@ class Ui_MainWindow(object):
 "}\n"
 "#icons{\n"
 "background-color:gray;\n"
-"box-shadow: 10px 10px 5px black;\n"
 "}\n"
 "QMenuBar,QMenu,QAction{\n"
 "font-family:Consolas;\n"

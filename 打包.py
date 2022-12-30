@@ -4,77 +4,77 @@
 from pathlib import Path
 import zipfile
 
+class Tool:
+    def __init__(self) -> None:
+        self.opts=[
+            'pywfn',
+            'app',
+            'manager',
+            'main.py',
+            'main.bat'
+        ]
+        # 定义需要排除的文件类型
+        self.rms=[
+            '__pycache__',
+            '.pyc',
+            '.ui',
+        ]
+    def get_files(self):
+        self.files=[]
+        for opt in self.opts:
+            self.get(Path(opt))
 
-def fileLines(path):
-    cwd=Path.cwd()
-    filePath=cwd/path
-    with open(filePath,'r',encoding='utf-8') as f:
-        return len(f.readlines())
 
-def ifRm(path:str):
-    for rm in rms:
-        if rm in path:
-            return True
-    return False
+    def zip(self,name):
+        zipFile=zipfile.ZipFile(f'{name}.zip','w')
+        print(len(self.files))
+        for each in self.files:
+            zipFile.write(each)
+        
+    def count(self):
+        
+        total=0
+        self.rms+=['.csv','.json']
+        self.get_files()
+        for each in self.files:
+            lineNum=self.fileLines(each)
+            print(f'{each:<40}{lineNum}')
+            total+=lineNum
+        print(f'{"total":<40}{total}')
 
-def get(path):
+    def save(self,files):
+        contents=[]
+        for each in files:
+            with open(each,'r',encoding='utf-8') as f:
+                contents.append(f.read())
+        with open('源代码.txt','w',encoding='utf-8') as f:
+            f.write('\n'.join(contents))
     
-    if path.is_file(): #如果是文件夹
-        path=str(path)
-        if not ifRm(path): #如果不属于排除文件
-            files.append(path)
-    else:
-        for each in path.iterdir():
-            get(each)
+    def fileLines(self,path):
+        cwd=Path.cwd()
+        filePath=cwd/path
+        with open(filePath,'r',encoding='utf-8') as f:
+            return len(f.readlines())
 
-def zip(files,name):
-    zipFile=zipfile.ZipFile(f'{name}.zip','w')
-    for each in files:
-        zipFile.write(each)
-    
-def count(files):
-    total=0
-    for each in files:
-        lineNum=fileLines(each)
-        print(f'{each:<40}{lineNum}')
-        total+=lineNum
-    print(f'{"total":<40}{total}')
+    def ifRm(self,path:str):
+        for rm in self.rms:
+            if rm in path:
+                return True
+        return False
 
-def save(files):
-    contents=[]
-    for each in files:
-        with open(each,'r',encoding='utf-8') as f:
-            contents.append(f.read())
-    with open('源代码.txt','w',encoding='utf-8') as f:
-        f.write('\n'.join(contents))
+    def get(self,path):
+        
+        if path.is_file(): #如果是文件夹
+            path=str(path)
+            if not self.ifRm(path): #如果不属于排除文件
+                self.files.append(path)
+        else:
+            for each in path.iterdir():
+                self.get(each)
 
-opts=[
-    'pywfn',
-    'app',
-    'manager',
-    'main.py',
-    'main.bat'
-]
-# 定义需要排除的文件类型
-rms=[
-    '__pycache__',
-    '.pyc',
-    '.ui',
-    '.json',
-    '.csv'
-]
 
-files=[]
-lines=[]
-for opt in opts:
-    get(Path(opt))
-# zip(files,'pywfn')
-count(files)
+tool=Tool()
+# tool.zip('pywfn')
+tool.count()
+# count(files)
 # save(files)
-
-
-files=[]
-opts.append('env')
-for opt in opts:
-    get(Path(opt))
-# zip(files,'pywfn_env')

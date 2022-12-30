@@ -23,7 +23,6 @@ background-color:gray;
 }
 #icons{
 background-color:gray;
-box-shadow: 10px 10px 5px black;
 }
 QMenuBar,QMenu,QAction{
 font-family:Consolas;
