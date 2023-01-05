@@ -84,7 +84,7 @@ class LogReader(Reader):
         basisData:Dict[str:List[Dict[str:list]]]={}
         ifRead=True
         angDict={'S':0,'P':1,'D':2} #角动量对应的字典
-        s1='^ +(\d+) +\d+'
+        s1='^ +(\d+) +\d+$'
         s2=r' ([SPD]+) +(\d+) \d.\d{2} +\d.\d{12}'
         s3=r'^ +(( +-?\d.\d{10}D[+-]\d{2}){2,3})'
         s4=' ****'
@@ -99,9 +99,8 @@ class LogReader(Reader):
                     ifRead=True
                 else:
                     ifRead=False
-            elif not ifRead:
-                continue #如果不需要读的话，则跳过后面的部分
             elif re.search(s2,line) is not None:
+                if not ifRead:continue
                 shellName,lineNum=re.search(s2,line).groups()
                 ang=[angDict[s] for s in shellName] #角动量
                 exp=[]
@@ -109,6 +108,7 @@ class LogReader(Reader):
                 shell={'ang':ang,'exp':exp,'coe':coe}
                 basisData[atomic].append(shell)
             elif re.search(s3,line) is not None:
+                if not ifRead:continue
                 numsStr=re.search(s3,line).groups()[0]
                 nums=re.findall(r'-?\d.\d{10}D[+-]\d{2}',numsStr)
                 nums=[float(num.replace('D','E')) for num in nums]

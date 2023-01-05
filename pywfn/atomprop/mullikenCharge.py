@@ -25,4 +25,8 @@ class Calculator:
             charges.append(elements[symbol].charge-charge.sum())
         return charges
             
-            
+    def print(self):
+        res=self.calculate()
+        atoms=self.mo.atoms
+        for a,v in zip(atoms,res):
+            printer.res(f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}')

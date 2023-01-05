@@ -26,6 +26,7 @@ class Tool:
 
 
     def zip(self,name):
+        self.get_files()
         zipFile=zipfile.ZipFile(f'{name}.zip','w')
         print(len(self.files))
         for each in self.files:
@@ -74,7 +75,7 @@ class Tool:
 
 
 tool=Tool()
-# tool.zip('pywfn')
-tool.count()
+tool.zip('pywfn')
+# tool.count()
 # count(files)
 # save(files)

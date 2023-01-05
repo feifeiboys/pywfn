@@ -48,3 +48,8 @@ class Calculator:
             electrons.append(electron)
         return electrons
 
+    def print(self):
+        res=self.calculate()
+        atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
+        for a,v in zip(atoms,res):
+            printer.res(f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}')

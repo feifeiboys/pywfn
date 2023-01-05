@@ -21,10 +21,8 @@ pkgs=[
     ['pyyaml','yaml'],
     ['pandas','pandas'],
     ['colorama','colorama'],
-    ['numba','numba'],
     ['Pillow','PIL'],
     ['tqdm','tqdm'],
-    ['pyperclip','pyperclip'],
     ['pyvista','pyvista'],
     ['pyvistaqt','pyvistaqt'],
 ]
