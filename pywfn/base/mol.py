@@ -50,8 +50,8 @@ class Mol:
         strs=[]
         for i,e in enumerate(self.obtElcts):
             symbol='V' if e==0 else 'O'
-            if self.isOpenShell and i>=self._CM.shape[1]:
-                i-=self._CM.shape[1]
+            if self.isOpenShell and i>=self.CM.shape[1]:
+                i-=self.CM.shape[1]
             strs.append(f'{i+1:<3}{symbol}')
         return strs
     

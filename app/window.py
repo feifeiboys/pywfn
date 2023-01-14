@@ -199,17 +199,23 @@ class Window(MainWindow):
         mol=self.currentFile.mol
         if name=='MullikenCharge': # 计算mulliken电荷分布
             caler=mullikenCharge.Calculator(mol)
-            res=caler.calculate(mol.atoms)
-            idxs=[a.idx for a in mol.atoms]
-            self.currentFile.canvas.set_colors(idxs,res)
-            atoms=mol.atoms
-            res=[f'{atoms[i].idx:<2}{atoms[i].symbol:>2}{e:>15.8f}' for i,e in enumerate(res)]
-            res='\n'.join(res)
+            
+            values=caler.calculate()
+            idxs=list(range(len(self.currentFile.mol.atoms)))
+            idxs=[idx+1 for idx in idxs]
+            self.currentFile.canvas.set_colors(idxs,values)
+            resStr=caler.resStr()
+            
 
         elif name=='piElectron': # 计算π电子分布
             atoms=mol.atoms
             caler=piElectron.Calculator(mol)
-            res=caler.calculate()
+            values=caler.calculate()
+            idxs=list(range(len(self.currentFile.mol.atoms)))
+            idxs=[idx+1 for idx in idxs]
+            self.currentFile.canvas.add_arrows_(idxs,values)
+            resStr=caler.resStr()
+
 
         elif name=='freeValence':
             atoms=self.currentFile.canvas.selectedAtoms
@@ -217,8 +223,15 @@ class Window(MainWindow):
             atoms=[int(atom.split('-')[1]) for atom in atoms]
             atom=mol.atom(int(atoms[0]))
             caler=freeValence.Calculator(mol)
-            res=caler.calculate(atom)
-        self.addLog(f'{res}')
+            # res=caler.calculate(atom)
+            resStr=caler.resStr(atom)
+        
+        self.addLog(resStr)
+    
+    def showMessage(self,msg:str):
+        """在状态栏显示文本信息"""
+        self.statusBar().showMessage(msg)
+    
             
 from .plotter.canvas import Mol as MolActor
 from .plotter.canvas import Canvas
@@ -248,6 +261,9 @@ class FileItem(QWidget):
         
     def onClick(self):
         print('click')
+
+    def set_atomColor(self,idxs,values):
+        self.canvas.set_colors(idxs,values)
 
 class viewItem(QWidget):
     def __init__(self):

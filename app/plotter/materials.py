@@ -1,14 +1,24 @@
 # 定义各种原子的颜色
-import pandas as pd
 from pathlib import Path
 from typing import *
+import json
+from functools import lru_cache
+
 class Elements:
     def __init__(self):
-        data=pd.read_csv(Path(__file__).parent / 'elements.csv')
+        self.sym2idx={}
         self.elements:List[Element]=[]
-        for i in range(data.shape[0]):
-            idx,symbol,color,radius=data.iloc[i,:]
-            self.elements.append(Element(idx, symbol, color, radius))
+        path=Path(__file__).parent / 'elements.json'
+        with open(path,'r',encoding='utf-8') as f:
+            elements=json.loads(f.read())
+        for element in elements[:55]:
+            idx=element['atomicNumber']
+            symbol=element['symbol']
+            colorStr=element['cpkHexColor']
+            color=f"#{colorStr:0>6}"
+            radius=float(element['atomicRadius'])/77/2 #以C原子半径为0.5作为基准
+            self.elements.append(Element(idx,symbol,color,radius))
+            self.sym2idx[symbol]=int(idx)
     
     def __getitem__(self,item):
         if isinstance(item,int):
@@ -28,8 +38,7 @@ class Element:
         self.color=color
         self.radius=radius
 
-if __name__=='__main__':
-    data=pd.read_csv(Path(__file__).parent.parent/'data/elements.csv')
-    for i in range(len(data)):
-        idx,symbol,color,radius=data.iloc[i,:]
-        print(idx,symbol,color,radius)
+
+@lru_cache
+def get_elements()->Elements:
+    return Elements()

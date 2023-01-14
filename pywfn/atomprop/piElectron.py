@@ -20,7 +20,7 @@ class Calculator:
         # 重构系数矩阵
         CM_=np.zeros_like(self.mol.CM,dtype=np.float32)
         if atoms is None:
-            atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
+            atoms=[atom for atom in self.mol.atoms]
         
         orbitals=self.mol.O_obts
         for atom in atoms:
@@ -42,14 +42,22 @@ class Calculator:
         PSS=PS.sum(axis=0)
         electrons=[]
         for atom in atoms:
+            if atom.symbol=='H':
+                electrons.append(0)
+                continue
             a_1,a_2=atom.obtRange
             electron=np.sum(PSS[a_1:a_2])
             printer.res(f'{atom.idx:<2}{atom.symbol:>2}{electron:>15.8f}')
             electrons.append(electron)
         return electrons
 
-    def print(self):
+    def print(self,result:str):
+        printer.res(result)
+    
+    def resStr(self)->str:
+        result=''
         res=self.calculate()
         atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
         for a,v in zip(atoms,res):
-            printer.res(f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}')
+            result+=f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}\n'
+        return result

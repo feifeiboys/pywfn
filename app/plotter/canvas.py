@@ -15,13 +15,14 @@ import vtk
 from pyvistaqt import QtInteractor
 from . import utils
 from ..window import Mol
+from .. import window
 elements=Elements()
 
 
 
 class Canvas(QtInteractor):
     """继承自plotter"""
-    def __init__(self,app,mol:Mol,parent) -> None:
+    def __init__(self,app:"window.Window",mol:Mol,parent) -> None:
         """每个canvas都对应一个分子"""
         super().__init__(parent=parent)        
         self.app=app
@@ -33,8 +34,13 @@ class Canvas(QtInteractor):
         self.scene=[] # 除了原子之外的actor都加入到scene中，方便管理
         self.cloudRange:float=0.001
         self.selectedAtoms:List[str]=[]
+        self.isoValue=0.06
+        self.borderValue=4
         self.add_atoms()
         self.add_bonds()
+        self.labels={} #标签会有很多个
+        self.add_labels()
+        self.plotter.show_axes()
         
     def add_atoms(self):
         for atom in self.mol.atoms:
@@ -47,10 +53,13 @@ class Canvas(QtInteractor):
         for bond in self.mol.bonds:
             a1,a2=bond.a1,bond.a2
             poly=Cylinder(center=(a1.coord+a2.coord)/2,direction=a2.coord-a1.coord,radius=0.1)
-            self.plotter.add_mesh(poly,name=bond.idx,pickable=False)
+            self.plotter.add_mesh(poly,name=bond.idx,pickable=False,pbr=True,metallic=0.5)
     
     def add_labels(self):
         """添加原子的label"""
+        points=self.mol.coords
+        labels=[f'{i}' for i in range(len(points))]
+        self.plotter.add_point_labels(points,labels,always_visible=True)
 
     def hide_cloud(self,names):
         """
@@ -76,7 +85,7 @@ class Canvas(QtInteractor):
         if len(self.selectedAtoms)==0:
             print('尚未选择原子')
             return
-        
+        self.app.showMessage('正在计算...')
         # 根据原子计算点云应该存在的位置
         print(self.selectedAtoms)
         atoms=[int(a.split('-')[1])-1 for a in self.selectedAtoms]
@@ -91,16 +100,16 @@ class Canvas(QtInteractor):
         maxX,maxY,maxZ=np.max(coords,axis=0)
         step=0.1
 
-        Rx=np.arange(minX-2,maxX+2.1,step)
-        Ry=np.arange(minY-2,maxY+2.1,step)
-        Rz=np.arange(minZ-2,maxZ+2.1,step)
+        Rx=np.arange(minX-self.borderValue,maxX+self.borderValue+0.1,step)
+        Ry=np.arange(minY-self.borderValue,maxY+self.borderValue+0.1,step)
+        Rz=np.arange(minZ-self.borderValue,maxZ+self.borderValue+0.1,step)
         origin=np.array([Rx[0],Ry[0],Rz[0]])
         Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
         X,Y,Z=np.meshgrid(Rx,Ry,Rz)
         pos=np.array([X.flatten(),Y.flatten(),Z.flatten()]).T
 
         values=np.zeros(len(pos))
-        print(values.shape,pos.shape)
+        # print(values.shape,pos.shape)
         for i in atoms:
             atom=self.mol.atoms[i]
             values+=atom.get_cloud(pos-atom.coord,obt)
@@ -110,7 +119,7 @@ class Canvas(QtInteractor):
         # self.add_cloud_surface(values,origin,(-1,-0.2),name='N')
         
         valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
-        values=np.where((values>0.2) | (values<-0.2),1.,0.)
+        values=np.where((values>self.isoValue) | (values<-self.isoValue),1.,0.)
         values[[0,-1],:,:]=0
         values[:,[0,-1],:]=0
         values[:,:,[0,-1]]=0
@@ -128,13 +137,13 @@ class Canvas(QtInteractor):
         valuesY0[:,1:,:]=values[:,:-1,:]
         valuesY1[:,:-1,:]=values[:,1:,:]
 
-        valuesZ0[1:,:,:]=values[:-1,:,:]
+        valuesZ0[:,:,1:]=values[:,:,:-1]
         valuesZ1[:,:,:-1]=values[:,:,1:]
 
-        valuesR=values+valuesX0+valuesX1+valuesY0+valuesY1+valuesZ0+valuesZ1
+        valuesR=values+valuesX0+valuesX1+valuesY0+valuesY1+valuesZ0+valuesZ1 #原来的点与周围方向的点的加和
 
-        valuesR=np.where((valuesR==0)|(valuesR==7),0.,1.)
-        valuesR*=valuesUnits
+        valuesR=np.where((valuesR==0)|(valuesR==7),0.,1.) #满足条件的为1，不满足条件的为0
+        valuesR*=valuesUnits #为所有值赋予单位，正1或负1
         valuesR=valuesR.flatten() #拉平
 
         idxsP=np.argwhere(valuesR>0).flatten()
@@ -143,6 +152,7 @@ class Canvas(QtInteractor):
         posN=pos.copy()[idxsN]
         self.add_cloud(posP,'red',f'cloud-P-{name}')
         self.add_cloud(posN,'blue',f'cloud-N-{name}')
+        self.app.showMessage('计算完成')
 
     def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name):
         grid = pv.UniformGrid()
@@ -196,10 +206,7 @@ class Canvas(QtInteractor):
             return actors[name]
         else:
             return None
-        for name_,actor in actors.items():
-            if name_==name:
-                return actor
-        return None
+
 
     def get_atom(self,idx:int)->Actor:
         """
@@ -238,6 +245,23 @@ class Canvas(QtInteractor):
         for idx,ratio in zip(idxs,ratios):
             color=color_bar(ratio)
             self.set_color(idx,color)
+
+    def add_arrow(self,center,direction,ratio):
+        """向场景中添加箭头"""
+        color=color_bar(ratio)
+        self.plotter.add_arrows(center,direction,color=color,mag=1+ratio/2)
+    
+    def add_arrows_(self,idxs,values):
+        values:np.ndarray=np.array(values)
+        ratios=(values-values.min())/(values.max()-values.min()) #将数值映射到0-1之间
+        # 将数值映射到颜色值为两个值之间
+        for idx,ratio in zip(idxs,ratios):
+            atom=self.mol.atom(idx)
+            center=atom.coord
+            direction=atom.get_Normal()
+            self.add_arrow(center,direction,ratio)
+
+        
 
 
 def color_bar(ratio:float):

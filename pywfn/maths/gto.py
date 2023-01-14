@@ -10,8 +10,6 @@ from typing import *
 π=np.pi
 e=np.e
 
-
-
 def gto(c:float,a:float,R:ndarray,pos:ndarray,lmn:Tuple[int]):
     """
     计算一系列gto函数的值
