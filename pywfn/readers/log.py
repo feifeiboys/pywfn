@@ -80,7 +80,7 @@ class LogReader(Reader):
     def read_basisData(self):
         """读取基组数据"""
         titleNum=self.titleNums['basisData']
-        if titleNum is None:raise
+        if titleNum is None:return
         basisData:Dict[str:List[Dict[str:list]]]={}
         ifRead=True
         angDict={'S':0,'P':1,'D':2} #角动量对应的字典
