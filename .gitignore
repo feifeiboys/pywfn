@@ -4,3 +4,5 @@ env
 /manager/storages
 *.zip
 *.cfg
+.qt_for_python
+.ipynb_checkpoints

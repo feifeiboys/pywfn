@@ -27,7 +27,9 @@ class Calculator:
         return charges
             
     def print(self,result):
+        printer.info('Mulliken 电荷分布')
         printer.res(result)
+        printer.bar()
     
     def resStr(self)->str:
         """获取结果的打印内容"""
@@ -36,5 +38,4 @@ class Calculator:
         atoms=self.mol.atoms
         for a,v in zip(atoms,res):
             result+=f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}\n'
-        
         return result

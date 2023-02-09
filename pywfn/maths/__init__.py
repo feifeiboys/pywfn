@@ -104,13 +104,15 @@ def get_extraValue(atom:"base.Atom",obt:int,valueType='max'):
     从指定位置开始,利用爬山算法寻找原子波函数极值
     maxPos:[3,]
     '''
-    p=p0=atom.coord #起始点,p是原子坐标不变
-    v0=atom.get_cloud(np.zeros((1,3)),obt) # 计算原子坐标处的初始值
+    # p0=atom.coord.copy() # 起始点,p是原子坐标不变
+    # p=p0.copy()
+    p0=np.array([0.,0.,0.]).reshape(1,3)
+    v0=atom.get_cloud(p0,obt) # 计算原子坐标处的初始值
     # print(f'{v0=:.6f},{p0=}')
     step=0.1
     while True:
         aroundPs=get_aroundPoints(p0,step) # aroundPs:(n,3)
-        aroundVs=atom.get_cloud(aroundPs-p,obt)
+        aroundVs=atom.get_cloud(aroundPs,obt)
         if valueType=='max' and np.max(aroundVs)>v0:
             maxID=np.argmax(aroundVs) #最大值的索引
             p0=aroundPs[maxID] # 最大值坐标

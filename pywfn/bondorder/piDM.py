@@ -8,17 +8,21 @@ from pywfn.maths import vector_angle
 from ..base import Mol,Atom
 from typing import *
 import numpy as np
-from.utils import CM2PM,CM2PMs
+from .utils import CM2PM,CM2PMs
+from .utils import printOrders
 from colorama import Fore
 import multiprocessing as mp
 from tqdm import tqdm
+from . import Caler
 
-class Calculator:
+class Calculator(Caler):
     def __init__(self,mol:Mol) -> None:
         self.mol=mol
 
     
-    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
+    def calculate(self,idx1:int,idx2:int)->float:
+        centerAtom=self.mol.atom(idx1)
+        aroundAtom=self.mol.atom(idx2)
         if centerAtom.symbol=='H' or aroundAtom.symbol=='H':
             # print(Fore.YELLOW+'不能计算含有H的键')
             return 0
@@ -71,7 +75,7 @@ class Calculator:
             PS=PM_@SM
             order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
             return np.sqrt(np.abs(order))
-
+    
     def get_OMi(self,idx): #计算一个矩阵元
         i,j=idx
         a1,a2=self.centerAtom.obtRange
@@ -92,28 +96,7 @@ class Calculator:
         OM+=np.tril(OM.T,-1)
         return OM
 
+
 def get_idxs(n):
     """返回下三角矩阵的索引"""
     return [[i,j] for j in range(n) for i in range(n) if j<=i]
-
-def printOrders(orders,orbitals):
-    """将轨道根据大小排序后输出"""
-    orders_=[f'{order:.4f}' for order in orders]
-    sortedRes=sorted(list(zip(orbitals,orders_)),key=lambda e:abs(float(e[1])),reverse=True)
-    sortedRes=[e for e in sortedRes if abs(float(e[1]))>=0.01]
-    sortedRes=list(zip(*sortedRes))    
-    formPrint(sortedRes,8,10)
-
-def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
-    """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
-    logs=[]
-    for content in contents:
-        logs.append([])
-        for i in range(0,len(content),lineNum):
-            text=''.join([f'{each}'.rjust(eachLength,' ') for each in content[i:i+lineNum]])
-            logs[-1].append(text)
-    if len(logs)==0:
-        return
-    for i in range(len(logs[0])):
-        for log in logs:
-            print(log[i])

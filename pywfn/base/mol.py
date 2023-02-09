@@ -50,9 +50,15 @@ class Mol:
         strs=[]
         for i,e in enumerate(self.obtElcts):
             symbol='V' if e==0 else 'O'
-            if self.isOpenShell and i>=self.CM.shape[1]:
-                i-=self.CM.shape[1]
-            strs.append(f'{i+1:<3}{symbol}')
+            if self.isOpenShell:
+                if i<len(self.obtElcts)//2:
+                    symbol=f'α {symbol}'
+                else:
+                    symbol=f'β {symbol}'
+            idx=i
+            if self.isOpenShell and i>=len(self.obtElcts)//2:
+                idx=i-len(self.obtElcts)//2
+            strs.append(f'{idx+1} {symbol}')
         return strs
     
     @cached_property

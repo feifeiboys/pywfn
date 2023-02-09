@@ -43,7 +43,8 @@ def judgeOrbital(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)->int:
     aroDir=aroundAtom.get_obtWay(orbital)
     centerAngle=vector_angle(cenDir,normal)
     aroundAngle=vector_angle(aroDir,normal)
-    if abs(0.5-centerAngle)>0.2 or abs(0.5-aroundAngle)>0.2:
+    if abs(0.5-centerAngle)<0.3 or abs(0.5-aroundAngle)<0.3:
+        # print(orbital+1,centerAngle,aroundAngle)
         return 0
     # 以上两个条件都满足的可以认为是π轨道
     if (0.5-centerAngle)*(0.5-aroundAngle)>0:
@@ -94,8 +95,13 @@ def printOrders(orders,orbitals):
     sortedRes=list(zip(*sortedRes))    
     formPrint(sortedRes,8,10)
 
-def formPrint(contents:List[List[str]],eachLength:int,lineNum:int):
-    """格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同"""
+def formPrint(contents:List[List[str]],eachLength:int,lineNum:int=10):
+    """
+    格式化打印列表内容，contents是一个列表，其中的每一项是一个包含字符串的列表，每个字符串列表长度必须相同
+    contents: 待打印的内容，可以想象成一个表
+    eachLength: 打印一行中每一项的字符长度
+    lineNum: 一行中有多少项
+    """
     logs=[]
     for content in contents:
         logs.append([])

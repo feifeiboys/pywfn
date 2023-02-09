@@ -131,7 +131,7 @@ class Atom:
         """获得原子某一轨道的方向"""
         atomPos=self.coord
         maxPos,maxValue=maths.get_extraValue(self,obt)
-        way=maxPos-atomPos # 如果两者相同说明完全没有电子云、这显然不对啊
+        way=maxPos # 如果两者相同说明完全没有电子云、这显然不对啊
         if np.linalg.norm(way)==0:
             raise
         return way/np.linalg.norm(way)

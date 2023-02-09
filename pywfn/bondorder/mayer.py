@@ -7,12 +7,15 @@ import numpy as np
 from colorama import Fore
 from typing import *
 from ..base import Atom,Mol
+from . import Caler
 
-class Calculator:
+class Calculator(Caler):
     def __init__(self,mol:"Mol"):
         self.mol=mol
 
-    def calculate(self,centerAtom:Atom,aroundAtom:Atom):
+    def calculate(self,idx1:int,idx2:int)->float:
+        centerAtom=self.mol.atom(idx1)
+        aroundAtom=self.mol.atom(idx2)
         """计算两原子之间的mayer键级"""
         # 获取密度矩阵 P
         PM=self.mol.PM

@@ -56,7 +56,7 @@ class Calculator:
     def calculate(self):
         """计算所有原子的自旋"""
         if not self.mol.isOpenShell:
-            print('非开窍层无法计算自旋')
+            # print('非开窍层无法计算自旋')
             return
         # 首先要有alpha电子和beta电子对应的轨道系数
         obtNum=self.mol.CM.shape[0] # 系数矩阵行数，基函数数量
@@ -66,8 +66,17 @@ class Calculator:
         bEs=np.array(self.get_Es(b_obt))
         return aEs-bEs
         
-    def print(self):
+    def print(self,resStr:str):
+        printer.info('所有非H原子的pi电子自旋:')
+        printer.res(resStr)
+        printer.bar()
+        
+    
+    def resStr(self):
+        resStr=''
         res=self.calculate()
+        if res is None:return '非开窍层无法计算自旋!!'
         atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
         for a,v in zip(atoms,res):
-            printer.res(f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}')
+            resStr+=f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}\n'
+        return resStr

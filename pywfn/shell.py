@@ -43,6 +43,13 @@ def inputBond():
     a1,a2=bond.split('-')
     return int(a1),int(a2)
 
+def select(opts)->str:
+    print('')
+    for idx,opt in opts:
+        print(f'{idx}.{opt}')
+    print('')
+    return input('input option: ')
+
 class Shell:
     def __init__(self):
 
@@ -54,38 +61,30 @@ class Shell:
         if self.paths is None:
             self.inputFile()
         opts=[
-            ['1','Mulliken电荷分布'],
-            ['2','pi电子分布'],
-            ['3','原子自由价']
+            ['1','Mulliken 电荷分布'],
+            ['2','pi 电子分布'],
+            ['3','原子自由价'],
+            ['4','Mulliken 电子自旋'],
+            ['5','pi 电子自旋']
         ]
         while True:
-            for i,opt in opts:
-                print(f'{i}.{opt}')
-            opt=input('input option: ')
+            opt=select(opts)
             if opt=='':
                 return
             elif opt=='1': # 计算mulliken电荷分布
-                printer.info('可以批量计算')
                 for file in self.paths:
                     reader=get_reader(file)
                     mol=reader.mol
-                    
                     caler=mullikenCharge.Calculator(mol)
-                    res=caler.calculate(mol.atoms)
-                    atoms=mol.atoms
-                    res=[f'{atoms[i].idx:<2}{atoms[i].symbol:>2}{e:>15.8f}' for i,e in enumerate(res)]
-                    printer.res('\n'.join(res))
+                    caler.print(caler.resStr())
             elif opt=='2': # 计算π电子分布
                 file=self.paths[0]
                 reader=get_reader(file)
                 mol=reader.mol
-                atoms=mol.atoms
                 caler=piElectron.Calculator(mol)
-                res=caler.calculate()
-                printer.res(f'total:{sum(res)}')
+                caler.print(caler.resStr())
             elif opt=='3':
                 from .atomprop import freeValence
-
                 file=self.paths[0]
                 reader=get_reader(file)
                 mol=reader.mol
@@ -95,11 +94,23 @@ class Shell:
                     if not atomidx.isdigit():
                         printer.warn('请输入正确原子编号!')
                         break
-                    atom=mol.atom(int(atomidx))
                     caler=freeValence.Calculator(mol)
-                    order=caler.calculate(atom)
-                    printer.res(f'{order:.6f}')
-
+                    idx=int(atomidx)
+                    caler.print(caler.resStr(idx))
+            elif opt=='4':
+                from .atomprop import mullikenSpin
+                file=self.paths[0]
+                reader=get_reader(file)
+                mol=reader.mol
+                caler=mullikenSpin.Calculator(mol)
+                caler.print(caler.resStr())
+            elif opt=='5':
+                from .atomprop import piSpin
+                file=self.paths[0]
+                reader=get_reader(file)
+                mol=reader.mol
+                caler=piSpin.Calculator(mol)
+                caler.print(caler.resStr())
                 
     def calerBondOrder(self):
         """计算各种键级"""
@@ -118,9 +129,7 @@ class Shell:
         reader=get_reader(file)
         mol=reader.mol
         while True:
-            for key,each in opts:
-                print(f'{key}.{each}')
-            opt=input('选择要计算的键级类型: ')
+            opt=select(opts)
             caler=None
             if opt=='':
                 break
@@ -151,16 +160,7 @@ class Shell:
                     if bondMatch is None:continue
                     idx1,idx2=bondMatch.groups()
                     idx1,idx2=int(idx1),int(idx2)
-                    res=caler.calculate(mol.atom(idx1), mol.atom(idx2))
-                    if opt=='1':
-                        orders=res['data']['orders'] # 结果可以有两个方向                        
-                        printer.res(f'{res["data"]["order"]}')
-                    elif opt=='2':
-                        orders=res
-                        printer.res(orders)
-                    else:
-                        order=res
-                        printer.res(order)
+                    caler.print(caler.resStr(idx1,idx2))
 
     def toolsPage(self):
         """进入实用工具页面"""
@@ -170,9 +170,7 @@ class Shell:
             ['2','批量生成gif文件'],
             ['3','分割扫描log文件']
         ]
-        for idx,txt in opts:
-            print(f'{idx} {txt}')
-        opt=input(INPUT_COMMAND)
+        opt=select(opts)
         if opt=='':
             return
         elif opt=='1': # 导出SI
@@ -206,9 +204,7 @@ class Shell:
         while True:
             self.inputFile()
             while True:
-                for key,opt in opts:
-                    print(f'{key}.{opt}')
-                opt=input('input command option: ')
+                opt=select(opts)
                 if opt=='1':self.calerBondOrder()
                 elif opt=='2':self.calerAtomProp()
                 elif opt=='3':self.toolsPage()

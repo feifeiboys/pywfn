@@ -104,7 +104,8 @@ class LogReader(Reader):
                 shellName,lineNum=re.search(s2,line).groups()
                 ang=[angDict[s] for s in shellName] #角动量
                 exp=[]
-                coe=[[]]*len(ang)
+                # coe=[[]]*len(ang)
+                coe=[[] for i in range(len(ang))]
                 shell={'ang':ang,'exp':exp,'coe':coe}
                 basisData[atomic].append(shell)
             elif re.search(s3,line) is not None:

@@ -14,28 +14,28 @@ class Calculator:
         self.mol=mol
         self.caler=piDM.Calculator(self.mol)
     
-    def calculate(self,centerAtom:Atom):
-        self.selectedAtom=centerAtom
+    def calculate(self,idx:int):
+        selectedAtom=self.mol.atom(idx)
         orders=[]
         bonds=[]
-        for aroundAtom in centerAtom.neighbors:
-            order=self.caler.calculate(centerAtom,aroundAtom)
+        for aroundAtom in selectedAtom.neighbors:
+            order=self.caler.calculate(selectedAtom,aroundAtom)
             orders.append(order)
-            bond=f'{centerAtom.idx}-{aroundAtom.idx}'
+            bond=f'{selectedAtom.idx}-{aroundAtom.idx}'
             bonds.append(bond)
                 
         return bonds,orders,STAND-sum(orders)
     
-    def print(self,selectedAtom:Atom):
-        resStr=self.resStr(selectedAtom)
+    def print(self,resStr:str):
+        printer.info('原子自由价及其相关键级: ')
         printer.res(resStr)
+        printer.bar()
     
-    def resStr(self,selectedAtom:Atom):
+    def resStr(self,idx:int):
         """结果的字符串形式"""
-
-        bonds,orders,value=self.calculate(selectedAtom)
+        bonds,orders,value=self.calculate(idx)
         resStr=''
         for bond,order in zip(bonds,orders):
-            resStr+=f'{bond:<8}-{order:6f}\n'
-        resStr+=f'自由价:{value:.6f}\n'
+            resStr+=f'{bond:<8}{order:6f}\n'
+        resStr+=f'自由价:{value:.8f}\n'
         return resStr

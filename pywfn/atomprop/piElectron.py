@@ -47,17 +47,22 @@ class Calculator:
                 continue
             a_1,a_2=atom.obtRange
             electron=np.sum(PSS[a_1:a_2])
-            printer.res(f'{atom.idx:<2}{atom.symbol:>2}{electron:>15.8f}')
+            # printer.res(f'{atom.idx:<2}{atom.symbol:>2}{electron:>15.8f}')
             electrons.append(electron)
         return electrons
 
-    def print(self,result:str):
-        printer.res(result)
+    def print(self,resStr:str):
+        # print('所有非H原子的pi电子分布:')
+        printer.info('所有非H原子的pi电子分布:')
+        printer.res(resStr)
+        printer.bar()
     
     def resStr(self)->str:
-        result=''
+        resStr=''
         res=self.calculate()
         atoms=[atom for atom in self.mol.atoms if atom.symbol!='H']
-        for a,v in zip(atoms,res):
-            result+=f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}\n'
-        return result
+        for a in atoms:
+            v=res[a.idx-1]
+            resStr+=f'{a.idx:<2}{a.symbol:>2}{v:>15.8f}\n'
+        resStr+=f'total:{sum(res)}'
+        return resStr

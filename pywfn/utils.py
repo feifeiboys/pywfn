@@ -15,10 +15,9 @@ def get_nums(string):
             res += [int(i) - 1 for i in range(int(content[0]), int(content[1]) + 1)]
     return res
 
-
 def get_vertical(v1,v2):
     '''获得垂直于两向量的单位向量'''
-    v=np.corss(v1,v2)
+    v=np.cross(v1,v2)
     return v/np.linalg.norm(v)
 
 def get_points_between_two_pos(pos1,pos2,n):
@@ -49,10 +48,6 @@ arounds=np.array([
         [0,0,+1]
     ])
 
-
-
-
-
 def differ_function(posan1,posan2): #计算电子分布差值图
     return (posan1+posan2)**2-(posan1**2+posan2**2)/2
 
@@ -69,9 +64,6 @@ def get_gridPoints(range,step,ball=False):
                         continue
                 points.append([x,y,z])
     return np.array(points).T
-
-
-
 
 def timeit(func):
     '''定义一个装饰器，统计函数的执行时间'''
@@ -98,10 +90,6 @@ def k_means(des,points):
         pos=np.array([np.mean(each,axis=0) if len(each)>0 else des[i] for i,each in enumerate(types)]) # 获取两个类别的中心点坐标
         des=pos  # 更新目标点
     return idxs
-
-
-
-
 
 def list_remove(l,x):
     new_l=[]
@@ -169,5 +157,8 @@ class Printer:
         for text in texts:
             self.__call__(text,end='')
         self.__call__('')
+    
+    def bar(self,len=20):
+        self.__call__('-'*len)
 
 printer=Printer()

@@ -6,14 +6,15 @@ import numpy as np
 from .. import utils
 from .. import maths
 from typing import *
+from . import Caler
 
-
-class Calculator:
+class Calculator(Caler):
     def __init__(self,mol:Mol) -> None:
         self.mol=mol
 
-    def get_order(self, center:Atom, around:Atom, orbital:int, direction):  # 计算一个轨道的键级
-        '''计算两个原子间每个轨道的键级
+    def get_order(self, center:Atom,around:Atom, orbital:int, direction):  # 计算一个轨道的键级
+        '''
+        计算两个原子间某个轨道的键级
         中心原子，相邻原子，轨道，方向'''
         if around.symbol=='H':
             return 0
@@ -53,8 +54,10 @@ class Calculator:
         orders=[self.get_order(center,around,orbital,direction) for orbital in orbitals] # 所有的占据轨道都计算键级
         return orders
 
-    def calculate(self,centerAtom:Atom,aroundAtom:Atom) -> dict:
+    def calculate(self,idx1:int,idx2:int) -> dict:
         """指定一个键，计算该键的键级"""
+        centerAtom=self.mol.atom(idx1)
+        aroundAtom=self.mol.atom(idx2)
         self.centerPIdx=[i for i,l in enumerate(centerAtom.layers) if 'P' in l] #原子的序数
         self.aroundPIdx=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
         O_obts=self.mol.O_obts
@@ -89,3 +92,9 @@ class Calculator:
                         "order":[sum(orders1),sum(orders2)]
                     }
                 }
+    
+    def resStr(self,idx1:int,idx2:int)->str:
+        res=self.calculate(idx1,idx2)
+        orders=res['data']['orders']
+        order=res['data']['order']
+        return f'{order}'
