@@ -20,6 +20,9 @@ class Calculator(Caler):
             print('没有系数矩阵,无法计算')
             return 0
         centerNormal=centerAtom.get_Normal()
+        if centerNormal is None:
+            bondVector=aroundAtom.coord-centerAtom.coord
+            centerNormal=centerAtom.get_vertObt(bondVector)
         orbitals=self.mol.O_obts
         CM_=np.zeros_like(self.mol.CM) # 拷贝一份，然后将不是π轨道的那些变成0
         atoms=[centerAtom,aroundAtom]

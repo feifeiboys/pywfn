@@ -64,13 +64,14 @@ class Calculator(Caler):
         normal=centerAtom.get_Normal(aroundAtom) # 原子的法向量
         if len(centerAtom.neighbors)==3: # 如果原子有法向量(sp2)
             orders=self.get_orders(centerAtom,aroundAtom,O_obts,normal)
-            return {
-                "type":0,
-                "data":{
-                    "orders":orders,
-                    "order":sum(orders)
-                }
-            }
+            return sum(orders)
+            # return {
+            #     "type":0,
+            #     "data":{
+            #         "orders":orders,
+            #         "order":sum(orders)
+            #     }
+            # }
         else: # 如果没有法向量的话，则需要找轨道方向作为基础方向
             # 从高到低计算轨道方向，遇到有垂直于键轴的则作为轨道方向
             orbitalDirection=None
@@ -85,6 +86,7 @@ class Calculator(Caler):
                 orders1=self.get_orders(centerAtom,aroundAtom,O_obts,orbitalDirection)
                 crossDirection=np.cross(orbitalDirection, bondDirection)
                 orders2=self.get_orders(centerAtom,aroundAtom,O_obts,crossDirection)
+                return sum(orders1),sum(orders2)
                 return {
                     "type":1,
                     "data":{

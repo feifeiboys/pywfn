@@ -125,6 +125,14 @@ class Atom:
                     return normal
                 return None #如果周围原子也没有法向量的话，返回None
         return normal
+
+    def get_vertObt(self,bondVector):
+        """从HOMO轨道开始寻找垂直于键轴的轨道方向"""
+        obts=self.mol.O_obts
+        for obt in obts:
+            obtWay=self.get_obtWay(obt)
+            if maths.vector_angle(bondVector,obtWay,trans=True)>0.4:
+                return obtWay
     
     @lru_cache
     def get_obtWay(self,obt:int):

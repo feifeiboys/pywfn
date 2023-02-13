@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-print(Path.cwd())
+# print(Path.cwd())
 sys.path.append(str(Path.cwd()))
 # 设定好执行库所必须的文件
 import importlib

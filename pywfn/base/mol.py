@@ -173,6 +173,21 @@ class Mol:
         vj=np.cross(vcb,vcd)
         angle=vector_angle(vi,vj)
         return angle
+    
+    def projCM(self,atoms:List[Atom],obts,norm):
+        """获取投影后的系数矩阵"""
+        CM_=np.zeros_like(self.CM,dtype=np.float32) #新的系数矩阵
+        
+        for atom in atoms:
+            a_1,a_2=atom.obtRange
+            pIndex=[i for i,l in enumerate(atom.layers) if 'P' in l]
+            for i,obt in enumerate(obts):
+                Cop=atom.get_pProj(norm,obt)
+                Co=np.zeros(len(atom.layers))
+                Co[pIndex]=np.concatenate(Cop)
+                CM_[a_1:a_2,obt]=Co
+        return CM_
+
     def __repr__(self):
         return f'atom number: {len(self.atoms)}'
     

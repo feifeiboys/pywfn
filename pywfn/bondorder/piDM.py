@@ -20,49 +20,54 @@ class Calculator(Caler):
         self.mol=mol
 
     
+    
+        """计算某个方向的"""
+
     def calculate(self,idx1:int,idx2:int)->float:
         centerAtom=self.mol.atom(idx1)
         aroundAtom=self.mol.atom(idx2)
         if centerAtom.symbol=='H' or aroundAtom.symbol=='H':
             # print(Fore.YELLOW+'不能计算含有H的键')
             return 0
-        CM_=np.zeros_like(self.mol.CM,dtype=np.float32) #新的系数矩阵
-        orbitals=self.mol.O_obts #占据轨道的索引
+        # CM_=np.zeros_like(self.mol.CM,dtype=np.float32) #新的系数矩阵
+        obts=self.mol.O_obts #占据轨道的索引
 
         normal=centerAtom.get_Normal(aroundAtom.idx)
-        if normal is None:
+        
+        if normal is not None:
+            return self.calerWay(idx1,idx2,obts,normal)
+        else:
             print(Fore.RED+'中心原子没有法向量')
-            for orbital in orbitals[::-1]:
+            bondVector=aroundAtom.coord-centerAtom.coord
+            for orbital in obts[::-1]: #从HOMO轨道开始寻找与键轴夹角最小的方向作为法向量方向
                 direction=centerAtom.get_obtWay(orbital)
-                if vector_angle(direction,aroundAtom.coord-centerAtom.coord,trans=True)<0.1:
+                if vector_angle(direction,bondVector,trans=True)>0.4:
                     normal=direction
                     break
+            if normal is None:return 0
+            crossVector=np.cross(bondVector,normal)
+            return self.calerWay(idx1,idx2,obts,normal),self.calerWay(idx1,idx2,obts,crossVector)
+        
+        
 
+    def calerWay(self,idx1:int,idx2:int,obts,norm):
+        centerAtom=self.mol.atom(idx1)
+        aroundAtom=self.mol.atom(idx2)
         a1_1,a1_2=centerAtom.obtRange
         a2_1,a2_2=aroundAtom.obtRange
-        centerPIndex=[i for i,l in enumerate(centerAtom.layers) if 'P' in l]
-        aroundPIndex=[i for i,l in enumerate(aroundAtom.layers) if 'P' in l]
-        for i,orbital in enumerate(orbitals):
-            C1op=centerAtom.get_pProj(normal,orbital)
-            C2op=aroundAtom.get_pProj(normal,orbital)
-            C1o=np.zeros(len(centerAtom.layers))
-            C2o=np.zeros(len(aroundAtom.layers))
-            C1o[centerPIndex]=np.concatenate(C1op)
-            C2o[aroundPIndex]=np.concatenate(C2op)
-            CM_[a1_1:a1_2,orbital]=C1o
-            CM_[a2_1:a2_2,orbital]=C2o
-            # progress('重构密度矩阵',i+1,len(orbitals))
+        CM_=self.mol.projCM(atoms=[centerAtom,aroundAtom],obts=obts,norm=norm)
+
         oe=1 if self.mol.isOpenShell else 2
-        n=[oe if 'O' in o else 0 for o in self.mol.obtStr]
+        # n=[oe if 'O' in o else 0 for o in self.mol.obtStr]
         SM=self.mol.SM
         
 
         self.centerAtom=centerAtom
         self.aroundAtom=aroundAtom
-        self.obtNum=obtNum=len(orbitals)
+        self.obtNum=obtNum=len(obts)
         
         if setting.IF_ORBITAL_ORDER: # 是否拆分轨道键级成分
-            self.PMs_=CM2PMs(CM_,orbitals,oe) #三维数组
+            self.PMs_=CM2PMs(CM_,obts,oe) #三维数组
             self.PSs=self.PMs_@SM
             OM=self.get_OM() # 键级矩阵
             orders=OM.sum(axis=0)
@@ -71,7 +76,7 @@ class Calculator(Caler):
             printOrders(ratios,self.mol.orbital_symbols)
             return order
         else:
-            PM_=CM2PM(CM_,orbitals,oe)
+            PM_=CM2PM(CM_,obts,oe)
             PS=PM_@SM
             order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
             return np.sqrt(np.abs(order))

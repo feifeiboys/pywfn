@@ -46,6 +46,10 @@ def get_normalVector(p1,p2,p3):
     vi=p3-p2
     vj=p1-p2
     n=np.cross(vi,vj)
+    if np.linalg.norm(n)==0: # 此时说明三个原子在一条直线上，是标准的线型分子，所以不存在法向量
+        return None
+    if vector_angle(vi,vj,trans=True)<0.02:
+        return None
     if vector_angle(n,setting.BASE_VECTOR)>0.5:n*=-1
     return n/np.linalg.norm(n) # 返回单位向量
 
