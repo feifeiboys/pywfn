@@ -115,7 +115,7 @@ class Atom:
             p1,p3=neighbors[0].coord,neighbors[1].coord
             angle=maths.vector_angle(p1-p2,p3-p2)
             if angle>=0.01:
-                normal=maths.get_normalVector(p1,p2,p3)
+                normal=maths.get_normalVector(p1,p2,p3,linear=True)
             else:return None
         elif main: #如果是在递归中调用本函数的话就不要再次递归了
             for each in neighbors:

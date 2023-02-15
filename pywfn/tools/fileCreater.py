@@ -12,7 +12,7 @@ class Tool:
         self.coordStr=None
         self.pwd=Path(__file__).parent
         self._chk=None
-        with open(os.path.join(self.pwd.parent,'data\\gifTemplate.txt'),'r',encoding='utf-8') as f:
+        with open(os.path.join(self.pwd.parent,'data\\gjfTemplate.txt'),'r',encoding='utf-8') as f:
             self.template=f.read()
 
     def set_coord(self,coord:List[List[str]]):

@@ -18,9 +18,6 @@ from . import Caler
 class Calculator(Caler):
     def __init__(self,mol:Mol) -> None:
         self.mol=mol
-
-    
-    
         """计算某个方向的"""
 
     def calculate(self,idx1:int,idx2:int)->float:

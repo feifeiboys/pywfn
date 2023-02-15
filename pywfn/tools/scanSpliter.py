@@ -9,6 +9,7 @@ import numpy as np
 from .fileCreater import Tool as FileCreater
 from pathlib import Path
 from ..data import Elements
+from tqdm import tqdm
 
 class Tool:
     def __init__(self,path:str) -> None:
@@ -21,7 +22,37 @@ class Tool:
             os.mkdir(folder)
         with open(path,'r',encoding='utf-8') as f:
             self.content=f.read()
+            self.lines=self.content.splitlines(keepends=False)
+            if 'Standard orientation' in self.content:
+                self.coordType=1
+            else:
+                self.coordType=0
         self.elements=Elements()
+    
+    def find_titles(self):
+        titleNums=[]
+        for i,line in enumerate(self.lines):
+            if 'Input orientation:' in line and self.coordType==0:
+                titleNums.append(i)
+            elif 'Standard orientation' in line and self.coordType==1:
+                titleNums.append(i)
+        return titleNums
+    
+    def match_coords(self,titleNums:List[int]):
+        s=r" +\d+ +(\d+) +\d+ +(-?\d+.\d+) +(-?\d+.\d+) +(-?\d+.\d+)"
+        coords=[]
+        for titleNum in titleNums:
+            coord=[]
+            for i in range(titleNum+5,len(self.lines)):
+                line=self.lines[i]
+                if re.search(s,line) is not None:
+                    idx,x,y,z=re.search(s,line).groups()
+                    symbol=self.elements.get_element_by_idx(int(idx)).symbol
+                    coord.append([symbol,x,y,z])
+                else:
+                    break
+            coords.append(coord)
+        return coords
 
     def split_raw(self)->List[str]:
         """将原始的一大段文本分割"""
@@ -52,12 +83,11 @@ class Tool:
     def split(self):
         """分割文件"""
         # 首先获取所有构象的坐标
-        contents=self.split_raw()
-        for i,content in enumerate(contents):
-            coords=self.get_coord(content)
+        titleNums=self.find_titles()
+        coords=self.match_coords(titleNums)
+        for i,coord in tqdm(enumerate(coords),total=len(coords),ncols=50):
             path=os.path.join(self.dirName,self.fileName,f'f{i+1}.gjf')
-            print(path)
             fileCreater=FileCreater(path=path)
-            fileCreater.set_coord(coords)
+            fileCreater.set_coord(coord)
             fileCreater.set_chk(f'{i+1}')
             fileCreater.save()

@@ -38,17 +38,17 @@ def vector_angle(a,b,trans=False): # 计算两向量之间的夹角
     else:
         return 0.5-abs(angle-0.5)
     
-def get_normalVector(p1,p2,p3):
+def get_normalVector(p1,p2,p3,linear=False):
     '''
     获取三点确定的平面的单位法向量
     根据两个向量也可以确定法向量
     '''
     vi=p3-p2
     vj=p1-p2
-    n=np.cross(vi,vj)
+    n=np.cross(vi,vj) #法向量
     if np.linalg.norm(n)==0: # 此时说明三个原子在一条直线上，是标准的线型分子，所以不存在法向量
         return None
-    if vector_angle(vi,vj,trans=True)<0.02:
+    if vector_angle(vi,vj,trans=True)<0.02 and linear:
         return None
     if vector_angle(n,setting.BASE_VECTOR)>0.5:n*=-1
     return n/np.linalg.norm(n) # 返回单位向量
