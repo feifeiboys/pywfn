@@ -16,10 +16,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QLineEdit, QMainWindow,
-    QMenu, QMenuBar, QSizePolicy, QSplitter,
-    QStatusBar, QTabWidget, QTextBrowser, QToolBar,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QLabel, QLineEdit,
+    QMainWindow, QMenu, QMenuBar, QSizePolicy,
+    QSpacerItem, QSplitter, QStatusBar, QTabWidget,
+    QTextBrowser, QToolBar, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -32,7 +32,7 @@ class Ui_MainWindow(object):
 "background-color:gray;\n"
 "}\n"
 "#icons{\n"
-"background-color:gray;\n"
+"background-color:#EBEEE8;\n"
 "}\n"
 "QMenuBar,QMenu,QAction{\n"
 "font-family:Consolas;\n"
@@ -89,6 +89,31 @@ class Ui_MainWindow(object):
         self.icons.setFrameShape(QFrame.NoFrame)
         self.icons.setFrameShadow(QFrame.Sunken)
         self.icons.setLineWidth(0)
+        self.verticalLayout_2 = QVBoxLayout(self.icons)
+        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.sideLabelFiles = QLabel(self.icons)
+        self.sideLabelFiles.setObjectName(u"sideLabelFiles")
+        self.sideLabelFiles.setMinimumSize(QSize(0, 40))
+        self.sideLabelFiles.setTextFormat(Qt.AutoText)
+        self.sideLabelFiles.setAlignment(Qt.AlignCenter)
+        self.sideLabelFiles.setMargin(5)
+
+        self.verticalLayout_2.addWidget(self.sideLabelFiles)
+
+        self.sideLabelOrbital = QLabel(self.icons)
+        self.sideLabelOrbital.setObjectName(u"sideLabelOrbital")
+        self.sideLabelOrbital.setMinimumSize(QSize(0, 40))
+        self.sideLabelOrbital.setAlignment(Qt.AlignCenter)
+        self.sideLabelOrbital.setMargin(5)
+
+        self.verticalLayout_2.addWidget(self.sideLabelOrbital)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.verticalLayout_2.addItem(self.verticalSpacer)
+
         self.splitter_2.addWidget(self.icons)
         self.view = QFrame(self.splitter_2)
         self.view.setObjectName(u"view")
@@ -125,19 +150,21 @@ class Ui_MainWindow(object):
         self.canvas.setSizePolicy(sizePolicy3)
         self.canvas.setFrameShape(QFrame.WinPanel)
         self.splitter.addWidget(self.canvas)
-        self.command = QLineEdit(self.splitter)
-        self.command.setObjectName(u"command")
+        self.cmdInput = QLineEdit(self.splitter)
+        self.cmdInput.setObjectName(u"cmdInput")
         sizePolicy4 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy4.setHorizontalStretch(0)
         sizePolicy4.setVerticalStretch(1)
-        sizePolicy4.setHeightForWidth(self.command.sizePolicy().hasHeightForWidth())
-        self.command.setSizePolicy(sizePolicy4)
+        sizePolicy4.setHeightForWidth(self.cmdInput.sizePolicy().hasHeightForWidth())
+        self.cmdInput.setSizePolicy(sizePolicy4)
         font = QFont()
         font.setFamilies([u"Consolas"])
-        self.command.setFont(font)
-        self.splitter.addWidget(self.command)
+        self.cmdInput.setFont(font)
+        self.splitter.addWidget(self.cmdInput)
         self.log = QTextBrowser(self.splitter)
         self.log.setObjectName(u"log")
+        self.log.setEnabled(True)
+        self.log.setReadOnly(False)
         self.splitter.addWidget(self.log)
         self.splitter_2.addWidget(self.splitter)
 
@@ -212,7 +239,9 @@ class Ui_MainWindow(object):
         self.actionfreeValence.setText(QCoreApplication.translate("MainWindow", u"freeValence", None))
         self.actionresetAtomColor.setText(QCoreApplication.translate("MainWindow", u"resetAtomColor", None))
         self.actionsetting.setText(QCoreApplication.translate("MainWindow", u"setting", None))
-        self.command.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input command here", None))
+        self.sideLabelFiles.setText(QCoreApplication.translate("MainWindow", u"\u6587\u4ef6", None))
+        self.sideLabelOrbital.setText(QCoreApplication.translate("MainWindow", u"\u8f68\u9053", None))
+        self.cmdInput.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input command here", None))
         self.menufile.setTitle(QCoreApplication.translate("MainWindow", u"file", None))
         self.menucompute.setTitle(QCoreApplication.translate("MainWindow", u"compute", None))
         self.menubondOrder.setTitle(QCoreApplication.translate("MainWindow", u"bondOrder", None))

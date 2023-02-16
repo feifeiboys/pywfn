@@ -19,7 +19,8 @@ class Calculator:
         orders=[]
         bonds=[]
         for aroundAtom in selectedAtom.neighbors:
-            order=self.caler.calculate(selectedAtom,aroundAtom)
+            
+            order=self.caler.calculate(idx,aroundAtom.idx)
             orders.append(order)
             bond=f'{selectedAtom.idx}-{aroundAtom.idx}'
             bonds.append(bond)

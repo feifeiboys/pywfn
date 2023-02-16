@@ -1,9 +1,10 @@
-from pywfn.readers import LogReader
+import numpy as np
 
-reader=LogReader('examples/mols/O2.log')
-mol=reader.mol
-print(mol.Eigenvalues)
-print(mol.O_obts)
-print(mol.V_obts)
-print(mol.Eigenvalues[mol.O_obts[-1]])
-print(mol.Eigenvalues[mol.V_obts[0]])
+import pyvista as pv
+from pyvista import examples
+grid = examples.load_hydrogen_orbital(3, 2, -2)
+pl = pv.Plotter()
+
+print(pl.camera.position)
+print(pl.camera.focal_point)
+print(pl.camera.up)

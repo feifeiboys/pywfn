@@ -18,14 +18,14 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QScrollArea, QSizePolicy, QTabWidget,
     QVBoxLayout, QWidget)
 
-class Ui_Form(object):
-    def setupUi(self, Form):
-        if not Form.objectName():
-            Form.setObjectName(u"Form")
-        Form.resize(574, 475)
-        self.verticalLayout_2 = QVBoxLayout(Form)
+class Ui_setting(object):
+    def setupUi(self, setting):
+        if not setting.objectName():
+            setting.setObjectName(u"setting")
+        setting.resize(574, 475)
+        self.verticalLayout_2 = QVBoxLayout(setting)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.tabWidget = QTabWidget(Form)
+        self.tabWidget = QTabWidget(setting)
         self.tabWidget.setObjectName(u"tabWidget")
         self.mainTab = QWidget()
         self.mainTab.setObjectName(u"mainTab")
@@ -56,17 +56,17 @@ class Ui_Form(object):
         self.verticalLayout_2.addWidget(self.tabWidget)
 
 
-        self.retranslateUi(Form)
+        self.retranslateUi(setting)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
 
 
-        QMetaObject.connectSlotsByName(Form)
+        QMetaObject.connectSlotsByName(setting)
     # setupUi
 
-    def retranslateUi(self, Form):
-        Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.mainTab), QCoreApplication.translate("Form", u"\u8bbe\u7f6e", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.colorTtab), QCoreApplication.translate("Form", u"\u989c\u8272", None))
+    def retranslateUi(self, setting):
+        setting.setWindowTitle(QCoreApplication.translate("setting", u"Form", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.mainTab), QCoreApplication.translate("setting", u"\u8bbe\u7f6e", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.colorTtab), QCoreApplication.translate("setting", u"\u989c\u8272", None))
     # retranslateUi
 

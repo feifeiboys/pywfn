@@ -16,6 +16,7 @@ from pyvistaqt import QtInteractor
 from . import utils
 from ..window import Mol
 from .. import window
+import time
 elements=Elements()
 
 
@@ -63,6 +64,7 @@ class Canvas(QtInteractor):
 
     def hide_cloud(self,names):
         """
+        传入当前想要显示轨道
         将非指定点云全部隐藏，并返回指定的点云是否已经存在
         """
         render=self.plotter.renderer
@@ -78,7 +80,7 @@ class Canvas(QtInteractor):
 
         return exist
 
-    def show_cloud(self,obt:int):
+    def show_cloud(self,obt:int,showType='surf'):
         """
         显示指定原子的轨道
         """
@@ -103,77 +105,94 @@ class Canvas(QtInteractor):
         Rx=np.arange(minX-self.borderValue,maxX+self.borderValue+0.1,step)
         Ry=np.arange(minY-self.borderValue,maxY+self.borderValue+0.1,step)
         Rz=np.arange(minZ-self.borderValue,maxZ+self.borderValue+0.1,step)
-        origin=np.array([Rx[0],Ry[0],Rz[0]])
-        Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
-        X,Y,Z=np.meshgrid(Rx,Ry,Rz)
-        pos=np.array([X.flatten(),Y.flatten(),Z.flatten()]).T
-
-        values=np.zeros(len(pos))
-        # print(values.shape,pos.shape)
-        for i in atoms:
-            atom=self.mol.atoms[i]
-            values+=atom.get_cloud(pos-atom.coord,obt)
-        # P:positive，N:negative
-        values=values.reshape(Lx,Ly,Lz) # 转成三位数组
-        # self.add_cloud_surface(values,origin,(0.2,1),name='P')
-        # self.add_cloud_surface(values,origin,(-1,-0.2),name='N')
+        origin=np.array([(maxX-minX)/2,(maxY-minY)/2,(maxZ-minZ)/2]) # 起点
+        origin=np.array([Ry[0],Rx[0],Rz[0]])
+        # self.plotter.add_points(origin)
         
-        valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
-        values=np.where((values>self.isoValue) | (values<-self.isoValue),1.,0.)
-        values[[0,-1],:,:]=0
-        values[:,[0,-1],:]=0
-        values[:,:,[0,-1]]=0
+        if showType=='surf' or showType=='surfP':
+            Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
+            X,Y,Z=np.meshgrid(Rx,Ry,Rz)
+            pos=np.array([Y.flatten(),X.flatten(),Z.flatten()]).T
+            values=np.zeros(len(pos))
+            # print(values.shape,pos.shape)
+            for i in atoms:
+                atom=self.mol.atoms[i]
+                values+=atom.get_cloud(pos-atom.coord,obt)
+            # P:positive，N:negative
+            values=values.reshape(Ly,Lx,Lz) # 转成三位数组
 
-        valuesX0=np.zeros_like(values)
-        valuesX1=np.zeros_like(values)
-        valuesY0=np.zeros_like(values)
-        valuesY1=np.zeros_like(values)
-        valuesZ0=np.zeros_like(values)
-        valuesZ1=np.zeros_like(values)
+            if showType=='surf':
+                self.add_cloud_surface(values,origin,(self.isoValue,1),name=name,cloudType='P')
+                self.add_cloud_surface(values,origin,(-1,-self.isoValue),name=name,cloudType='N')
+            elif showType=='surfP':
+                valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
+                values=np.where((values>self.isoValue) | (values<-self.isoValue),1.,0.)
+                values[[0,-1],:,:]=0 # 某一个维度的最前方和最后方设为0
+                values[:,[0,-1],:]=0
+                values[:,:,[0,-1]]=0
 
-        valuesX0[1:,:,:]=values[:-1,:,:]
-        valuesX1[:-1,:,:]=values[1:,:,:]
+                values0=np.zeros_like(values)
+                # --- 问题就出现在这一块
+                values0[ 1:,:,:]+=values[:-1,:,:]
+                values0[:-1,:,:]+=values[ 1:,:,:]
 
-        valuesY0[:,1:,:]=values[:,:-1,:]
-        valuesY1[:,:-1,:]=values[:,1:,:]
+                values0[:, 1:,:]+=values[:,:-1,:]
+                values0[:,:-1,:]+=values[:, 1:,:]
 
-        valuesZ0[:,:,1:]=values[:,:,:-1]
-        valuesZ1[:,:,:-1]=values[:,:,1:]
+                values0[:,:, 1:]+=values[:,:,:-1]
+                values0[:,:,:-1]+=values[:,:, 1:]
 
-        valuesR=values+valuesX0+valuesX1+valuesY0+valuesY1+valuesZ0+valuesZ1 #原来的点与周围方向的点的加和
-
-        valuesR=np.where((valuesR==0)|(valuesR==7),0.,1.) #满足条件的为1，不满足条件的为0
-        valuesR*=valuesUnits #为所有值赋予单位，正1或负1
-        valuesR=valuesR.flatten() #拉平
-
-        idxsP=np.argwhere(valuesR>0).flatten()
-        idxsN=np.argwhere(valuesR<0).flatten()
-        posP=pos.copy()[idxsP]
-        posN=pos.copy()[idxsN]
-        self.add_cloud(posP,'red',f'cloud-P-{name}')
-        self.add_cloud(posN,'blue',f'cloud-N-{name}')
+                valuesR=values+values0 #原来的点与周围方向的点的加和
+                valuesR=np.where(valuesR>=7,0,valuesR) #满足条件的为1，不满足条件的为0
+                valuesR*=valuesUnits #为所有值赋予单位，正1或负1
+                valuesR=valuesR.flatten() #拉平
+                # valuesR=values.flatten()
+                idxsP=np.argwhere(valuesR>0).flatten()
+                idxsN=np.argwhere(valuesR<0).flatten()
+                posP=pos[idxsP]
+                posN=pos[idxsN]
+                self.add_cloud(posP,'red',f'cloud-P-{name}')
+                self.add_cloud(posN,'blue',f'cloud-N-{name}')
+        elif showType=='prop':
+            pos=np.random.random(size=(int(1e6),3))
+            pos=(pos*np.array([Rx[-1]-Rx[0],Ry[-1]-Ry[0],Rz[-1]-Rz[0]]).reshape(1,3))+np.array([Rx[0],Ry[0],Rz[0]]).reshape(1,3)
+            values=np.zeros(len(pos))
+            # print(values.shape,pos.shape)
+            for i in atoms:
+                atom=self.mol.atoms[i]
+                values+=atom.get_cloud(pos-atom.coord,obt)
+            # P:positive，N:negative
+            valuesR=values*np.random.random(values.shape)
+            valuesR=valuesR.flatten() #拉平
+            limit=0.08
+            idxsP=np.argwhere(valuesR>limit).flatten()
+            idxsN=np.argwhere(valuesR<-limit).flatten()
+            posP=pos[idxsP]
+            posN=pos[idxsN]
+            self.add_cloud(posP,'red',f'cloud-P-{name}')
+            self.add_cloud(posN,'blue',f'cloud-N-{name}')
         self.app.showMessage('计算完成')
 
-    def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name):
+    def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name,cloudType):
         grid = pv.UniformGrid()
         grid.dimensions = np.array(values.shape) + 1
         grid.spacing = (0.1, 0.1, 0.1)
         grid.origin = origin
         
-        grid.cell_data["values"] = values.flatten(order="F")
+        grid.cell_data["values"] = values.flatten(order='F')
         vol = grid.threshold(value=value)
-        print(vol.number_of_cells)
         if vol.number_of_cells==0:
+            print('没有点')
             return
         surf = vol.extract_geometry()
-        smooth = surf.smooth(n_iter=500)
-        self.plotter.add_mesh(smooth,color='pink',opacity=0.5,smooth_shading=True,name=name)
+        smooth = surf.smooth(n_iter=1000,progress_bar=True)
+        color='red' if cloudType=='P' else 'blue'
+        self.plotter.add_mesh(smooth,color=color,opacity=0.5,smooth_shading=True,name=f'cloud-{cloudType}-{name}')
 
     def add_cloud(self,points,color:str,name:str):
         if len(points)>0:
             cloud=pv.PolyData(points)
-            self.plotter.add_mesh(cloud,color=color,opacity=0.5,
-                reset_camera=False,name=name,pickable=False)
+            self.plotter.add_mesh(cloud,color=color,opacity=0.8,reset_camera=False,name=name,pickable=False)
         else:
             print('没有点')
 

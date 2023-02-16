@@ -7,9 +7,9 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 os.environ["QT_API"] = "pyside6"
 import pyvista as pv
 
-from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel
-from PySide6.QtGui import QIcon,QFont
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel,QLayout
+from PySide6.QtGui import QIcon,QFont,QColor
+from PySide6.QtCore import Qt,QObject,QEvent
 from pyvistaqt import QtInteractor, MainWindow
 
 
@@ -29,6 +29,7 @@ from pathlib import Path
 from .pages.setting import SettingWidget
 from .pages.start import StartWidget
 from .pages.orbital import OrbitalWidget
+from .pages.fileSideTab import FileSideTabWidget
 
 class Window(MainWindow):
     def __init__(self) -> None:
@@ -48,14 +49,16 @@ class Window(MainWindow):
         self.currentFile:FileItem=None # 初始化一个啥都没有的文件
         
         self.init_layout()
-        self.orbital=OrbitalWidget(self)
-        self.viewLaout.addWidget(self.orbital)
-
         self.init_pages()
+        self.init_funs()
 
     def init_pages(self):
         """初始化一些子页面"""
-        self.settingPage=SettingWidget()
+        self.settingPage=SettingWidget(self)
+        self.fileSideTab=FileSideTabWidget(self)
+        self.obtSideTab=OrbitalWidget(self)
+        # self.viewLaout.addWidget(self.fileSideTab)
+        self.set_layoutWidget(self.viewLaout,self.fileSideTab)
 
     def init_layout(self):
         """初始化布局"""
@@ -83,46 +86,67 @@ class Window(MainWindow):
         self.ui.actionfreeValence.triggered.connect(lambda:self.claer_atomProp('freeValence'))
         self.ui.actionresetAtomColor.triggered.connect(lambda:self.currentFile.canvas.reset_color())
         self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
+
+    def init_funs(self):
+        """初始化组件函数绑定"""
+        self.ui.cmdInput.returnPressed.connect(self.cmdRun)
+        self.ui.cmdInput.installEventFilter(self)
+    
+    # 事件过滤器
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched.objectName()=='cmdInput':
+            if event.type()==QEvent.KeyPress:
+                if event.key()==Qt.Key_Up:
+                    opt=self.commandLine.get_history('up')
+                    self.ui.cmdInput.setText(opt)
+                elif event.key()==Qt.Key_Down:
+                    opt=self.commandLine.get_history('down')
+                    self.ui.cmdInput.setText(opt)
+        return super().eventFilter(watched, event)
+
+    def set_layoutWidget(self,layout:QLayout,widget:QWidget):
+        """设置在侧边view区显示的widget"""
+        count=layout.count()
+        for i in range(count):
+            layout.itemAt(i).widget().deleteLater()
+        layout.addWidget(widget)
+
     def clear_selectedAtoms(self):
         if self.currentFile is not None:
             self.currentFile.canvas.clearAtoms()
             
 
-    def command(self):
+    def cmdRun(self):
         """处理命令行输入的内容"""
-        opt=self.ui.lineEdit.text()
-        res=self.commandLine.run(opt)
-        self.addInfo(res)
+        opt=self.ui.cmdInput.text()
+        print(opt)
+        self.commandLine.run(opt)
 
     def viewLabel(self):
         """显示或隐藏原子的label"""
         label=self.currentFile.canvas.labels
         visible=label.GetVisibility()
         label.SetVisibility(int(not visible))
-        print(label.GetVisibility())
     
-    def addLog(self,log:str):
+    def addLog(self,log:str,logType='base',end='\n'):
         """输出程序的执行结果"""
-        self.ui.log.append(log)
+        colors={'base':'#181a17','info':'#4338ba'}
+        # self.ui.log.insertHtml(f'<p> >>> <span style="color:{colors[logType]}">{log}</span><br></p>')
+        self.ui.log.append(f'>>>\n{log}')
 
     def openFile(self):
         """打开log/out文件"""
-        print('打开文件')
-        files=[]
+
         filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
         for filePath,fileType in zip(filePaths,fileTypes):
             # self.ui.listWidget_files.addItem(filePath)
             # self.files[filePath]=FileItem(filePath=filePath,app=self) # 添加一个文件
-            files.append(filePath)
+            self.fileSideTab.add_file(filePath)
             self.addLog(f'open {filePath}')
             self.setting.lastOpenFilePath=str(Path(filePath).parent)
-        if len(files)==0:return
-        name=files[-1] # 最后一个文件的名称
-        fileItem=FileItem(Path(files[-1]),app=self)
-        self.currentFile=fileItem
-        self.canvasLayout.addWidget(fileItem)
-        self.addTab(files[-1])
-        # self.showMol(self.currentFile,self.files[name])
+            fileItem=FileItem(Path(filePath),app=self)
+            self.currentFile=fileItem
+            self.set_layoutWidget(self.canvasLayout,fileItem)
     
     def addTab(self,text):
         """在tabFrame添加一个标签"""
@@ -192,8 +216,9 @@ class Window(MainWindow):
         elif name=='Mayer':
             caler=mayer.Calculator(mol)
         idx1,idx2=atoms
-        res=caler.calculate(mol.atom(idx1), mol.atom(idx2))
-        self.addLog(f'{res}')
+        # res=caler.calculate(idx1,idx2)
+        resStr=caler.resStr(idx1,idx2)
+        self.addLog(f'\n{resStr}')
     
     def claer_atomProp(self,name): # 计算原子性质
         mol=self.currentFile.mol
@@ -221,10 +246,10 @@ class Window(MainWindow):
             atoms=self.currentFile.canvas.selectedAtoms
             if len(atoms)!=1:return
             atoms=[int(atom.split('-')[1]) for atom in atoms]
-            atom=mol.atom(int(atoms[0]))
+            idx=int(atoms[0])
             caler=freeValence.Calculator(mol)
             # res=caler.calculate(atom)
-            resStr=caler.resStr(atom)
+            resStr=caler.resStr(idx)
         
         self.addLog(resStr)
     
@@ -245,8 +270,8 @@ class FileItem(QWidget):
         self.app=app
         self.filePath=filePath
         self.mol=mol=get_reader(filePath).mol
-        orbitals=[str(o) for o in mol.orbital_symbols]
-        self.app.orbital.set_orbitals(orbitals)
+        orbitals=mol.obtStr
+        self.app.obtSideTab.set_orbitals(orbitals)
         self.layout=QHBoxLayout()
 
         self.canvas=Canvas(self.app,mol,self)
