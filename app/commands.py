@@ -76,7 +76,14 @@ class Command:
             plotter.export_obj(f'{fileName}.obj')
         elif fileType in ['svg','eps','ps','pdf','tex']:
             plotter.save_graphic(f'{fileName}.{fileType}')
-        self.app.addLog('导出成功!!')
+        self.app.addLog(f'导出成功!! {fileName}')
+    
+    def export_all(self,fileType):
+        for file in self.app.fileItems.values():
+            self.currentFile=file
+            # path=str(file.filePath)
+            # self.app.fileSideTab.show_file(path)
+            self.export(fileType)
 
 
 # from .window import Window,FileItem

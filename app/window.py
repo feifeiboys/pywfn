@@ -124,7 +124,6 @@ class Window(MainWindow):
     def cmdRun(self):
         """处理命令行输入的内容"""
         opt=self.ui.cmdInput.text()
-        print(opt)
         self.commandLine.run(opt)
 
     def viewLabel(self):
@@ -274,7 +273,7 @@ class FileItem(QWidget):
     def __init__(self,filePath:Path,app:Window,showMol:bool=True) -> None:
         QWidget.__init__(self,parent=None)
         self.app=app
-        self.filePath=filePath
+        self.filePath:Path=filePath
         self.mol=get_reader(filePath).mol
         self.showObtIdx:int=None
         self.layout=QHBoxLayout()

@@ -11,14 +11,23 @@ class FileSideTabWidget(QWidget,Ui_Form):
         self.setupUi(self)
         self.app=app
         self.listWidget.itemClicked.connect(self.clicked)
+        self.listWidget.currentRowChanged.connect(self.row_changed)
 
     def add_file(self,path:str):
         """添加文件"""
         self.listWidget.addItem(path)
 
     def clicked(self,item:QListWidgetItem):
-        
-        path=item.text() # 轨道的序数，肯定都是整数
+        path=item.text() # 文件路径
+        self.show_file(path)
+    
+    def row_changed(self,row:int):
+        item=self.listWidget.item(row)
+        path=item.text()
+        self.show_file(path)
+
+    def show_file(self,path):
+        print(path)
         fileItem=self.app.fileItems[path]
         self.app.set_layoutWidget(self.app.canvasLayout,fileItem)
         self.app.currentFile=fileItem
