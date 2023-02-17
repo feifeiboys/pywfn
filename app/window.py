@@ -44,13 +44,12 @@ class Window(MainWindow):
         self.init_menu()
         
         self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
-        
-        self.files:Dict[str,FileItem]={}
         self.currentFile:FileItem=None # 初始化一个啥都没有的文件
         
         self.init_layout()
         self.init_pages()
         self.init_funs()
+        self.fileItems:Dict[str,FileItem]={} #路径：widget
 
     def init_pages(self):
         """初始化一些子页面"""
@@ -91,6 +90,8 @@ class Window(MainWindow):
         """初始化组件函数绑定"""
         self.ui.cmdInput.returnPressed.connect(self.cmdRun)
         self.ui.cmdInput.installEventFilter(self)
+        self.ui.iconFiles.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.fileSideTab)
+        self.ui.iconOrbital.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.obtSideTab)
     
     # 事件过滤器
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -105,11 +106,15 @@ class Window(MainWindow):
         return super().eventFilter(watched, event)
 
     def set_layoutWidget(self,layout:QLayout,widget:QWidget):
-        """设置在侧边view区显示的widget"""
+        """设置在某个layout内显示指定的widget"""
         count=layout.count()
-        for i in range(count):
-            layout.itemAt(i).widget().deleteLater()
-        layout.addWidget(widget)
+        if count==0:
+            layout.addWidget(widget)
+        elif count==1:
+            oldWidget=layout.itemAt(0).widget() #当前的组件
+            oldWidget.close()
+            layout.replaceWidget(oldWidget,widget)
+            widget.show()
 
     def clear_selectedAtoms(self):
         if self.currentFile is not None:
@@ -145,8 +150,9 @@ class Window(MainWindow):
             self.addLog(f'open {filePath}')
             self.setting.lastOpenFilePath=str(Path(filePath).parent)
             fileItem=FileItem(Path(filePath),app=self)
+            self.fileItems[filePath]=fileItem
             self.currentFile=fileItem
-            self.set_layoutWidget(self.canvasLayout,fileItem)
+            self.set_layoutWidget(self.canvasLayout,self.fileItems[filePath])
     
     def addTab(self,text):
         """在tabFrame添加一个标签"""
@@ -269,16 +275,24 @@ class FileItem(QWidget):
         QWidget.__init__(self,parent=None)
         self.app=app
         self.filePath=filePath
-        self.mol=mol=get_reader(filePath).mol
-        orbitals=mol.obtStr
-        self.app.obtSideTab.set_orbitals(orbitals)
+        self.mol=get_reader(filePath).mol
+        self.showObtIdx:int=None
         self.layout=QHBoxLayout()
-
-        self.canvas=Canvas(self.app,mol,self)
+        self.canvas=Canvas(self.app,self.mol,self)
         self.layout.addWidget(self.canvas.interactor)
         self.setLayout(self.layout)
-        # self.init_mol()
-        
+        self.show_obts()
+    
+    def on_show(self):
+        self.show_obts()
+        self.app.obtSideTab.on_show()
+
+    def show_obts(self):
+        orbitals=self.mol.obtStr
+        self.app.obtSideTab.set_orbitals(orbitals)
+    
+
+
     
     def hide_mol(self):
         """隐藏原子"""
@@ -289,6 +303,12 @@ class FileItem(QWidget):
 
     def set_atomColor(self,idxs,values):
         self.canvas.set_colors(idxs,values)
+    
+    def __repr__(self) -> str:
+        return self.filePath
+    
+    def __str__(self) -> str:
+        return self.filePath
 
 class viewItem(QWidget):
     def __init__(self):

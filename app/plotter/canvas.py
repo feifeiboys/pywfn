@@ -10,14 +10,14 @@ from typing import *
 from pywfn import utils
 import pyvista as pv
 from . import utils
-from .materials import Elements
 import vtk
 from pyvistaqt import QtInteractor
 from . import utils
 from ..window import Mol
 from .. import window
 import time
-elements=Elements()
+from .materials import get_materials,Material
+materials=get_materials()
 
 
 
@@ -29,6 +29,8 @@ class Canvas(QtInteractor):
         self.app=app
         self.mol=mol
         self.plotter=self.interactor
+        # self.plotter.background_color=materials['BackGround'].color
+        self.plotter.set_background(materials['BackGround'].color)
         self.plotter.enable_mesh_picking(callback=self.onClick,left_clicking=True,show=False,show_message=False,\
             style='wireframe',line_width=1,color='white')
         self.mols:List[Mol]=[]
@@ -42,19 +44,26 @@ class Canvas(QtInteractor):
         self.labels={} #标签会有很多个
         self.add_labels()
         self.plotter.show_axes()
+    
+    def add_mesh_(self,mesh,name,material:Material,pickable=False):
+        self.plotter.add_mesh(mesh=mesh,name=name,pbr=False,smooth_shading=True,pickable=pickable,
+                              color=material.color,metallic=material.metalic,
+                              roughness=material.roughness,opacity=material.opacity,
+                              diffuse=material.diffuse,specular=material.specular)
         
     def add_atoms(self):
         for atom in self.mol.atoms:
-            poly=Sphere(center=atom.coord,radius=elements[atom.symbol].radius)
+            poly=Sphere(center=atom.coord,radius=materials[atom.symbol].size)
             name=f'{atom.symbol}-{atom.idx}'
             setattr(poly,'name',name) #为poly添加name属性，只有能够被点击的物体才设置name，以便与场景中的actor对照
-            self.plotter.add_mesh(poly,color=elements[atom.symbol].color,smooth_shading=True,name=name)
+            self.add_mesh_(poly,name=name,material=materials[atom.symbol],pickable=True)
 
     def add_bonds(self):
         for bond in self.mol.bonds:
             a1,a2=bond.a1,bond.a2
-            poly=Cylinder(center=(a1.coord+a2.coord)/2,direction=a2.coord-a1.coord,radius=0.1)
-            self.plotter.add_mesh(poly,name=bond.idx,pickable=False,pbr=True,metallic=0.5)
+            material=materials['Bond']
+            poly=Cylinder(center=(a1.coord+a2.coord)/2,direction=a2.coord-a1.coord,radius=material.size)
+            self.add_mesh_(poly,name=bond.idx,material=material)
     
     def add_labels(self):
         """添加原子的label"""
@@ -94,7 +103,7 @@ class Canvas(QtInteractor):
         atoms.sort()
         atomStr=','.join([str(a) for a in atoms])
         name=f'{atomStr}-{obt}'
-        exist=self.hide_cloud([f'cloud-N-{name}',f'cloud-P-{name}'])
+        exist=self.hide_cloud([f'Cloud-N-{name}',f'cloud-P-{name}'])
         if exist:return # 如果已经存在的话就没必要再添加了
         
         coords=self.mol.coords[atoms,:]
@@ -186,8 +195,8 @@ class Canvas(QtInteractor):
             return
         surf = vol.extract_geometry()
         smooth = surf.smooth(n_iter=1000,progress_bar=True)
-        color='red' if cloudType=='P' else 'blue'
-        self.plotter.add_mesh(smooth,color=color,opacity=0.5,smooth_shading=True,name=f'cloud-{cloudType}-{name}')
+        material=materials[f'Cloud{cloudType}']
+        self.add_mesh_(smooth,name=f'cloud-{cloudType}-{name}',material=material)
 
     def add_cloud(self,points,color:str,name:str):
         if len(points)>0:
@@ -207,7 +216,7 @@ class Canvas(QtInteractor):
             prop.SetColor(utils.hex2rgb('#108b96'))
             prop.SetAmbient(0.5)
         else:
-            hexColor=elements[symbol].color
+            hexColor=materials[symbol].color
             rgbColor=utils.hex2rgb(hexColor)
             prop.SetColor(rgbColor)
             prop.SetAmbient(0)
@@ -241,7 +250,7 @@ class Canvas(QtInteractor):
         设置原子的颜色，如果不传入任何参数则使用原子默认颜色
         """
         symbol=self.mol.atom(idx).symbol
-        if color is None:color=elements[symbol].color
+        if color is None:color=materials[symbol].color
         self.get_atom(idx).prop.SetColor(utils.hex2rgb(color))
     
     def reset_color(self):

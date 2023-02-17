@@ -19,7 +19,7 @@
   <property name="styleSheet">
    <string notr="true">#canvas{
 height:80%;
-background-color:gray;
+background-color:white;
 }
 #icons{
 background-color:#EBEEE8;
@@ -89,7 +89,7 @@ font-family:Consolas;
          <number>0</number>
         </property>
         <item>
-         <widget class="QLabel" name="sideLabelFiles">
+         <widget class="QLabel" name="iconFiles">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -111,7 +111,7 @@ font-family:Consolas;
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="sideLabelOrbital">
+         <widget class="QLabel" name="iconOrbital">
           <property name="minimumSize">
            <size>
             <width>0</width>

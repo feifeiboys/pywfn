@@ -29,7 +29,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(895, 706)
         MainWindow.setStyleSheet(u"#canvas{\n"
 "height:80%;\n"
-"background-color:gray;\n"
+"background-color:white;\n"
 "}\n"
 "#icons{\n"
 "background-color:#EBEEE8;\n"
@@ -93,22 +93,22 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setSpacing(0)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.sideLabelFiles = QLabel(self.icons)
-        self.sideLabelFiles.setObjectName(u"sideLabelFiles")
-        self.sideLabelFiles.setMinimumSize(QSize(0, 40))
-        self.sideLabelFiles.setTextFormat(Qt.AutoText)
-        self.sideLabelFiles.setAlignment(Qt.AlignCenter)
-        self.sideLabelFiles.setMargin(5)
+        self.iconFiles = QLabel(self.icons)
+        self.iconFiles.setObjectName(u"iconFiles")
+        self.iconFiles.setMinimumSize(QSize(0, 40))
+        self.iconFiles.setTextFormat(Qt.AutoText)
+        self.iconFiles.setAlignment(Qt.AlignCenter)
+        self.iconFiles.setMargin(5)
 
-        self.verticalLayout_2.addWidget(self.sideLabelFiles)
+        self.verticalLayout_2.addWidget(self.iconFiles)
 
-        self.sideLabelOrbital = QLabel(self.icons)
-        self.sideLabelOrbital.setObjectName(u"sideLabelOrbital")
-        self.sideLabelOrbital.setMinimumSize(QSize(0, 40))
-        self.sideLabelOrbital.setAlignment(Qt.AlignCenter)
-        self.sideLabelOrbital.setMargin(5)
+        self.iconOrbital = QLabel(self.icons)
+        self.iconOrbital.setObjectName(u"iconOrbital")
+        self.iconOrbital.setMinimumSize(QSize(0, 40))
+        self.iconOrbital.setAlignment(Qt.AlignCenter)
+        self.iconOrbital.setMargin(5)
 
-        self.verticalLayout_2.addWidget(self.sideLabelOrbital)
+        self.verticalLayout_2.addWidget(self.iconOrbital)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
@@ -239,8 +239,8 @@ class Ui_MainWindow(object):
         self.actionfreeValence.setText(QCoreApplication.translate("MainWindow", u"freeValence", None))
         self.actionresetAtomColor.setText(QCoreApplication.translate("MainWindow", u"resetAtomColor", None))
         self.actionsetting.setText(QCoreApplication.translate("MainWindow", u"setting", None))
-        self.sideLabelFiles.setText(QCoreApplication.translate("MainWindow", u"\u6587\u4ef6", None))
-        self.sideLabelOrbital.setText(QCoreApplication.translate("MainWindow", u"\u8f68\u9053", None))
+        self.iconFiles.setText(QCoreApplication.translate("MainWindow", u"\u6587\u4ef6", None))
+        self.iconOrbital.setText(QCoreApplication.translate("MainWindow", u"\u8f68\u9053", None))
         self.cmdInput.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input command here", None))
         self.menufile.setTitle(QCoreApplication.translate("MainWindow", u"file", None))
         self.menucompute.setTitle(QCoreApplication.translate("MainWindow", u"compute", None))

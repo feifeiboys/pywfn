@@ -38,6 +38,7 @@ class Command:
             self.app.ui.cmdInput.clear()
         except:
             self.app.addLog('命令执行失败')
+            eval(f'self.{opt}')
     
     def add_point(self,point:List[float]):
         if len(point)!=3:
@@ -56,8 +57,26 @@ class Command:
         camera.position=position
         camera.focal=focal
         camera.up=up
-
-        
+    
+    def set_view_all(self,position,focal,up):
+        for file in self.app.fileItems.values():
+            camera=file.canvas.plotter.camera
+            camera.position=position
+            camera.focal=focal
+            camera.up=up
+    
+    def export(self,fileType):
+        plotter=self.currentFile.canvas.plotter
+        path=self.currentFile.filePath
+        fileName:str=str(path.parent / path.stem)
+        print(fileName)
+        if fileType=='png':
+            plotter.screenshot(f'{fileName}.png',transparent_background=True)
+        elif fileType=='obj':
+            plotter.export_obj(f'{fileName}.obj')
+        elif fileType in ['svg','eps','ps','pdf','tex']:
+            plotter.save_graphic(f'{fileName}.{fileType}')
+        self.app.addLog('导出成功!!')
 
 
 # from .window import Window,FileItem

@@ -15,11 +15,15 @@ class OrbitalWidget(QWidget,Ui_Form):
     
     def set_orbitals(self,obts:List[str]):
         self.obts=obts
+        self.listWidget.clear()
         self.listWidget.addItems(obts)
     
     def clicked(self,item:QListWidgetItem):
         obt=self.obts.index(item.text()) # 轨道的序数，肯定都是整数
-        
         self.app.currentFile.canvas.show_cloud(obt)
-        
-        print(item.text())
+        self.app.currentFile.showObtIdx=obt
+    
+    def on_show(self):
+        showIdx=self.app.currentFile.showObtIdx
+        if showIdx is not None:
+            self.listWidget.setCurrentRow(showIdx)
