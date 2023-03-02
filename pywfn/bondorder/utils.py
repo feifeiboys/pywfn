@@ -7,7 +7,7 @@ from ..base import Atom
 from ..maths import vector_angle
 import numpy as np
 import time
-def CM2PM(CM,orbital:List[int],oe:int):
+def CM2PM(CM,orbital:List[int],oe:int)->np.ndarray:
     """
     根据系数矩阵构建密度矩阵
     CM:系数矩阵,如果是开壳层的话,列数是行数的两倍[n,n]/[n,2n]
@@ -22,7 +22,7 @@ def CM2PMs(CM,orbital:List[int],oe:int):
     """
     A=(CM[:,orbital].T)[:,:,np.newaxis]
     B=(CM[:,orbital].T)[:,np.newaxis,:]
-    return A@B*oe #用矩阵乘法的形式直接构建矩阵可比逐元素计算多了
+    return A@B*oe #用矩阵乘法的形式直接构建矩阵可比逐元素计算快多了
 
 def judgeOrbital(centerAtom:Atom,aroundAtom:Atom,orbital:int,normal)->int:
     """

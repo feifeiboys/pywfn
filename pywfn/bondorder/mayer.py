@@ -23,8 +23,8 @@ class Calculator(Caler):
         SM=self.mol.SM
         PS=PM@SM
 
-        a1_1,a1_2=centerAtom.obtRange
-        a2_1,a2_2=aroundAtom.obtRange
-        order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
+        a_1,a_2=centerAtom.obtRange
+        b_1,b_2=aroundAtom.obtRange
 
+        order=np.sum(PS[a_1:a_2,b_1:b_2]*PS[b_1:b_2,a_1:a_2].T)
         return order

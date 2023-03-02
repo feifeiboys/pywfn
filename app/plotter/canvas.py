@@ -42,7 +42,7 @@ class Canvas(QtInteractor):
         self.add_atoms()
         self.add_bonds()
         self.labels={} #标签会有很多个
-        self.add_labels()
+        self.add_labels(name='atomIdx',points=self.mol.coords,labels=[f'{atom.idx}' for atom in self.mol.atoms])
         self.plotter.show_axes()
     
     def add_mesh_(self,mesh,name,material:Material,pickable=False):
@@ -65,12 +65,6 @@ class Canvas(QtInteractor):
             poly=Cylinder(center=(a1.coord+a2.coord)/2,direction=a2.coord-a1.coord,radius=material.size)
             self.add_mesh_(poly,name=bond.idx,material=material)
     
-    def add_labels(self):
-        """添加原子的label"""
-        points=self.mol.coords
-        labels=[f'{i}' for i in range(len(points))]
-        self.plotter.add_point_labels(points,labels,always_visible=True)
-
     def hide_cloud(self,names):
         """
         传入当前想要显示轨道
@@ -259,7 +253,6 @@ class Canvas(QtInteractor):
         for idx in idxs:
             self.set_color(idx)
 
-
     def set_colors(self,idxs:List[int],values:List[float]):
         """
         根据数值计算对应的颜色并修改
@@ -280,6 +273,7 @@ class Canvas(QtInteractor):
         self.plotter.add_arrows(center,direction,color=color,mag=1+ratio/2)
     
     def add_arrows_(self,idxs,values):
+        """计算的都是原子的法向量的箭头"""
         values:np.ndarray=np.array(values)
         ratios=(values-values.min())/(values.max()-values.min()) #将数值映射到0-1之间
         # 将数值映射到颜色值为两个值之间
@@ -289,8 +283,10 @@ class Canvas(QtInteractor):
             direction=atom.get_Normal()
             self.add_arrow(center,direction,ratio)
 
-        
-
+    def add_labels(self,name:str,points,labels:List[str]):
+        """添加坐标()"""
+        self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True)
+    
 
 def color_bar(ratio:float):
     c0=np.array([0.,0.,1.])

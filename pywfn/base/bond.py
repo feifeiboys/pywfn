@@ -20,6 +20,11 @@ class Bond:
     def vector(self):
         """获取键向"""
         return self.a2.coord-self.a1.coord
+
+    @cached_property
+    def center(self):
+        """获取键中心坐标"""
+        return (self.a1.coord+self.a2.coord)/2
     
     def __repr__(self) -> str:
         return f'length={self.length}'

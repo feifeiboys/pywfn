@@ -33,7 +33,6 @@ class Tool:
             zipFile.write(each)
         
     def count(self):
-        
         total=0
         self.rms+=['.csv','.json']
         self.get_files()
@@ -43,9 +42,11 @@ class Tool:
             total+=lineNum
         print(f'{"total":<40}{total}')
 
-    def save(self,files):
+    def save(self):
         contents=[]
-        for each in files:
+        self.rms+=['.csv','.json']
+        self.get_files()
+        for each in self.files:
             with open(each,'r',encoding='utf-8') as f:
                 contents.append(f.read())
         with open('源代码.txt','w',encoding='utf-8') as f:
@@ -75,7 +76,8 @@ class Tool:
 
 
 tool=Tool()
-tool.zip('pywfn')
+# tool.zip('pywfn')
+tool.save()
 # tool.count()
 # count(files)
 # save(files)

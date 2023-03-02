@@ -96,6 +96,7 @@ class Ui_MainWindow(object):
         self.iconFiles = QLabel(self.icons)
         self.iconFiles.setObjectName(u"iconFiles")
         self.iconFiles.setMinimumSize(QSize(0, 40))
+        self.iconFiles.setFrameShape(QFrame.NoFrame)
         self.iconFiles.setTextFormat(Qt.AutoText)
         self.iconFiles.setAlignment(Qt.AlignCenter)
         self.iconFiles.setMargin(5)
@@ -105,10 +106,19 @@ class Ui_MainWindow(object):
         self.iconOrbital = QLabel(self.icons)
         self.iconOrbital.setObjectName(u"iconOrbital")
         self.iconOrbital.setMinimumSize(QSize(0, 40))
+        self.iconOrbital.setFrameShape(QFrame.NoFrame)
+        self.iconOrbital.setFrameShadow(QFrame.Plain)
         self.iconOrbital.setAlignment(Qt.AlignCenter)
         self.iconOrbital.setMargin(5)
 
         self.verticalLayout_2.addWidget(self.iconOrbital)
+
+        self.iconScene = QLabel(self.icons)
+        self.iconScene.setObjectName(u"iconScene")
+        self.iconScene.setMinimumSize(QSize(0, 40))
+        self.iconScene.setAlignment(Qt.AlignCenter)
+
+        self.verticalLayout_2.addWidget(self.iconScene)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
@@ -241,6 +251,7 @@ class Ui_MainWindow(object):
         self.actionsetting.setText(QCoreApplication.translate("MainWindow", u"setting", None))
         self.iconFiles.setText(QCoreApplication.translate("MainWindow", u"\u6587\u4ef6", None))
         self.iconOrbital.setText(QCoreApplication.translate("MainWindow", u"\u8f68\u9053", None))
+        self.iconScene.setText(QCoreApplication.translate("MainWindow", u"\u573a\u666f", None))
         self.cmdInput.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input command here", None))
         self.menufile.setTitle(QCoreApplication.translate("MainWindow", u"file", None))
         self.menucompute.setTitle(QCoreApplication.translate("MainWindow", u"compute", None))

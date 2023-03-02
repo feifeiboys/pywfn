@@ -50,8 +50,8 @@ class Calculator(Caler):
     def calerWay(self,idx1:int,idx2:int,obts,norm):
         centerAtom=self.mol.atom(idx1)
         aroundAtom=self.mol.atom(idx2)
-        a1_1,a1_2=centerAtom.obtRange
-        a2_1,a2_2=aroundAtom.obtRange
+        a_1,a_2=centerAtom.obtRange
+        b_1,b_2=aroundAtom.obtRange
         CM_=self.mol.projCM(atoms=[centerAtom,aroundAtom],obts=obts,norm=norm)
 
         oe=1 if self.mol.isOpenShell else 2
@@ -61,22 +61,23 @@ class Calculator(Caler):
 
         self.centerAtom=centerAtom
         self.aroundAtom=aroundAtom
-        self.obtNum=obtNum=len(obts)
         
-        if setting.IF_ORBITAL_ORDER: # 是否拆分轨道键级成分
-            self.PMs_=CM2PMs(CM_,obts,oe) #三维数组
-            self.PSs=self.PMs_@SM
-            OM=self.get_OM() # 键级矩阵
-            orders=OM.sum(axis=0)
-            order=np.sqrt(np.abs(np.sum(orders)))
-            ratios=orders/np.sum(orders)*order
-            printOrders(ratios,self.mol.orbital_symbols)
-            return order
-        else:
-            PM_=CM2PM(CM_,obts,oe)
-            PS=PM_@SM
-            order=np.sum(PS[a1_1:a1_2,a2_1:a2_2]*PS[a2_1:a2_2,a1_1:a1_2].T)
-            return np.sqrt(np.abs(order))
+        # if setting.IF_ORBITAL_ORDER: # 是否拆分轨道键级成分
+        #     self.PMs_=CM2PMs(CM_,obts,oe) #三维数组
+        #     self.PSs=self.PMs_@SM
+        #     OM=self.get_OM() # 键级矩阵
+        #     orders=OM.sum(axis=0)
+        #     order=np.sqrt(np.abs(np.sum(orders)))
+        #     ratios=orders/np.sum(orders)*order
+        #     printOrders(ratios,self.mol.orbital_symbols)
+        #     return order
+        # else:
+        PM_=CM2PM(CM_,obts,oe)
+        PS=PM_@SM
+        order=np.sum(PS[a_1:a_2,b_1:b_2]*PS[b_1:b_2,a_1:a_2].T)
+        print(order)
+        # return order
+        return np.sqrt(np.abs(order))
     
     def get_OMi(self,idx): #计算一个矩阵元
         i,j=idx

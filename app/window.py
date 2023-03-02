@@ -229,7 +229,6 @@ class Window(MainWindow):
         mol=self.currentFile.mol
         if name=='MullikenCharge': # 计算mulliken电荷分布
             caler=mullikenCharge.Calculator(mol)
-            
             values=caler.calculate()
             idxs=list(range(len(self.currentFile.mol.atoms)))
             idxs=[idx+1 for idx in idxs]
@@ -245,6 +244,10 @@ class Window(MainWindow):
             idxs=[idx+1 for idx in idxs]
             self.currentFile.canvas.add_arrows_(idxs,values)
             resStr=caler.resStr()
+            # pi电子计算的是所有非H原子的
+            points=self.currentFile.mol.coords
+            labels=[f'{value:.4f}' for value in values]
+            self.currentFile.canvas.add_labels('piElectron',points,labels)
 
 
         elif name=='freeValence':

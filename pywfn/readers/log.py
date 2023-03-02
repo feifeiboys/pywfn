@@ -16,6 +16,7 @@ from colorama import Fore
 from .. import utils
 from ..utils import printer
 from ..data import elements
+from pathlib import Path
 
 
 class LogReader(Reader):
@@ -36,6 +37,7 @@ class LogReader(Reader):
         self.read_basisName()
         self.read_basisData()
         self.read_SM()
+        # self.read_PM()
 
     def search_title(self):
         """
@@ -49,6 +51,7 @@ class LogReader(Reader):
             'acoefs':None,
             'bcoefs':None,
             'overlap':None,
+            'density':None,
             'basisData':None
         }
         for i,line in enumerate(self.logLines):
@@ -66,6 +69,8 @@ class LogReader(Reader):
                 self.titleNums['bcoefs']=i
             elif ' *** Overlap *** ' in line:
                 self.titleNums['overlap']=i
+            elif 'Density Matrix:' in line:
+                self.titleNums['density']=i
             elif 'Overlap normalization' in line:
                 self.titleNums['basisData']=i
     
@@ -254,7 +259,33 @@ class LogReader(Reader):
 
     def read_PM(self):
         """读取密度矩阵"""
-        ...
+        titleNum=self.titleNums['density']
+        if titleNum is None:return None
+
+        PM=np.zeros_like(self.mol.CM) #无论如何，系数矩阵是一定要有的
+        num=len(PM)
+        data={i:[] for i in range(num)}
+
+        for i in range(titleNum+1,len(self.logLines)):
+            line=self.logLines[i]
+            search_1=re.search(r'(\d+).+\d+[A-Za-z]+(( +-?\d\.\d+){1,5})',line)
+            if search_1 is not None:
+                idx,nums,_=search_1.groups()
+                nums=re.findall('-?\d+\.\d+',nums)
+                nums=[float(num) for num in nums]
+                data[int(idx)-1]+=nums
+            elif re.search(r'^( +\d+){1,5}$',line) is not None:
+                continue
+            else:
+                print(i,line)
+                break
+        
+        for key,value in data.items():
+            PM[key][:len(value)]=value
+        PM_=np.copy(PM)
+        row, col = np.diag_indices_from(PM_)
+        PM_[row,col]=0
+        self.mol._PM=PM+PM_.T
 
 
 class Data:

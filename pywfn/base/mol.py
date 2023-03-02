@@ -40,6 +40,7 @@ class Mol:
         self._heavyAtoms:List[Atom]=None
         self._CM:np.ndarray=None # 系数矩阵
         self._SM:np.ndarray=None # 重叠矩阵
+        self._PM:np.ndarray=None # 密度矩阵
         self.reader=None
         self.basis:"data.Basis"=None
         self.gto:"gto.Gto"=None
@@ -128,6 +129,8 @@ class Mol:
 
     @cached_property
     def PM(self):
+        if self._PM is not None:
+            return self._PM
         """计算密度矩阵(其实可以读的,但是感觉读的没有计算的快,因为可以直接根据系数矩阵计算)"""
         A=(self.CM[:,self.O_obts].T)[:,:,np.newaxis]
         B=(self.CM[:,self.O_obts].T)[:,np.newaxis,:]
@@ -174,17 +177,21 @@ class Mol:
         angle=vector_angle(vi,vj)
         return angle
     
-    def projCM(self,atoms:List[Atom],obts,norm):
+    def projCM(self,atoms:List[Atom],obts,norm=None):
         """获取投影后的系数矩阵"""
         CM_=np.zeros_like(self.CM,dtype=np.float32) #新的系数矩阵
         
         for atom in atoms:
+            norm=atom.get_projWay()
             a_1,a_2=atom.obtRange
             pIndex=[i for i,l in enumerate(atom.layers) if 'P' in l]
+            sIndex=[i for i,l in enumerate(atom.layers) if l in ['2S','3S']]
             for i,obt in enumerate(obts):
+                Cos=atom.OC[sIndex,obt]
                 Cop=atom.get_pProj(norm,obt)
                 Co=np.zeros(len(atom.layers))
                 Co[pIndex]=np.concatenate(Cop)
+                # Co[sIndex]=Cos
                 CM_[a_1:a_2,obt]=Co
         return CM_
 

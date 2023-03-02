@@ -124,6 +124,8 @@ class Atom:
                     normal=normal_
                     return normal
                 return None #如果周围原子也没有法向量的话，返回None
+        if maths.vector_angle(normal,np.array([1,1,1]))>0.5:
+            normal*=-1
         return normal
 
     def get_vertObt(self,bondVector):
@@ -133,6 +135,20 @@ class Atom:
             obtWay=self.get_obtWay(obt)
             if maths.vector_angle(bondVector,obtWay,trans=True)>0.4:
                 return obtWay
+    
+    def get_projWay(self):
+        """
+        获得系数投影方向
+        有法向量用法向量,没有法向量用垂直于轨道和键轴的方向
+        没有法向量的时候,相当于原子在线性区域,两个键平行,但还是用平均值比较合理
+        """
+        norm=self.get_Normal()
+        if norm is not None:
+            return norm
+        else:
+            a1,a2=self.neighbors #相邻两个原子
+            bondVector=a2.coord-a1.coord
+            return self.get_obtWay(bondVector)
     
     @lru_cache
     def get_obtWay(self,obt:int):

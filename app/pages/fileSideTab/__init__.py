@@ -10,7 +10,7 @@ class FileSideTabWidget(QWidget,Ui_Form):
         QWidget.__init__(self,parent=None)
         self.setupUi(self)
         self.app=app
-        self.listWidget.itemClicked.connect(self.clicked)
+        # self.listWidget.itemClicked.connect(self.clicked)
         self.listWidget.currentRowChanged.connect(self.row_changed)
 
     def add_file(self,path:str):
