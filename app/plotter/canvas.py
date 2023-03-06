@@ -1,69 +1,111 @@
 """
 一个canvas里面有一个分子，其实就是原子和键
 原子的名字的格式为：symbol-idx
+如果每个分子都用一个组件+一个plotter来渲染的话，速度会比较慢
+所以都放在一个plotter中渲染，因此要为不同分子分配单独的一个ID从而避免覆盖
+同一时刻只能渲染一个组内的分子
+一个actor的名称应该为: 分子ID-模型类型-补充信息
+模型类型可以有：
+    原子-id_type
+    键-id1,id2
+    轨道-obt_id1,id2...
+    箭头
+切换分子的时候只显示对应分子的actor，通过设置visible
 """
 
 from pyvista import Plotter,Cylinder,Sphere,PolyData,Light,Actor,Property,Color
+from PySide6.QtCore import QThread
 from pywfn.base import Atom,Bond,Mol
 import numpy as np
 from typing import *
-from pywfn import utils
+
 import pyvista as pv
-from . import utils
-import vtk
+
+from pyvista.plotting.actor import Actor
 from pyvistaqt import QtInteractor
-from . import utils
 from ..window import Mol
 from .. import window
 import time
+from collections import defaultdict
 from .materials import get_materials,Material
+from .. import threads
+from .utils import hex2rgb
+from ..utils import randName
 materials=get_materials()
-
-
 
 class Canvas(QtInteractor):
     """继承自plotter"""
-    def __init__(self,app:"window.Window",mol:Mol,parent) -> None:
+    def __init__(self,app:"window.Window",parent) -> None:
         """每个canvas都对应一个分子"""
         super().__init__(parent=parent)        
         self.app=app
-        self.mol=mol
         self.plotter=self.interactor
         # self.plotter.background_color=materials['BackGround'].color
         self.plotter.set_background(materials['BackGround'].color)
         self.plotter.enable_mesh_picking(callback=self.onClick,left_clicking=True,show=False,show_message=False,\
             style='wireframe',line_width=1,color='white')
-        self.mols:List[Mol]=[]
+        self.mols:Dict[str,Mol]={} #记录每一个原子的id
         self.scene=[] # 除了原子之外的actor都加入到scene中，方便管理
         self.cloudRange:float=0.001
-        self.selectedAtoms:List[str]=[]
+        self.selectAtom=defaultdict(list) #记录每个分子选择的原子的name
+        self.atomIdx=lambda name:name.split('-')[2].split(',')[-1]
         self.isoValue=0.06
         self.borderValue=4
-        self.add_atoms()
-        self.add_bonds()
-        self.labels={} #标签会有很多个
-        self.add_labels(name='atomIdx',points=self.mol.coords,labels=[f'{atom.idx}' for atom in self.mol.atoms])
         self.plotter.show_axes()
+        self.molID:str=None
+        self.renderThreads:Dict[str,threads.RenderCloud]={}
     
-    def add_mesh_(self,mesh,name,material:Material,pickable=False):
-        self.plotter.add_mesh(mesh=mesh,name=name,pbr=False,smooth_shading=True,pickable=pickable,
+    @property
+    def mol(self):
+        return self.mols[self.molID]
+
+    def add_mol(self,molID:str,mol:Mol):
+        """添加分子"""
+        # self.show_mol(molID) #将其他原子隐藏起来
+        self.mols[molID]=mol
+        self.molID=molID
+        self.add_atoms(molID)
+        self.add_bonds(molID)
+        self.add_labels(name=f'{molID}-labels-atomIdx',points=mol.coords,labels=[f'{atom.idx}' for atom in mol.atoms])
+
+    def show_mol(self,molID:str):
+        """显示指定的分子"""
+        self.molID=molID
+        for name in self.plotter.actors:
+            actor=self.get_actor(name)
+            molid,mesh,_=name.split('-')[:3]
+            if molid==molID:
+                actor.VisibilityOn()
+            else:
+                actor.VisibilityOff()
+    
+    @property
+    def now_mol(self):
+        """获取当前正在显示的分子ID"""
+        return self.molID
+    
+    def add_mesh_(self,mesh,name,material:Material,pickable=False,reset_camera=False):
+        actor=self.plotter.add_mesh(mesh=mesh,name=name,pbr=False,smooth_shading=True,pickable=pickable,
                               color=material.color,metallic=material.metalic,
                               roughness=material.roughness,opacity=material.opacity,
-                              diffuse=material.diffuse,specular=material.specular)
+                              diffuse=material.diffuse,specular=material.specular,reset_camera=reset_camera)
         
-    def add_atoms(self):
+    def add_atoms(self,molID:str):
         for atom in self.mol.atoms:
             poly=Sphere(center=atom.coord,radius=materials[atom.symbol].size)
-            name=f'{atom.symbol}-{atom.idx}'
-            setattr(poly,'name',name) #为poly添加name属性，只有能够被点击的物体才设置name，以便与场景中的actor对照
-            self.add_mesh_(poly,name=name,material=materials[atom.symbol],pickable=True)
+            name=f'{molID}-atom-{atom.symbol},{atom.idx}'
+            setattr(poly,'name',name)
+            self.add_mesh_(poly,name=name,material=materials[atom.symbol],pickable=True,reset_camera=True)
 
-    def add_bonds(self):
+    def add_bonds(self,molID:str):
         for bond in self.mol.bonds:
             a1,a2=bond.a1,bond.a2
+            idx1,idx2=a1.idx,a2.idx
+            if idx2<idx1:idx1,idx2=idx2,idx1
             material=materials['Bond']
             poly=Cylinder(center=(a1.coord+a2.coord)/2,direction=a2.coord-a1.coord,radius=material.size)
-            self.add_mesh_(poly,name=bond.idx,material=material)
+            name=f'{molID}-bond-{idx1},{idx2}'
+            self.add_mesh_(poly,name=name,material=material)
     
     def hide_cloud(self,names):
         """
@@ -83,21 +125,35 @@ class Canvas(QtInteractor):
 
         return exist
 
-    def show_cloud(self,obt:int,showType='surf'):
+    def show_cloud(self,obt:int,showType='surf',atoms=None,molID:str=None): 
+        """开启子线程渲染，在不指定原子的情况下渲染选中的原子"""
+        if atoms is None:
+            atoms=[int(self.atomIdx(name))-1 for name in self.selectAtom[self.molID]]
+        if molID is None:
+            molID=self.molID
+        name=randName()
+        t=self.renderThreads[name]=threads.RenderCloud(self.app,self)
+        t.obt=obt
+        t.showType=showType
+        t.atoms=atoms
+        t.start()
+        
+        # self.renderCloudThread.join()
+
+    def show_cloud_t(self,obt:int,showType:str,atoms:List[int]):
         """
         显示指定原子的轨道
         """
-        if len(self.selectedAtoms)==0:
-            print('尚未选择原子')
+        if len(atoms)==0:
+            self.app.addLog('未指定渲染原子')
             return
+        print('渲染',obt,atoms,self.molID)
         self.app.showMessage('正在计算...')
         # 根据原子计算点云应该存在的位置
-        print(self.selectedAtoms)
-        atoms=[int(a.split('-')[1])-1 for a in self.selectedAtoms]
         atoms.sort()
         atomStr=','.join([str(a) for a in atoms])
-        name=f'{atomStr}-{obt}'
-        exist=self.hide_cloud([f'Cloud-N-{name}',f'cloud-P-{name}'])
+        name=f'{atomStr},{obt}'
+        exist=self.hide_cloud([f'{self.molID}-cloudN-{name}',f'{self.molID}-cloudP-{name}'])
         if exist:return # 如果已经存在的话就没必要再添加了
         
         coords=self.mol.coords[atoms,:]
@@ -190,7 +246,7 @@ class Canvas(QtInteractor):
         surf = vol.extract_geometry()
         smooth = surf.smooth(n_iter=1000,progress_bar=True)
         material=materials[f'Cloud{cloudType}']
-        self.add_mesh_(smooth,name=f'cloud-{cloudType}-{name}',material=material)
+        self.add_mesh_(smooth,name=f'{self.molID}-cloud{cloudType}-{name}',material=material)
 
     def add_cloud(self,points,color:str,name:str):
         if len(points)>0:
@@ -201,21 +257,24 @@ class Canvas(QtInteractor):
 
     def onClick(self,mesh:PolyData): #使选中的原子改变颜色
         if not hasattr(mesh,'name'):return
-        name:str=mesh.name
-        symbol,idx=name.split('-')
+        name:str=getattr(mesh,'name')
+        molID,mtype,other=name.split('-')
+        symbol,idx=other.split(',')
         actor=self.get_actor(name)
         prop = actor.GetProperty()
-        if name not in self.selectedAtoms: # 如果该原子没有被选中
-            self.selectedAtoms.append(name)
-            prop.SetColor(utils.hex2rgb('#108b96'))
+        atomIdxs=self.selectAtom[molID]
+        if name not in self.selectAtom[molID]: # 如果该原子没有被选中
+            self.selectAtom[molID].append(name)
+
+            prop.SetColor(hex2rgb('#108b96'))
             prop.SetAmbient(0.5)
         else:
             hexColor=materials[symbol].color
-            rgbColor=utils.hex2rgb(hexColor)
+            rgbColor=hex2rgb(hexColor)
             prop.SetColor(rgbColor)
             prop.SetAmbient(0)
-            index=self.selectedAtoms.index(name)
-            self.selectedAtoms.pop(index)
+            index=self.selectAtom[molID].index(name)
+            self.selectAtom[molID].pop(index)
             actor.SetProperty(prop)
     
     def get_actor(self,name)->Actor:
@@ -229,7 +288,6 @@ class Canvas(QtInteractor):
         else:
             return None
 
-
     def get_atom(self,idx:int)->Actor:
         """
         根据原子标签获取原子对象
@@ -238,14 +296,13 @@ class Canvas(QtInteractor):
         name=f'{atom.symbol}-{idx}'
         return self.get_actor(name)
 
-
     def set_color(self,idx:int,color=None):
         """
         设置原子的颜色，如果不传入任何参数则使用原子默认颜色
         """
         symbol=self.mol.atom(idx).symbol
         if color is None:color=materials[symbol].color
-        self.get_atom(idx).prop.SetColor(utils.hex2rgb(color))
+        self.get_atom(idx).prop.SetColor(hex2rgb(color))
     
     def reset_color(self):
         """将所有的原子回复原本的颜色"""
@@ -285,9 +342,9 @@ class Canvas(QtInteractor):
 
     def add_labels(self,name:str,points,labels:List[str]):
         """添加坐标()"""
-        self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True)
+        actor=self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True,show_points=False)
+        # actor.VisibilityOff()
     
-
 def color_bar(ratio:float):
     c0=np.array([0.,0.,1.])
     c1=np.array([1.,0.,0.])

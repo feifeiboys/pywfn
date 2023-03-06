@@ -12,10 +12,13 @@ class FileSideTabWidget(QWidget,Ui_Form):
         self.app=app
         # self.listWidget.itemClicked.connect(self.clicked)
         self.listWidget.currentRowChanged.connect(self.row_changed)
+        self.molIDs:Dict[str,str]={} #记录分子路径与分子id的对应关系
 
-    def add_file(self,path:str):
+    def add_file(self,path:str,molID:str):
         """添加文件"""
         self.listWidget.addItem(path)
+        self.molIDs[path]=molID
+
 
     def clicked(self,item:QListWidgetItem):
         path=item.text() # 文件路径
@@ -27,8 +30,5 @@ class FileSideTabWidget(QWidget,Ui_Form):
         self.show_file(path)
 
     def show_file(self,path):
-        print(path)
-        fileItem=self.app.fileItems[path]
-        self.app.set_layoutWidget(self.app.canvasLayout,fileItem)
-        self.app.currentFile=fileItem
-        fileItem.on_show()
+        molID=self.molIDs[path]
+        self.app.molView.on_show(molID)

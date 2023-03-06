@@ -1,5 +1,6 @@
 """
 输入文件有很多结构，将每个结构分割来来
+重点在于分割，首先根据指定的分割符将文本分割为很多块，然后在每一块提取所需内容
 """
 import enum
 from typing import *
@@ -20,31 +21,31 @@ class Tool:
         folder=self.dirName / self.fileName
         if not Path(folder).exists(): #判断文件夹是否存在
             os.mkdir(folder)
-        with open(path,'r',encoding='utf-8') as f:
-            self.content=f.read()
-            self.lines=self.content.splitlines(keepends=False)
-            if 'Standard orientation' in self.content:
-                self.coordType=1
-            else:
-                self.coordType=0
+        self.content=self.path.read_text(encoding='utf-8')
+        self.lines=self.content.splitlines(keepends=False)
+        if 'Standard orientation' in self.content:
+            self.coordType='Standard orientation'
+        else:
+            self.coordType='Input orientation'
         self.elements=Elements()
     
     def find_titles(self):
         titleNums=[]
-        for i,line in enumerate(self.lines):
-            if 'Input orientation:' in line and self.coordType==0:
-                titleNums.append(i)
-            elif 'Standard orientation' in line and self.coordType==1:
-                titleNums.append(i)
+        for idx,content in enumerate(self.contents): # 循环每一段
+            for i,line in enumerate(content.splitlines(keepends=False)): # 循环每一行
+                if self.coordType in line: # 找到行坐标
+                    titleNums.append((idx,i)) # 只要第一个,记录段落数和行数
+                    break
         return titleNums
     
-    def match_coords(self,titleNums:List[int]):
+    def match_coords(self,titleNums:List[Tuple[int]]):
         s=r" +\d+ +(\d+) +\d+ +(-?\d+.\d+) +(-?\d+.\d+) +(-?\d+.\d+)"
         coords=[]
-        for titleNum in titleNums:
+        for idx,titleNum in titleNums:
             coord=[]
-            for i in range(titleNum+5,len(self.lines)):
-                line=self.lines[i]
+            lines=self.contents[idx].splitlines(keepends=False)
+            for i in range(titleNum+5,len(lines)):
+                line=lines[i]
                 if re.search(s,line) is not None:
                     idx,x,y,z=re.search(s,line).groups()
                     symbol=self.elements.get_element_by_idx(int(idx)).symbol
@@ -56,7 +57,7 @@ class Tool:
 
     def split_raw(self)->List[str]:
         """将原始的一大段文本分割"""
-        splitMark=' Optimization completed.' #以此为每个结构的分隔
+        splitMark=' Optimization completed.' # 以此为每个结构的分隔
         contents=self.content.split(splitMark)
         return contents
     
@@ -82,7 +83,9 @@ class Tool:
             
     def split(self):
         """分割文件"""
+        self.contents=self.split_raw()
         # 首先获取所有构象的坐标
+
         titleNums=self.find_titles()
         coords=self.match_coords(titleNums)
         for i,coord in tqdm(enumerate(coords),total=len(coords),ncols=50):

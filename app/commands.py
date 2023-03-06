@@ -5,12 +5,13 @@
 from typing import *
 from . import window
 import numpy as np
+from pathlib import Path
 
 class Command:
 
     def __init__(self,app:"window.Window") -> None:
         self.app=app
-        self.currentFile:"window.FileItem"
+        self.molView:"window.MolView"
         self.historys=[] # 记录命令历史
         self.historyIdx=None
     
@@ -27,8 +28,8 @@ class Command:
         return self.historys[self.historyIdx]
         
     def run(self,opt:str):
-        self.currentFile=self.app.currentFile
-        if self.currentFile is None:
+        self.molView=self.app.molView
+        if self.app.molView.canvas.mols is None:
             self.app.addLog('尚未打开任何文件!')
             return
         try: # 尝试执行指令
@@ -44,16 +45,16 @@ class Command:
         if len(point)!=3:
             self.app.addLog('坐标必须为三个数')
             return
-        self.currentFile.canvas.plotter.add_points(np.array(point,dtype=np.float32))
+        self.molView.canvas.plotter.add_points(np.array(point,dtype=np.float32))
     
     def get_view(self):
         """获取当前场景摄像机视角"""
-        camera=self.currentFile.canvas.plotter.renderer.camera
+        camera=self.molView.canvas.plotter.renderer.camera
         self.app.addLog(f'{camera.position},{camera.focal_point},{camera.up}',logType='info')
     
     def set_view(self,position,focal,up):
         """设置当前场景摄像机视角"""
-        camera=self.currentFile.canvas.plotter.camera
+        camera=self.molView.canvas.plotter.camera
         camera.position=position
         camera.focal=focal
         camera.up=up
@@ -66,12 +67,11 @@ class Command:
             camera.up=up
     
     def export(self,fileType):
-        plotter=self.currentFile.canvas.plotter
-        path=self.currentFile.filePath
+        plotter=self.molView.canvas.plotter
+        path=Path(self.molView.now_path)
         fileName:str=str(path.parent / path.stem)
-        print(fileName)
         if fileType=='png':
-            plotter.screenshot(f'{fileName}.png',transparent_background=True)
+            plotter.screenshot(f'{fileName}.png',transparent_background=False)
         elif fileType=='obj':
             plotter.export_obj(f'{fileName}.obj')
         elif fileType in ['svg','eps','ps','pdf','tex']:
@@ -79,11 +79,25 @@ class Command:
         self.app.addLog(f'导出成功!! {fileName}')
     
     def export_all(self,fileType):
-        for file in self.app.fileItems.values():
-            self.currentFile=file
-            # path=str(file.filePath)
-            # self.app.fileSideTab.show_file(path)
+        molIDs=self.molView.canvas.mols.keys()
+        for molID in molIDs:
+            self.molView.on_show(molID)
+            print(f'显示分子{molID}')
             self.export(fileType)
-
+    
+    def render_cloud(self,obt:int,atoms:List[int],molID:str=None):
+        if len(atoms)==0:
+            atoms=[atom.idx-1 for atom in self.molView.now_mol.atoms] #索引从0开始
+        else:
+            atoms=[atom-1 for atom in atoms]
+        if molID is None:molID=self.molView.canvas.molID
+        self.molView.canvas.show_cloud(obt=obt-1,atoms=atoms,molID=molID)
+    
+    def render_cloud_all(self,obt:int,atoms:List[int]):
+        molIDs=self.molView.canvas.mols.keys()
+        print(molIDs)
+        for molID in molIDs:
+            # print(molID)
+            self.render_cloud(obt,atoms,molID)
 
 # from .window import Window,FileItem

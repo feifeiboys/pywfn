@@ -2,6 +2,8 @@
 记录一些常用的工具函数
 """
 from typing import *
+import random
+
 
 
 def formPrint(self,contents:List[List[str]],eachLength:int,lineNum:int,window):
@@ -15,3 +17,8 @@ def formPrint(self,contents:List[List[str]],eachLength:int,lineNum:int,window):
     for i in range(len(logs[0])):
         for log in logs:
             window.addLog(log[i])
+
+def randName():
+    """生成一个随机字符串"""
+    strs='1234567890abcdefghijklmnopqrstuvwxyz'
+    return ''.join(random.choices(strs,k=6))

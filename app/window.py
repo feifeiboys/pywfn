@@ -9,7 +9,7 @@ import pyvista as pv
 
 from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel,QLayout
 from PySide6.QtGui import QIcon,QFont,QColor
-from PySide6.QtCore import Qt,QObject,QEvent
+from PySide6.QtCore import Qt,QObject,QEvent,QThread
 from pyvistaqt import QtInteractor, MainWindow
 
 
@@ -25,6 +25,10 @@ from .setting import settingManager
 
 from typing import *
 from pathlib import Path
+from .threads import Test
+from . import threads
+from . import utils
+
 
 from .pages.setting import SettingWidget
 from .pages.start import StartWidget
@@ -44,12 +48,13 @@ class Window(MainWindow):
         self.init_menu()
         
         self.orbitalType:str='cloud' # 显示轨道的方式，点云(cloud)或箭头(arrow)
-        self.currentFile:FileItem=None # 初始化一个啥都没有的文件
         
         self.init_layout()
         self.init_pages()
         self.init_funs()
-        self.fileItems:Dict[str,FileItem]={} #路径：widget
+        self.molView=MolView(app=self)
+        self.threads:Dict[str,QThread]={} #存储线程，防止直接死掉
+
 
     def init_pages(self):
         """初始化一些子页面"""
@@ -73,7 +78,7 @@ class Window(MainWindow):
         self.ui.actionopen.triggered.connect(self.openFile)
         self.ui.actionsetting.triggered.connect(lambda:self.settingPage.show())
         self.ui.actionatomLabels.triggered.connect(self.viewLabel)
-        self.ui.actionclearCloud.triggered.connect(lambda:self.currentFile.canvas.hide_cloud(names=[]))
+        self.ui.actionclearCloud.triggered.connect(lambda:self.molView.canvas.hide_cloud(names=[]))
         self.ui.actionpiDH.triggered.connect(lambda:self.caler_bondOrder('piDH'))
         self.ui.actionpiDM.triggered.connect(lambda:self.caler_bondOrder('piDM'))
         self.ui.actionpiSH.triggered.connect(lambda:self.caler_bondOrder('piSH'))
@@ -83,7 +88,7 @@ class Window(MainWindow):
         self.ui.actionMullikenCharge.triggered.connect(lambda:self.claer_atomProp('MullikenCharge'))
         self.ui.actionpiElectron.triggered.connect(lambda:self.claer_atomProp('piElectron'))
         self.ui.actionfreeValence.triggered.connect(lambda:self.claer_atomProp('freeValence'))
-        self.ui.actionresetAtomColor.triggered.connect(lambda:self.currentFile.canvas.reset_color())
+        self.ui.actionresetAtomColor.triggered.connect(lambda:self.molView.canvas.reset_color())
         self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
 
     def init_funs(self):
@@ -117,10 +122,9 @@ class Window(MainWindow):
             widget.show()
 
     def clear_selectedAtoms(self):
-        if self.currentFile is not None:
-            self.currentFile.canvas.clearAtoms()
+        if self.molView is not None:
+            self.molView.canvas.clearAtoms()
             
-
     def cmdRun(self):
         """处理命令行输入的内容"""
         opt=self.ui.cmdInput.text()
@@ -128,7 +132,7 @@ class Window(MainWindow):
 
     def viewLabel(self):
         """显示或隐藏原子的label"""
-        label=self.currentFile.canvas.labels
+        label=self.molView.canvas.labels
         visible=label.GetVisibility()
         label.SetVisibility(int(not visible))
     
@@ -140,19 +144,14 @@ class Window(MainWindow):
 
     def openFile(self):
         """打开log/out文件"""
-
         filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
-        for filePath,fileType in zip(filePaths,fileTypes):
-            # self.ui.listWidget_files.addItem(filePath)
-            # self.files[filePath]=FileItem(filePath=filePath,app=self) # 添加一个文件
-            self.fileSideTab.add_file(filePath)
-            self.addLog(f'open {filePath}')
-            self.setting.lastOpenFilePath=str(Path(filePath).parent)
-            fileItem=FileItem(Path(filePath),app=self)
-            self.fileItems[filePath]=fileItem
-            self.currentFile=fileItem
-            self.set_layoutWidget(self.canvasLayout,self.fileItems[filePath])
-    
+        if len(filePaths)==0:return
+        name=utils.randName()
+        self.threads[name]=threads.AddMol(self)
+        self.threads[name].paths=filePaths
+        self.threads[name].start()
+        self.setting.lastOpenFilePath=str(Path(filePaths[-1]).parent)
+                   
     def addTab(self,text):
         """在tabFrame添加一个标签"""
         self.fileTab.addWidget(QLabel(text))
@@ -160,10 +159,10 @@ class Window(MainWindow):
     def selectFile(self):
         """选择一个打开的文件,当选择文件名的时候，如果就是当前的文件，则不发生变化，如果不是则取代"""
         file=self.ui.listWidget_files.currentItem().text() # 点前选中的文件
-        if file==self.currentFile.filePath: # 当前展示的文件
+        if file==self.molView.filePath: # 当前展示的文件
             return
-        print('替换组件',self.currentFile.filePath,file)
-        oldFile=self.currentFile
+        print('替换组件',self.molView.filePath,file)
+        oldFile=self.molView
         newFile=self.files[file]
         self.showMol(oldFile,newFile)
         
@@ -175,16 +174,16 @@ class Window(MainWindow):
     def selectOrbital(self):
         """选择某个轨道"""
         orbital=self.ui.listWidget_orbitals.currentIndex().row()
-        self.currentFile.canvas.selectedOrbital=orbital
+        self.molView.canvas.selectedOrbital=orbital
         if self.orbitalType=='cloud':
-            self.currentFile.canvas.addCloud()
+            self.molView.canvas.addCloud()
         elif self.orbitalType=='arrow':
-            atoms=self.currentFile.canvas.selectedAtoms
+            atoms=self.molView.canvas.selectedAtoms
             for atom in atoms:
                 start=atom.coord
                 direction=atom.get_obtWay(orbital)
                 name=f'{atom.idx}-{orbital}'
-                self.currentFile.canvas.add_arrow(start, direction,name)
+                self.molView.canvas.add_arrow(start, direction,name)
 
     def update(self):
         """更新页面中的内容"""
@@ -192,7 +191,7 @@ class Window(MainWindow):
 
     def set_cloudRange(self,e):
         """设置点云范围"""
-        self.currentFile.canvas.cloudRange=e/10000
+        self.molView.canvas.cloudRange=e/10000
         # print(e)
     
     def on_exit(self):
@@ -206,10 +205,10 @@ class Window(MainWindow):
         return super().closeEvent(event)
 
     def caler_bondOrder(self,name): # 计算键性质
-        atoms=self.currentFile.canvas.selectedAtoms
+        atoms=self.molView.canvas.selectedAtoms
         if len(atoms)!=2:return
         atoms=[int(atom.split('-')[1]) for atom in atoms]
-        mol=self.currentFile.mol
+        mol=self.molView.now_mol
         if name=='piDH':
             caler=piDH.Calculator(mol)
         elif name=='piSH':
@@ -226,13 +225,13 @@ class Window(MainWindow):
         self.addLog(f'\n{resStr}')
     
     def claer_atomProp(self,name): # 计算原子性质
-        mol=self.currentFile.mol
+        mol=self.molView.now_mol
         if name=='MullikenCharge': # 计算mulliken电荷分布
             caler=mullikenCharge.Calculator(mol)
             values=caler.calculate()
-            idxs=list(range(len(self.currentFile.mol.atoms)))
+            idxs=list(range(len(self.molView.now_mol.atoms)))
             idxs=[idx+1 for idx in idxs]
-            self.currentFile.canvas.set_colors(idxs,values)
+            self.molView.canvas.set_colors(idxs,values)
             resStr=caler.resStr()
             
 
@@ -240,18 +239,18 @@ class Window(MainWindow):
             atoms=mol.atoms
             caler=piElectron.Calculator(mol)
             values=caler.calculate()
-            idxs=list(range(len(self.currentFile.mol.atoms)))
+            idxs=list(range(len(self.molView.now_mol.atoms)))
             idxs=[idx+1 for idx in idxs]
-            self.currentFile.canvas.add_arrows_(idxs,values)
+            self.molView.canvas.add_arrows_(idxs,values)
             resStr=caler.resStr()
             # pi电子计算的是所有非H原子的
-            points=self.currentFile.mol.coords
+            points=self.molView.now_mol.coords
             labels=[f'{value:.4f}' for value in values]
-            self.currentFile.canvas.add_labels('piElectron',points,labels)
+            self.molView.canvas.add_labels('piElectron',points,labels)
 
 
         elif name=='freeValence':
-            atoms=self.currentFile.canvas.selectedAtoms
+            atoms=self.molView.canvas.selectedAtoms
             if len(atoms)!=1:return
             atoms=[int(atom.split('-')[1]) for atom in atoms]
             idx=int(atoms[0])
@@ -269,31 +268,50 @@ class Window(MainWindow):
 from .plotter.canvas import Mol as MolActor
 from .plotter.canvas import Canvas
 
-class FileItem(QWidget):
+class MolView(QWidget):
     """
     应该是一个tab，里面可以包含各种组件
+    
     """
-    def __init__(self,filePath:Path,app:Window,showMol:bool=True) -> None:
+    def __init__(self,app:Window) -> None:
         QWidget.__init__(self,parent=None)
         self.app=app
-        self.filePath:Path=filePath
-        self.mol=get_reader(filePath).mol
         self.showObtIdx:int=None
-        self.layout=QHBoxLayout()
-        self.canvas=Canvas(self.app,self.mol,self)
-        self.layout.addWidget(self.canvas.interactor)
-        self.setLayout(self.layout)
-        self.show_obts()
+        self.canvas=Canvas(self.app,self)
+        self.mols:Dict[str:Mol]={} #分子ID与分子的对应关系
+        self.paths:Dict[str,str]={} #分子ID与文件路径的对应关系
+        self.app.canvasLayout.addWidget(self.canvas.interactor)
     
-    def on_show(self):
+    def add_mol(self,path:str):
+        self.app.addLog(f'open {path}')
+        mol=get_reader(Path(path)).mol
+        molID=str(id(mol))
+        self.app.fileSideTab.add_file(path,molID)
+        self.canvas.add_mol(molID=molID,mol=mol)
+        self.mols[molID]=mol
+        self.paths[molID]=path
+        self.on_show(molID)
+    
+    def on_show(self,molID:str):
+        self.canvas.show_mol(molID)
         self.show_obts()
         self.app.obtSideTab.on_show()
+        
 
     def show_obts(self):
-        orbitals=self.mol.obtStr
+        orbitals=self.now_mol.obtStr
         self.app.obtSideTab.set_orbitals(orbitals)
     
+    @property
+    def now_mol(self)->Mol:
+        """获取当前显示的分子"""
+        molID=self.canvas.molID
+        return self.mols[molID]
 
+    @property
+    def now_path(self)->str:
+        molID=self.canvas.molID
+        return self.paths[molID]
 
     
     def hide_mol(self):
