@@ -14,12 +14,15 @@
 """
 
 from pyvista import Plotter,Cylinder,Sphere,PolyData,Light,Actor,Property,Color
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread,QThreadPool
 from pywfn.base import Atom,Bond,Mol
+from pywfn.maths import Gto
 import numpy as np
 from typing import *
-
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Queue,Pool,Manager
 import pyvista as pv
+import re
 
 from pyvista.plotting.actor import Actor
 from pyvistaqt import QtInteractor
@@ -31,6 +34,7 @@ from .materials import get_materials,Material
 from .. import threads
 from .utils import hex2rgb
 from ..utils import randName
+from .. import signals
 materials=get_materials()
 
 class Canvas(QtInteractor):
@@ -125,35 +129,46 @@ class Canvas(QtInteractor):
 
         return exist
 
-    def show_cloud(self,obt:int,showType='surf',atoms=None,molID:str=None): 
-        """开启子线程渲染，在不指定原子的情况下渲染选中的原子"""
+    def show_cloud(self,obt:int,showType='surf',atoms=None,molIDs:List[str]=None): 
+        """开启子线程计算，在不指定原子的情况下渲染选中的原子"""
         if atoms is None:
             atoms=[int(self.atomIdx(name))-1 for name in self.selectAtom[self.molID]]
-        if molID is None:
-            molID=self.molID
-        name=randName()
-        t=self.renderThreads[name]=threads.RenderCloud(self.app,self)
-        t.obt=obt
-        t.showType=showType
-        t.atoms=atoms
-        t.start()
-        
-        # self.renderCloudThread.join()
+        def add_surf(values,origin,name,molID):
+            self.add_cloud_surface(values,origin,(self.isoValue,1),name=name,cloudType='P',molID=molID)
+            self.add_cloud_surface(values,origin,(-1,-self.isoValue),name=name,cloudType='N',molID=molID)
+        def add_point(posP,posN,name,molID):
+            self.add_cloud_points(posP,name=name,cloudType='P',molID=molID)
+            self.add_cloud_points(posN,name=name,cloudType='N',molID=molID)
+        self.threadpool=QThreadPool()
+        self.threadpool.setMaxThreadCount(6)
+        print(molIDs)
+        if len(atoms)==0:return
+        for molID in molIDs:
+            t=threads.RenderCloud(self.app,self,obt,atoms,molID)
+            t.signal=signals.RenderCloud()
 
-    def show_cloud_t(self,obt:int,showType:str,atoms:List[int]):
+            t.signal.sigSurf.connect(add_surf)
+            t.signal.sigPoint.connect(add_point)
+            t.setAutoDelete(True)
+            self.threadpool.start(t)
+
+    def get_atom_cloud(self,atom:Atom,pos,obt):
+        return atom.get_cloud(pos,obt)
+
+    def show_cloud_t(self,obt:int,showType:str,atoms:List[int],molID):
         """
-        显示指定原子的轨道
+        显示指定原子的轨道,放在子线程中计算的逻辑
         """
         if len(atoms)==0:
             self.app.addLog('未指定渲染原子')
             return
-        print('渲染',obt,atoms,self.molID)
-        self.app.showMessage('正在计算...')
+        self.app.showMessage(f'{molID}正在计算...')
+        print(f'{molID}正在计算...\n')
         # 根据原子计算点云应该存在的位置
         atoms.sort()
         atomStr=','.join([str(a) for a in atoms])
         name=f'{atomStr},{obt}'
-        exist=self.hide_cloud([f'{self.molID}-cloudN-{name}',f'{self.molID}-cloudP-{name}'])
+        exist=self.hide_cloud([f'{molID}-cloudN-{name}',f'{molID}-cloudP-{name}'])
         if exist:return # 如果已经存在的话就没必要再添加了
         
         coords=self.mol.coords[atoms,:]
@@ -168,51 +183,19 @@ class Canvas(QtInteractor):
         origin=np.array([Ry[0],Rx[0],Rz[0]])
         # self.plotter.add_points(origin)
         
-        if showType=='surf' or showType=='surfP':
+        if showType=='surf':
             Lx,Ly,Lz=len(Rx),len(Ry),len(Rz) #每个轴的长度
             X,Y,Z=np.meshgrid(Rx,Ry,Rz)
             pos=np.array([Y.flatten(),X.flatten(),Z.flatten()]).T
             values=np.zeros(len(pos))
-            # print(values.shape,pos.shape)
             for i in atoms:
-                atom=self.mol.atoms[i]
+                atom=self.mols[molID].atoms[i]
                 values+=atom.get_cloud(pos-atom.coord,obt)
-            # P:positive，N:negative
             values=values.reshape(Ly,Lx,Lz) # 转成三位数组
-
-            if showType=='surf':
-                self.add_cloud_surface(values,origin,(self.isoValue,1),name=name,cloudType='P')
-                self.add_cloud_surface(values,origin,(-1,-self.isoValue),name=name,cloudType='N')
-            elif showType=='surfP':
-                valuesUnits = np.divide(values, np.abs(values), out=np.zeros_like(values), where=values!=0)
-                values=np.where((values>self.isoValue) | (values<-self.isoValue),1.,0.)
-                values[[0,-1],:,:]=0 # 某一个维度的最前方和最后方设为0
-                values[:,[0,-1],:]=0
-                values[:,:,[0,-1]]=0
-
-                values0=np.zeros_like(values)
-                # --- 问题就出现在这一块
-                values0[ 1:,:,:]+=values[:-1,:,:]
-                values0[:-1,:,:]+=values[ 1:,:,:]
-
-                values0[:, 1:,:]+=values[:,:-1,:]
-                values0[:,:-1,:]+=values[:, 1:,:]
-
-                values0[:,:, 1:]+=values[:,:,:-1]
-                values0[:,:,:-1]+=values[:,:, 1:]
-
-                valuesR=values+values0 #原来的点与周围方向的点的加和
-                valuesR=np.where(valuesR>=7,0,valuesR) #满足条件的为1，不满足条件的为0
-                valuesR*=valuesUnits #为所有值赋予单位，正1或负1
-                valuesR=valuesR.flatten() #拉平
-                # valuesR=values.flatten()
-                idxsP=np.argwhere(valuesR>0).flatten()
-                idxsN=np.argwhere(valuesR<0).flatten()
-                posP=pos[idxsP]
-                posN=pos[idxsN]
-                self.add_cloud(posP,'red',f'cloud-P-{name}')
-                self.add_cloud(posN,'blue',f'cloud-N-{name}')
-        elif showType=='prop':
+            self.app.showMessage(f'{molID}计算完成^v^')
+            return values,origin,name,molID
+            
+        elif showType=='point':
             pos=np.random.random(size=(int(1e6),3))
             pos=(pos*np.array([Rx[-1]-Rx[0],Ry[-1]-Ry[0],Rz[-1]-Rz[0]]).reshape(1,3))+np.array([Rx[0],Ry[0],Rz[0]]).reshape(1,3)
             values=np.zeros(len(pos))
@@ -228,11 +211,12 @@ class Canvas(QtInteractor):
             idxsN=np.argwhere(valuesR<-limit).flatten()
             posP=pos[idxsP]
             posN=pos[idxsN]
-            self.add_cloud(posP,'red',f'cloud-P-{name}')
-            self.add_cloud(posN,'blue',f'cloud-N-{name}')
-        self.app.showMessage('计算完成')
-
-    def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name,cloudType):
+            self.app.showMessage(f'{molID}计算完成^v^')
+            return posP,posN,name,molID
+        else:
+            raise
+        
+    def add_cloud_surface(self,values:np.ndarray,origin:np.ndarray,value,name,cloudType,molID):
         grid = pv.UniformGrid()
         grid.dimensions = np.array(values.shape) + 1
         grid.spacing = (0.1, 0.1, 0.1)
@@ -246,12 +230,39 @@ class Canvas(QtInteractor):
         surf = vol.extract_geometry()
         smooth = surf.smooth(n_iter=1000,progress_bar=True)
         material=materials[f'Cloud{cloudType}']
-        self.add_mesh_(smooth,name=f'{self.molID}-cloud{cloudType}-{name}',material=material)
+        name=f'{molID}-cloud{cloudType}-{name}'
+        print(f'渲染{molID} {cloudType}')
+        self.add_mesh_(smooth,name=name,material=material)
 
-    def add_cloud(self,points,color:str,name:str):
+    def reverse_cloud(self,reset=False):
+        """反转当前分子轨道的颜色,reset表示恢复为原本颜色"""
+        actors=self.plotter.actors
+        for name in self.plotter.actors:
+            if f'{self.molID}-cloudP' in name:
+                if reset:
+                    actors[name].prop.SetColor(hex2rgb(materials['CloudP'].color))
+                else:
+                    actors[name].prop.SetColor(hex2rgb(materials['CloudN'].color))
+            if f'{self.molID}-cloudN' in name:
+                if reset:
+                    actors[name].prop.SetColor(hex2rgb(materials['CloudN'].color))
+                else:
+                    actors[name].prop.SetColor(hex2rgb(materials['CloudP'].color))
+        materials['Bond'].color
+    
+    def remove_mol(self,molID):
+        actors=self.plotter.actors
+        for name in actors:
+            if molID in name:
+                self.plotter.remove_actor(actors[name])
+
+    def add_cloud_points(self,points,name:str,cloudType:str,molID:str):
+        name=f'{molID}-cloud{cloudType}-{name}'
+        material=materials[f'Cloud{cloudType}']
         if len(points)>0:
+            print(f'添加{molID} {cloudType}')
             cloud=pv.PolyData(points)
-            self.plotter.add_mesh(cloud,color=color,opacity=0.8,reset_camera=False,name=name,pickable=False)
+            self.add_mesh_(cloud,name=name,material=material)
         else:
             print('没有点')
 
@@ -344,7 +355,14 @@ class Canvas(QtInteractor):
         """添加坐标()"""
         actor=self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True,show_points=False)
         # actor.VisibilityOff()
-    
+
+
+def get_atomCloud(atom:Atom,pos,obt,q:Queue):
+    print('执行子进程')
+    res=atom.get_cloud(pos,obt)
+    print('res子进程',res)
+    q.put(res)
+
 def color_bar(ratio:float):
     c0=np.array([0.,0.,1.])
     c1=np.array([1.,0.,0.])

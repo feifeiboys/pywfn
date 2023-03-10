@@ -6,6 +6,9 @@ from typing import *
 from . import window
 import numpy as np
 from pathlib import Path
+from threading import Thread
+import time
+
 
 class Command:
 
@@ -17,14 +20,14 @@ class Command:
     
     def get_history(self,way):
         """获取历史指令"""
-        if len(self.historys)==0:return ''
+        if len(self.historys)==0:return None
         if way=='up' and self.historyIdx>0:
             self.historyIdx-=1
         elif way=='down':
             if self.historyIdx<len(self.historys)-1:
                 self.historyIdx+=1
             else:
-                return ''
+                return None
         return self.historys[self.historyIdx]
         
     def run(self,opt:str):
@@ -81,23 +84,26 @@ class Command:
     def export_all(self,fileType):
         molIDs=self.molView.canvas.mols.keys()
         for molID in molIDs:
+            time.sleep(0.5)
             self.molView.on_show(molID)
             print(f'显示分子{molID}')
             self.export(fileType)
     
     def render_cloud(self,obt:int,atoms:List[int],molID:str=None):
-        if len(atoms)==0:
+        if not atoms:
             atoms=[atom.idx-1 for atom in self.molView.now_mol.atoms] #索引从0开始
         else:
             atoms=[atom-1 for atom in atoms]
         if molID is None:molID=self.molView.canvas.molID
-        self.molView.canvas.show_cloud(obt=obt-1,atoms=atoms,molID=molID)
+        self.molView.canvas.show_cloud(obt=obt-1,atoms=atoms,molIDs=[molID])
     
     def render_cloud_all(self,obt:int,atoms:List[int]):
+        if not atoms:
+            atoms=[atom.idx-1 for atom in self.molView.now_mol.atoms] #索引从0开始
+        else:
+            atoms=[atom-1 for atom in atoms]
         molIDs=self.molView.canvas.mols.keys()
-        print(molIDs)
-        for molID in molIDs:
-            # print(molID)
-            self.render_cloud(obt,atoms,molID)
+        self.molView.canvas.show_cloud(obt=obt-1,atoms=atoms,molIDs=molIDs)
+
 
 # from .window import Window,FileItem

@@ -1,24 +1,24 @@
+from PySide6.QtCore import Qt, QEvent
+from PySide6.QtGui import QKeyEvent
+from PySide6.QtWidgets import QApplication, QWidget
 
-from multiprocessing import  Process
- 
-class MyProcess(Process): #继承Process类
-    def __init__(self,name):
-        super(MyProcess,self).__init__()
-        self.name = name
-        self.idx:int=None
- 
-    def run(self):
-        print('测试多进程' , self.name , self.idx)
- 
- 
+import sys
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeyEvent
+from PySide6.QtWidgets import QApplication, QMainWindow
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_S:
+            # 执行 Ctrl+S 组合键事件的处理代码
+            print("Ctrl+S pressed")
+
+
 if __name__ == '__main__':
-    process_list = []
-    for i in range(5):  #开启5个子进程执行fun1函数
-        p = MyProcess('Python') #实例化进程对象
-        p.idx=i
-        p.start()
-        process_list.append(p)
- 
-    for i in process_list:
-        p.join()
-    print('执行完毕')
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())

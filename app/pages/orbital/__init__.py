@@ -20,7 +20,7 @@ class OrbitalWidget(QWidget,Ui_Form):
     
     def clicked(self,item:QListWidgetItem):
         obt=self.obts.index(item.text()) # 轨道的序数，肯定都是整数
-        self.app.molView.canvas.show_cloud(obt)
+        self.app.molView.canvas.show_cloud(obt,molIDs=[self.app.molView.canvas.molID])
         self.app.molView.showObtIdx=obt
     
     def on_show(self):

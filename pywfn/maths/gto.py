@@ -6,6 +6,8 @@
 import numpy as np
 from numpy import sqrt,ndarray
 from typing import *
+from multiprocessing import Pool,Queue,Process
+from concurrent.futures import ProcessPoolExecutor
 
 π=np.pi
 e=np.e
@@ -39,10 +41,25 @@ def lgto(pos:ndarray,cs:List[float],as_:List[float],lmn):
         vs+=v
     return vs
 
+def agto_(Ci,pos,coes,exps,lmn):
+    print('子进程')
+    res=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
+    return res
+
+
 from .. import data
 class Gto:
     def __init__(self,basis:"data.Basis"):
         self.basis=basis
+        self.queue=Queue()
+    
+    def agto_(self,Ci,pos,coes,exps,lmn):
+        print('子进程')
+        res=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
+        self.queue.put(res)
+        return res
+
+
     def agto(self,pos:ndarray,OCi:ndarray,atomic:int,angs=[1]):
         """
         atom gto,计算一个原子的轨道波函数(所有层的轨道波函数之和)
@@ -54,9 +71,12 @@ class Gto:
         2. 对每个角动量循环
         3. 对角动量展开的lmn循环
         """
+
+        # ps=[]
         base=self.basis.get(atomic)
         vs=np.zeros(len(pos)) # 波函数值，初始为0
         idx=0
+        # print(base)
         for i,shell in enumerate(base): # 首先对shell循环
             exps=shell['exp']
             for j,ang in enumerate(shell['ang']): # 然后对角动量循环
@@ -66,8 +86,14 @@ class Gto:
                     Ci=OCi[idx]
                     if show:
                         vs+=Ci*lgto(pos=pos,cs=coes,as_=exps,lmn=lmn)
+                        # ps.append(Process(target=agto_,args=(Ci,pos,coes,exps,lmn)))
+                        # pool.apply_async(self.agto_,args=(Ci,pos,coes,exps,lmn))
                     idx+=1
         if idx!=len(OCi):raise #所有的系数必须都走完
+        # [p.start() for p in ps]
+        # [p.join() for p in ps]
+        # vsi=self.queue.get()
+        # print(vsi)
         return vs
 
 if __name__=='__main__':

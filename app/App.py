@@ -15,7 +15,7 @@ from .window import Window
 def run():
     app=QApplication(sys.argv)
     app.setStyle(QStyleFactory.create("Fusion")) #fusion风格
-    w=Window()
+    w=Window(app)
     w.show()
 
     sys.exit(app.exec_())

@@ -7,10 +7,12 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 os.environ["QT_API"] = "pyside6"
 import pyvista as pv
 
-from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel,QLayout
-from PySide6.QtGui import QIcon,QFont,QColor
-from PySide6.QtCore import Qt,QObject,QEvent,QThread
+from PySide6.QtWidgets import QFileDialog,QVBoxLayout,QHBoxLayout,QWidget,QLabel,QLayout,QMenu,QApplication
+from PySide6.QtGui import QIcon,QFont,QColor,QAction,QKeyEvent,QMouseEvent
+from PySide6.QtCore import Qt,QObject,QEvent,QThread,QThreadPool
 from pyvistaqt import QtInteractor, MainWindow
+
+
 
 
 from pywfn.base import Mol
@@ -25,9 +27,9 @@ from .setting import settingManager
 
 from typing import *
 from pathlib import Path
-from .threads import Test
 from . import threads
 from . import utils
+from . import signals
 
 
 from .pages.setting import SettingWidget
@@ -36,7 +38,7 @@ from .pages.orbital import OrbitalWidget
 from .pages.fileSideTab import FileSideTabWidget
 
 class Window(MainWindow):
-    def __init__(self) -> None:
+    def __init__(self,app:QApplication) -> None:
         super().__init__()
         self.setting=settingManager()
         self.ui:Ui_MainWindow=Ui_MainWindow()
@@ -44,6 +46,7 @@ class Window(MainWindow):
         
         self.commandLine=Command(self)
         self.ui.log.setFont(QFont('Courier New'))
+        
         
         self.init_menu()
         
@@ -54,7 +57,8 @@ class Window(MainWindow):
         self.init_funs()
         self.molView=MolView(app=self)
         self.threads:Dict[str,QThread]={} #存储线程，防止直接死掉
-
+        
+        # app.installEventFilter(self)
 
     def init_pages(self):
         """初始化一些子页面"""
@@ -68,8 +72,10 @@ class Window(MainWindow):
         """初始化布局"""
         self.fileTab=QHBoxLayout()
         self.ui.fileTab.setLayout(self.fileTab)
+
         self.canvasLayout=QVBoxLayout()
         self.ui.canvas.setLayout(self.canvasLayout)
+
         self.viewLaout=QVBoxLayout()
         self.ui.view.setLayout(self.viewLaout)
 
@@ -94,21 +100,20 @@ class Window(MainWindow):
     def init_funs(self):
         """初始化组件函数绑定"""
         self.ui.cmdInput.returnPressed.connect(self.cmdRun)
-        self.ui.cmdInput.installEventFilter(self)
+        self.ui.cmdInput.installEventFilter(self) #要绑定一个类，这个类要是QObject的子类，而且要有eventFilter函数
         self.ui.iconFiles.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.fileSideTab)
         self.ui.iconOrbital.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.obtSideTab)
     
-    # 事件过滤器
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if watched.objectName()=='cmdInput':
-            if event.type()==QEvent.KeyPress:
-                if event.key()==Qt.Key_Up:
-                    opt=self.commandLine.get_history('up')
-                    self.ui.cmdInput.setText(opt)
-                elif event.key()==Qt.Key_Down:
-                    opt=self.commandLine.get_history('down')
-                    self.ui.cmdInput.setText(opt)
-        return super().eventFilter(watched, event)
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress:
+            if event.key()==Qt.Key_Up:
+                opt=self.commandLine.get_history('up')
+                self.ui.cmdInput.setText(opt)
+            elif event.key()==Qt.Key_Down:
+                opt=self.commandLine.get_history('down')
+                self.ui.cmdInput.setText(opt)
+        return False
+    
 
     def set_layoutWidget(self,layout:QLayout,widget:QWidget):
         """设置在某个layout内显示指定的widget"""
@@ -145,11 +150,23 @@ class Window(MainWindow):
     def openFile(self):
         """打开log/out文件"""
         filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
+        
         if len(filePaths)==0:return
-        name=utils.randName()
-        self.threads[name]=threads.AddMol(self)
-        self.threads[name].paths=filePaths
-        self.threads[name].start()
+        self.threadpool=QThreadPool()
+        self.threadpool.setMaxThreadCount(4)
+        
+        for path in filePaths:
+            t=threads.AddMol(self,path)
+            t.signal=signals.OpenFile()
+            t.signal.sig.connect(self.molView.add_mol)
+            t.setAutoDelete(True)
+            self.threadpool.start(t)
+        self.threadpool.waitForDone()
+        print('文件读取完成')
+            
+        # self.t=threads.AddMol(self,filePaths)            
+        # self.t._signal.connect(self.molView.add_mol)
+        # self.t.start()
         self.setting.lastOpenFilePath=str(Path(filePaths[-1]).parent)
                    
     def addTab(self,text):
@@ -280,11 +297,15 @@ class MolView(QWidget):
         self.canvas=Canvas(self.app,self)
         self.mols:Dict[str:Mol]={} #分子ID与分子的对应关系
         self.paths:Dict[str,str]={} #分子ID与文件路径的对应关系
-        self.app.canvasLayout.addWidget(self.canvas.interactor)
+        self.app.canvasLayout.addWidget(self.canvas)
+        # self.canvas.interactor.mousePressEvent=self.mousePressEvent
+        self.canvas.installEventFilter(self)
+        self.R_Menu()
+        
     
-    def add_mol(self,path:str):
+    def add_mol(self,path:str,mol:Mol):
         self.app.addLog(f'open {path}')
-        mol=get_reader(Path(path)).mol
+        # mol=get_reader(Path(path)).mol
         molID=str(id(mol))
         self.app.fileSideTab.add_file(path,molID)
         self.canvas.add_mol(molID=molID,mol=mol)
@@ -297,7 +318,6 @@ class MolView(QWidget):
         self.show_obts()
         self.app.obtSideTab.on_show()
         
-
     def show_obts(self):
         orbitals=self.now_mol.obtStr
         self.app.obtSideTab.set_orbitals(orbitals)
@@ -313,22 +333,46 @@ class MolView(QWidget):
         molID=self.canvas.molID
         return self.paths[molID]
 
-    
     def hide_mol(self):
         """隐藏原子"""
         ...
-        
-    def onClick(self):
-        print('click')
 
     def set_atomColor(self,idxs,values):
         self.canvas.set_colors(idxs,values)
+
+    def R_Menu(self):
+        """定义右键菜单"""
+        self.r_menu=QMenu()
+
+        act=QAction("相位反转",self)
+        act.triggered.connect(self.canvas.reverse_cloud)
+        self.r_menu.addAction(act)
+
+        act=QAction("相位恢复",self)
+        act.triggered.connect(lambda :self.canvas.reverse_cloud(reset=True))
+        self.r_menu.addAction(act)
     
-    def __repr__(self) -> str:
-        return self.filePath
+    # def mousePressEvent(self, event: QMouseEvent) -> None:
+    #     if event.button()==Qt.RightButton:
+    #         self.r_menu.exec(event.globalPos())
+    #     return super().mousePressEvent(event)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # print(event.type(),type(event.type()))
+        if event.type()==QEvent.MouseButtonPress:
+            if event.button()==Qt.RightButton:
+                self.r_menu.exec(event.globalPos())
+        return super().eventFilter(watched, event)
     
-    def __str__(self) -> str:
-        return self.filePath
+    def remove_mol(self,molID:str=None):
+        """
+        删除一个分子，需要删除的东西有很多
+        1.画布中的所有该分子的actor要删除
+        2.文件列表中该文件要删除
+        """
+        if molID==None:molID=self.canvas.molID
+        self.canvas.remove_mol(molID)
+
 
 class viewItem(QWidget):
     def __init__(self):
