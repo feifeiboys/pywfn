@@ -36,6 +36,7 @@ from .pages.setting import SettingWidget
 from .pages.start import StartWidget
 from .pages.orbital import OrbitalWidget
 from .pages.fileSideTab import FileSideTabWidget
+from .pages.sceneSideTab import SceneSideTabWidget
 
 class Window(MainWindow):
     def __init__(self,app:QApplication) -> None:
@@ -46,7 +47,6 @@ class Window(MainWindow):
         
         self.commandLine=Command(self)
         self.ui.log.setFont(QFont('Courier New'))
-        
         
         self.init_menu()
         
@@ -65,6 +65,7 @@ class Window(MainWindow):
         self.settingPage=SettingWidget(self)
         self.fileSideTab=FileSideTabWidget(self)
         self.obtSideTab=OrbitalWidget(self)
+        self.sceneSideTab=SceneSideTabWidget(self)
         # self.viewLaout.addWidget(self.fileSideTab)
         self.set_layoutWidget(self.viewLaout,self.fileSideTab)
 
@@ -83,7 +84,7 @@ class Window(MainWindow):
         """初始化菜单的命令"""
         self.ui.actionopen.triggered.connect(self.openFile)
         self.ui.actionsetting.triggered.connect(lambda:self.settingPage.show())
-        self.ui.actionatomLabels.triggered.connect(self.viewLabel)
+        self.ui.actionatomLabels.triggered.connect(lambda:self.molView.canvas.show_label())
         self.ui.actionclearCloud.triggered.connect(lambda:self.molView.canvas.hide_cloud(names=[]))
         self.ui.actionpiDH.triggered.connect(lambda:self.caler_bondOrder('piDH'))
         self.ui.actionpiDM.triggered.connect(lambda:self.caler_bondOrder('piDM'))
@@ -103,6 +104,7 @@ class Window(MainWindow):
         self.ui.cmdInput.installEventFilter(self) #要绑定一个类，这个类要是QObject的子类，而且要有eventFilter函数
         self.ui.iconFiles.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.fileSideTab)
         self.ui.iconOrbital.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.obtSideTab)
+        self.ui.iconScene.mousePressEvent=lambda e:self.set_layoutWidget(self.viewLaout,self.sceneSideTab)
     
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
@@ -134,12 +136,6 @@ class Window(MainWindow):
         """处理命令行输入的内容"""
         opt=self.ui.cmdInput.text()
         self.commandLine.run(opt)
-
-    def viewLabel(self):
-        """显示或隐藏原子的label"""
-        label=self.molView.canvas.labels
-        visible=label.GetVisibility()
-        label.SetVisibility(int(not visible))
     
     def addLog(self,log:str,logType='base',end='\n'):
         """输出程序的执行结果"""
@@ -351,6 +347,10 @@ class MolView(QWidget):
         act=QAction("相位恢复",self)
         act.triggered.connect(lambda :self.canvas.reverse_cloud(reset=True))
         self.r_menu.addAction(act)
+
+        act=QAction("删除点云",self)
+        act.triggered.connect(self.canvas.remove_cloud)
+        self.r_menu.addAction(act)
     
     # def mousePressEvent(self, event: QMouseEvent) -> None:
     #     if event.button()==Qt.RightButton:
@@ -372,8 +372,3 @@ class MolView(QWidget):
         """
         if molID==None:molID=self.canvas.molID
         self.canvas.remove_mol(molID)
-
-
-class viewItem(QWidget):
-    def __init__(self):
-        QWidget.__init__(self,parent=None)

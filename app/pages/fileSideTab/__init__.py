@@ -1,6 +1,6 @@
 import PySide6
 from PySide6.QtWidgets import QWidget,QListWidgetItem,QMenu
-from PySide6.QtGui import QAction,QMouseEvent
+from PySide6.QtGui import QAction,QMouseEvent,QColor
 from PySide6.QtCore import QObject,QEvent,Qt
 from typing import *
 from ... import window
@@ -33,6 +33,21 @@ class FileSideTabWidget(QWidget,Ui_Form):
         item=self.listWidget.item(row)
         path=item.text()
         self.show_file(path)
+    
+    def set_runed(self,molID:str):
+        """将计算完成的文件改变背景颜色"""
+        path=None
+        for key,value in self.molIDs.items():
+            if value==molID:
+                path=key
+                break
+        if path is None:return
+
+        for i in range(self.listWidget.count()):
+            widget=self.listWidget.item(i)
+            if path==widget.text():
+                widget.setBackground(QColor('#B7D332'))
+
 
     def show_file(self,path):
         molID=self.molIDs[path]

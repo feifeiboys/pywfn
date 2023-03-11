@@ -58,6 +58,7 @@ class Canvas(QtInteractor):
         self.plotter.show_axes()
         self.molID:str=None
         self.renderThreads:Dict[str,threads.RenderCloud]={}
+        self.labelVisible:bool=True #控制label是否可见
     
     @property
     def mol(self):
@@ -70,7 +71,7 @@ class Canvas(QtInteractor):
         self.molID=molID
         self.add_atoms(molID)
         self.add_bonds(molID)
-        self.add_labels(name=f'{molID}-labels-atomIdx',points=mol.coords,labels=[f'{atom.idx}' for atom in mol.atoms])
+        self.add_labels(name=f'{molID}-labelAtomIdx',points=mol.coords,labels=[f'{atom.idx}' for atom in mol.atoms]) # 会自动在name后添加-labels，很烦
 
     def show_mol(self,molID:str):
         """显示指定的分子"""
@@ -265,6 +266,19 @@ class Canvas(QtInteractor):
             self.add_mesh_(cloud,name=name,material=material)
         else:
             print('没有点')
+    
+    def remove_cloud(self):
+        """删除当前分子的点云"""
+        actors=self.plotter.actors
+        names=[]
+        for name in actors:
+            print(name)
+            molID,mesh,other=name.split('-')
+            if molID==self.molID and mesh in ['cloudP','cloudN']:
+                names.append(name)
+        print(names)
+        for name in names:
+            self.plotter.remove_actor(actors[name])
 
     def onClick(self,mesh:PolyData): #使选中的原子改变颜色
         if not hasattr(mesh,'name'):return
@@ -351,11 +365,22 @@ class Canvas(QtInteractor):
             direction=atom.get_Normal()
             self.add_arrow(center,direction,ratio)
 
-    def add_labels(self,name:str,points,labels:List[str]):
+    def add_labels(self,name:str,points,labels:List[str]): # labels只有一个，但是数据可以记录起来
         """添加坐标()"""
-        actor=self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True,show_points=False)
+        self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True,show_points=False)
+        self.show_label()
         # actor.VisibilityOff()
-
+    def show_label(self):
+        """设施显示、隐藏label"""
+        actors=self.plotter.actors
+        self.labelVisible=not self.labelVisible
+        for name in actors:
+            molID,mesh,other=name.split('-')
+            if other!='labels':continue
+            if self.labelVisible==False:
+                actors[name].VisibilityOff()
+            elif self.labelVisible==True and molID==self.molID:
+                actors[name].VisibilityOn()
 
 def get_atomCloud(atom:Atom,pos,obt,q:Queue):
     print('执行子进程')

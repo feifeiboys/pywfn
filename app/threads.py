@@ -41,11 +41,11 @@ class RenderCloud(QRunnable):
         self.signal:signals.RenderCloud=None
     
     def run(self):
+        
         if self.showType=='surf':
             values,origin,name,molID=self.canvas.show_cloud_t(obt=self.obt,showType=self.showType,atoms=self.atoms,molID=self.molID)
             self.signal.sigSurf.emit(values,origin,name,molID)
         elif self.showType=='point':
             posP,posN,name,molID=self.canvas.show_cloud_t(obt=self.obt,showType=self.showType,atoms=self.atoms,molID=self.molID)
             self.signal.sigPoint.emit(posP,posN,name,molID)
-
-            
+        self.app.fileSideTab.set_runed(self.molID)
