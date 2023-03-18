@@ -22,3 +22,10 @@ def randName():
     """生成一个随机字符串"""
     strs='1234567890abcdefghijklmnopqrstuvwxyz'
     return ''.join(random.choices(strs,k=6))
+
+def hex2rgb(hexcolor:str):
+    '''HEX转RGB'''
+    hexcolor=hexcolor.replace('#', '')
+    hexcolor = int(hexcolor, base=16)
+    rgb = (hexcolor >> 16) & 0xff , (hexcolor >> 8) & 0xff , hexcolor & 0xff 
+    return rgb[0]/255,rgb[1]/255,rgb[2]/255

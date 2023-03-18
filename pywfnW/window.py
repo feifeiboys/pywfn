@@ -32,11 +32,12 @@ from . import utils
 from . import signals
 
 
-from .pages.setting import SettingWidget
-from .pages.start import StartWidget
-from .pages.orbital import OrbitalWidget
-from .pages.fileSideTab import FileSideTabWidget
-from .pages.sceneSideTab import SceneSideTabWidget
+from .pages.color import ColorPage
+from .pages.start import StartPage
+
+from .sideTabs.orbital import OrbitalWidget
+from .sideTabs.files import FileSideTabWidget
+from .sideTabs.scene import SceneSideTabWidget
 
 class Window(MainWindow):
     def __init__(self,app:QApplication) -> None:
@@ -58,11 +59,13 @@ class Window(MainWindow):
         self.molView=MolView(app=self)
         self.threads:Dict[str,QThread]={} #存储线程，防止直接死掉
         
-        # app.installEventFilter(self)
+        # app.installEventFilter(self)qianru
 
     def init_pages(self):
         """初始化一些子页面"""
-        self.settingPage=SettingWidget(self)
+        self.colorPage=ColorPage(self)
+        self.startPage=StartPage(self)
+
         self.fileSideTab=FileSideTabWidget(self)
         self.obtSideTab=OrbitalWidget(self)
         self.sceneSideTab=SceneSideTabWidget(self)
@@ -72,20 +75,23 @@ class Window(MainWindow):
     def init_layout(self):
         """初始化布局"""
         self.fileTab=QHBoxLayout()
-        self.ui.fileTab.setLayout(self.fileTab)
+        self.ui.pageTabs.setLayout(self.fileTab)
 
-        self.canvasLayout=QVBoxLayout()
-        self.ui.canvas.setLayout(self.canvasLayout)
+        self.pageLayout=QVBoxLayout()
+        self.pageLayout.setContentsMargins(0,0,0,0)
+        self.ui.canvas.setLayout(self.pageLayout)
 
         self.viewLaout=QVBoxLayout()
         self.ui.view.setLayout(self.viewLaout)
 
     def init_menu(self):
         """初始化菜单的命令"""
+        # file
         self.ui.actionopen.triggered.connect(self.openFile)
         self.ui.actionsetting.triggered.connect(lambda:self.settingPage.show())
         self.ui.actionatomLabels.triggered.connect(lambda:self.molView.canvas.show_label())
         self.ui.actionclearCloud.triggered.connect(lambda:self.molView.canvas.hide_cloud(names=[]))
+        # compute
         self.ui.actionpiDH.triggered.connect(lambda:self.caler_bondOrder('piDH'))
         self.ui.actionpiDM.triggered.connect(lambda:self.caler_bondOrder('piDM'))
         self.ui.actionpiSH.triggered.connect(lambda:self.caler_bondOrder('piSH'))
@@ -95,8 +101,12 @@ class Window(MainWindow):
         self.ui.actionMullikenCharge.triggered.connect(lambda:self.claer_atomProp('MullikenCharge'))
         self.ui.actionpiElectron.triggered.connect(lambda:self.claer_atomProp('piElectron'))
         self.ui.actionfreeValence.triggered.connect(lambda:self.claer_atomProp('freeValence'))
+        # view
         self.ui.actionresetAtomColor.triggered.connect(lambda:self.molView.canvas.reset_color())
+        # select
         self.ui.actionclear.triggered.connect(self.clear_selectedAtoms)
+        # setting
+        self.ui.actioncolor.triggered.connect(lambda:self.colorPage.show())
 
     def init_funs(self):
         """初始化组件函数绑定"""
@@ -148,6 +158,7 @@ class Window(MainWindow):
         filePaths,fileTypes=QFileDialog.getOpenFileNames(self,"打开文件",filter='log (*.log);;out (*.out)',dir=self.setting.lastOpenFilePath) # 选择文件名
         
         if len(filePaths)==0:return
+        
         self.threadpool=QThreadPool()
         self.threadpool.setMaxThreadCount(4)
         
@@ -213,8 +224,7 @@ class Window(MainWindow):
     
     def closeEvent(self, event) -> None:
         """退出程序时的回调函数"""
-        for each in self.files.values():
-            each.canvas.plotter.Finalize()
+        self.molView.canvas.close()
         return super().closeEvent(event)
 
     def caler_bondOrder(self,name): # 计算键性质
@@ -295,11 +305,7 @@ class MolView(QWidget):
         self.showObtIdx:int=None
         self.canvas=Canvas(self.app,self)
         self.files:List[File]=[]
-
-        # self.mols:Dict[str:Mol]={} #分子ID与分子的对应关系
-        # self.paths:Dict[str,str]={} #分子ID与文件路径的对应关系
-        self.app.canvasLayout.addWidget(self.canvas)
-        # self.canvas.interactor.mousePressEvent=self.mousePressEvent
+        self.app.pageLayout.addWidget(self.canvas)
         self.canvas.installEventFilter(self)
         self.R_Menu()
         

@@ -375,6 +375,7 @@ class Canvas(QtInteractor):
         self.plotter.add_point_labels(points=points,labels=labels,name=name,always_visible=True,show_points=False)
         self.show_label()
         # actor.VisibilityOff()
+        
     def show_label(self):
         """设施显示、隐藏label"""
         actors:Dict[str,pv.Actor]=self.plotter.actors

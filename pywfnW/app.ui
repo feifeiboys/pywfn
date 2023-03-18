@@ -205,7 +205,7 @@ font-family:Consolas;
        <property name="handleWidth">
         <number>1</number>
        </property>
-       <widget class="QFrame" name="fileTab">
+       <widget class="QFrame" name="pageTabs">
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -221,7 +221,7 @@ font-family:Consolas;
          </sizepolicy>
         </property>
         <property name="frameShape">
-         <enum>QFrame::WinPanel</enum>
+         <enum>QFrame::Box</enum>
         </property>
        </widget>
        <widget class="QLineEdit" name="cmdInput">
@@ -309,10 +309,17 @@ font-family:Consolas;
     </property>
     <addaction name="actionclear"/>
    </widget>
+   <widget class="QMenu" name="menusetting">
+    <property name="title">
+     <string>setting</string>
+    </property>
+    <addaction name="actioncolor"/>
+   </widget>
    <addaction name="menufile"/>
    <addaction name="menucompute"/>
    <addaction name="menuview"/>
    <addaction name="menuselect"/>
+   <addaction name="menusetting"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -400,6 +407,11 @@ font-family:Consolas;
   <action name="actionsetting">
    <property name="text">
     <string>setting</string>
+   </property>
+  </action>
+  <action name="actioncolor">
+   <property name="text">
+    <string>color</string>
    </property>
   </action>
  </widget>

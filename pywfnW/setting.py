@@ -5,7 +5,7 @@ import shutil
 class settingManager:
     def __init__(self) -> None:
         """不要改变默认的设置文件，克隆一份方便还原"""
-        self.cwd=cwd=os.path.join(os.getcwd(),'app')
+        self.cwd=cwd=os.path.join(os.getcwd(),'pywfnW')
         print(cwd)
         if not os.path.exists(self.local('setting.json')):
             shutil.copyfile(self.local('rawSetting.json'),self.local('setting.json'))
