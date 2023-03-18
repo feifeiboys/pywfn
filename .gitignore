@@ -1,8 +1,9 @@
 __pycache__
-*.pyc
-env
+.ipynb_checkpoints
+.qt_for_python
 /manager/storages
+env
+*.pyc
 *.zip
 *.cfg
-.qt_for_python
-.ipynb_checkpoints
+
