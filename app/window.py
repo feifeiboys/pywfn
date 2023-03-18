@@ -281,6 +281,9 @@ class Window(MainWindow):
 from .plotter.canvas import Mol as MolActor
 from .plotter.canvas import Canvas
 
+
+from collections import namedtuple
+File=namedtuple('File',['path','molID','mol'])
 class MolView(QWidget):
     """
     应该是一个tab，里面可以包含各种组件
@@ -291,13 +294,20 @@ class MolView(QWidget):
         self.app=app
         self.showObtIdx:int=None
         self.canvas=Canvas(self.app,self)
-        self.mols:Dict[str:Mol]={} #分子ID与分子的对应关系
-        self.paths:Dict[str,str]={} #分子ID与文件路径的对应关系
+        self.files:List[File]=[]
+
+        # self.mols:Dict[str:Mol]={} #分子ID与分子的对应关系
+        # self.paths:Dict[str,str]={} #分子ID与文件路径的对应关系
         self.app.canvasLayout.addWidget(self.canvas)
         # self.canvas.interactor.mousePressEvent=self.mousePressEvent
         self.canvas.installEventFilter(self)
         self.R_Menu()
         
+    def get_file(self,prop,value):
+        """根据属性值返回文件"""
+        for file in self.files:
+            if getattr(file,prop)==value:
+                return file
     
     def add_mol(self,path:str,mol:Mol):
         self.app.addLog(f'open {path}')
@@ -305,8 +315,8 @@ class MolView(QWidget):
         molID=str(id(mol))
         self.app.fileSideTab.add_file(path,molID)
         self.canvas.add_mol(molID=molID,mol=mol)
-        self.mols[molID]=mol
-        self.paths[molID]=path
+        self.files.append(File(path,molID,mol))
+
         self.on_show(molID)
     
     def on_show(self,molID:str):
@@ -322,12 +332,14 @@ class MolView(QWidget):
     def now_mol(self)->Mol:
         """获取当前显示的分子"""
         molID=self.canvas.molID
-        return self.mols[molID]
+        file=self.get_file('molID',molID)
+        return file.mol
 
     @property
     def now_path(self)->str:
         molID=self.canvas.molID
-        return self.paths[molID]
+        file=self.get_file('molID',molID)
+        return file.path
 
     def hide_mol(self):
         """隐藏原子"""
@@ -348,15 +360,14 @@ class MolView(QWidget):
         act.triggered.connect(lambda :self.canvas.reverse_cloud(reset=True))
         self.r_menu.addAction(act)
 
-        act=QAction("删除点云",self)
+        act=QAction("删除轨道",self)
         act.triggered.connect(self.canvas.remove_cloud)
         self.r_menu.addAction(act)
-    
-    # def mousePressEvent(self, event: QMouseEvent) -> None:
-    #     if event.button()==Qt.RightButton:
-    #         self.r_menu.exec(event.globalPos())
-    #     return super().mousePressEvent(event)
 
+        act=QAction("清空轨道",self)
+        act.triggered.connect(lambda :self.canvas.remove_cloud(clear=True))
+        self.r_menu.addAction(act)
+    
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         # print(event.type(),type(event.type()))
         if event.type()==QEvent.MouseButtonPress:

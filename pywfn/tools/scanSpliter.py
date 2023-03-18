@@ -89,7 +89,7 @@ class Tool:
         titleNums=self.find_titles()
         coords=self.match_coords(titleNums)
         for i,coord in tqdm(enumerate(coords),total=len(coords),ncols=50):
-            path=os.path.join(self.dirName,self.fileName,f'f{i+1}.gjf')
+            path=os.path.join(self.dirName,self.fileName,f'f{i+1:0>2}.gjf')
             fileCreater=FileCreater(path=path)
             fileCreater.set_coord(coord)
             fileCreater.set_chk(f'{i+1}')

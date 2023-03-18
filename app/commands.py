@@ -103,6 +103,7 @@ class Command:
         else:
             atoms=[atom-1 for atom in atoms]
         molIDs=self.molView.canvas.mols.keys()
+        self.app.fileSideTab.clear_list()
         self.molView.canvas.show_cloud(obt=obt-1,atoms=atoms,molIDs=molIDs)
 
 

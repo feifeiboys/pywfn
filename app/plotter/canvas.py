@@ -253,9 +253,12 @@ class Canvas(QtInteractor):
     
     def remove_mol(self,molID):
         actors=self.plotter.actors
+        rms=[]
         for name in actors:
             if molID in name:
-                self.plotter.remove_actor(actors[name])
+                rms.append(actors[name])
+        for actor in rms:
+            self.plotter.remove_actor(actor)
 
     def add_cloud_points(self,points,name:str,cloudType:str,molID:str):
         name=f'{molID}-cloud{cloudType}-{name}'
@@ -267,16 +270,18 @@ class Canvas(QtInteractor):
         else:
             print('没有点')
     
-    def remove_cloud(self):
-        """删除当前分子的点云"""
+    def remove_cloud(self,clear=False):
+        """删除当前分子的点云，可以清空或者删除当前"""
         actors=self.plotter.actors
         names=[]
         for name in actors:
-            print(name)
             molID,mesh,other=name.split('-')
-            if molID==self.molID and mesh in ['cloudP','cloudN']:
-                names.append(name)
-        print(names)
+            if mesh in ['cloudP','cloudN']:
+                if clear:
+                    names.append(name)
+                    continue
+                elif molID==self.molID:
+                    names.append(name)
         for name in names:
             self.plotter.remove_actor(actors[name])
 
@@ -372,8 +377,8 @@ class Canvas(QtInteractor):
         # actor.VisibilityOff()
     def show_label(self):
         """设施显示、隐藏label"""
-        actors=self.plotter.actors
-        self.labelVisible=not self.labelVisible
+        actors:Dict[str,pv.Actor]=self.plotter.actors
+        
         for name in actors:
             molID,mesh,other=name.split('-')
             if other!='labels':continue
@@ -381,6 +386,7 @@ class Canvas(QtInteractor):
                 actors[name].VisibilityOff()
             elif self.labelVisible==True and molID==self.molID:
                 actors[name].VisibilityOn()
+        self.labelVisible=not self.labelVisible
 
 def get_atomCloud(atom:Atom,pos,obt,q:Queue):
     print('执行子进程')
